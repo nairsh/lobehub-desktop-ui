@@ -85,6 +85,7 @@ const ChatList = memo<ChatListProps>(({ disableActionsBar, welcome, itemContent,
       <WideScreenContainer
         style={{
           height: '100%',
+          maxWidth: 720,
         }}
         wrapperStyle={{
           minHeight: '100%',

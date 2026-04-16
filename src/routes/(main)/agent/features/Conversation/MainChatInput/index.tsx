@@ -10,7 +10,7 @@ import { userGeneralSettingsSelectors } from '@/store/user/selectors';
 
 import { useSendMenuItems } from './useSendMenuItems';
 
-const rightActions: ActionKeys[] = ['promptTransform'];
+const rightActions: ActionKeys[] = ['model', 'promptTransform'];
 
 /**
  * MainChatInput
@@ -26,12 +26,7 @@ const MainChatInput = memo(() => {
 
   const leftActions: ActionKeys[] = useMemo(
     () => [
-      'model',
-      'search',
-      'memory',
-      'fileUpload',
-      'tools',
-      'typo',
+      'plusActions',
       ...(isDevMode ? (['params'] as ActionKeys[]) : []),
       'mainToken',
     ],

@@ -176,7 +176,7 @@ const VirtualizedList = memo<VirtualizedListProps>(({ dataSource, itemContent })
         {(messageId, index): ReactElement => {
           if (isSpacerMessage(messageId)) {
             return (
-              <WideScreenContainer key={messageId} style={{ position: 'relative' }}>
+              <WideScreenContainer key={messageId} style={{ maxWidth: 720, position: 'relative' }}>
                 <div
                   aria-hidden
                   style={{
@@ -208,7 +208,7 @@ const VirtualizedList = memo<VirtualizedListProps>(({ dataSource, itemContent })
           }
 
           return (
-            <WideScreenContainer key={messageId} style={{ position: 'relative' }}>
+            <WideScreenContainer key={messageId} style={{ maxWidth: 720, position: 'relative' }}>
               {content}
               {isLastItem && isAutoScrollEnabled && !spacerActive && <AutoScroll />}
             </WideScreenContainer>
@@ -216,7 +216,7 @@ const VirtualizedList = memo<VirtualizedListProps>(({ dataSource, itemContent })
         }}
       </VList>
       {/* BackBottom is placed outside VList so it remains visible regardless of scroll position */}
-      <WideScreenContainer style={{ position: 'relative' }}>
+      <WideScreenContainer style={{ maxWidth: 720, position: 'relative' }}>
         <BackBottom
           atBottom={atBottom}
           visible={!atBottom}

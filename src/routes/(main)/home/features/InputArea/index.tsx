@@ -15,12 +15,14 @@ import { serverConfigSelectors, useServerConfigStore } from '@/store/serverConfi
 
 import CommunityRecommend from '../CommunityRecommend';
 import SuggestQuestions from '../SuggestQuestions';
+import WelcomeText from '../WelcomeText';
 import ModeTag from './ModeTag';
 import SkillInstallBanner, { SKILL_INSTALL_BANNER_ID } from './SkillInstallBanner';
 import StarterList from './StarterList';
 import { useSend } from './useSend';
 
-const leftActions: ActionKeys[] = ['model', 'search', 'fileUpload', 'tools'];
+const leftActions: ActionKeys[] = ['plusActions'];
+const rightActions: ActionKeys[] = ['model'];
 
 const InputArea = () => {
   const { loading, send, inboxAgentId } = useSend();
@@ -57,10 +59,10 @@ const InputArea = () => {
   // Override some default behavior of the chat input
   const inputContainerProps = useMemo(
     () => ({
-      minHeight: 88,
+      minHeight: 52,
       resize: false,
       style: {
-        borderRadius: 20,
+        borderRadius: 14,
         boxShadow: '0 12px 32px rgba(0,0,0,.04)',
       },
     }),
@@ -88,8 +90,15 @@ const InputArea = () => {
     <Flexbox gap={16} style={{ marginBottom: 16 }}>
       <Flexbox
         ref={chatInputRef}
-        style={{ paddingBottom: showSkillBanner ? 32 : 0, position: 'relative' }}
+        style={{
+          alignSelf: 'center',
+          maxWidth: 720,
+          paddingBottom: showSkillBanner ? 32 : 0,
+          position: 'relative',
+          width: '100%',
+        }}
       >
+        <WelcomeText />
         {showSkillBanner && <SkillInstallBanner />}
         <DragUploadZone
           style={{ position: 'relative', zIndex: 1 }}
@@ -99,6 +108,7 @@ const InputArea = () => {
             agentId={inboxAgentId}
             allowExpand={false}
             leftActions={leftActions}
+            rightActions={rightActions}
             slashPlacement="bottom"
             chatInputEditorRef={(instance) => {
               if (!instance) return;

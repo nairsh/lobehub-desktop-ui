@@ -228,7 +228,11 @@ const ChatInput = memo<ChatInputProps>(
 
     const defaultContent = (
       <WideScreenContainer
-        style={skipScrollMarginWithList ? { marginTop: -12, position: 'relative' } : undefined}
+        style={
+          skipScrollMarginWithList
+            ? { marginTop: -12, maxWidth: 720, position: 'relative' }
+            : { maxWidth: 720 }
+        }
       >
         {hasPendingInterventions ? (
           <InterventionBar interventions={pendingInterventions} />
@@ -260,7 +264,7 @@ const ChatInput = memo<ChatInputProps>(
             )}
             <DesktopChatInput
               actionBarStyle={actionBarStyle}
-              borderRadius={12}
+              borderRadius={14}
               extraActionItems={extraActionItems}
               leftContent={leftContent}
               sendAreaPrefix={sendAreaPrefix}

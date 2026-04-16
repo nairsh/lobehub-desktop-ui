@@ -136,8 +136,9 @@ const Recents = memo<RecentsProps>(({ itemKey }) => {
 
   return (
     <AccordionItem
+      hideIndicator
       itemKey={itemKey}
-      paddingBlock={4}
+      paddingBlock={2}
       paddingInline={'8px 4px'}
       action={
         <DropdownMenu items={dropdownMenu} nativeButton={false}>
@@ -149,10 +150,10 @@ const Recents = memo<RecentsProps>(({ itemKey }) => {
       )}
       title={
         <Flexbox horizontal align="center" gap={4}>
-          <Text ellipsis fontSize={12} type={'secondary'} weight={500}>
+          <Text ellipsis fontSize={11} type={'secondary'} weight={400} style={{ opacity: 0.6 }}>
             {t('recents')}
           </Text>
-          {isRevalidating && <NeuralNetworkLoading size={14} />}
+          {isRevalidating && <NeuralNetworkLoading size={12} />}
         </Flexbox>
       }
     >

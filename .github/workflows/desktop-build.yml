@@ -1,0 +1,50 @@
+name: Desktop Build
+
+on:
+  push:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+concurrency:
+  group: desktop-build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 24.11.1
+
+jobs:
+  build-linux:
+    name: Build Desktop App (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup build environment
+        uses: ./.github/actions/desktop-build-setup
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Build desktop app
+        run: npm run desktop:package:app
+        env:
+          UPDATE_CHANNEL: canary
+          APP_URL: http://localhost:3015
+          DATABASE_URL: postgresql://postgres@localhost:5432/postgres
+          KEY_VAULTS_SECRET: oLXWIiR/AKF+rWaqy9lHkrYgzpATbW3CtJp3UfkVgpE=
+
+      - name: Upload desktop artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: release-ubuntu-latest
+          path: |
+            apps/desktop/release/latest*
+            apps/desktop/release/*.AppImage
+            apps/desktop/release/*.deb*
+            apps/desktop/release/*.rpm*
+            apps/desktop/release/*.snap*
+            apps/desktop/release/*.tar.gz*
+          retention-days: 7

@@ -1,9 +1,9 @@
 import { LoadingOutlined } from '@ant-design/icons';
 import { ModelIcon } from '@lobehub/icons';
-import { Center, Flexbox } from '@lobehub/ui';
+import { Flexbox, Text } from '@lobehub/ui';
 import { Spin } from 'antd';
-import { createStaticStyles, cx } from 'antd-style';
-import { Settings2Icon } from 'lucide-react';
+import { createStaticStyles, cssVar, cx } from 'antd-style';
+import { ChevronDown, Settings2Icon } from 'lucide-react';
 import { memo, Suspense, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -27,6 +27,9 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
   icon: cx(
     'model-switch',
     css`
+      display: flex;
+      align-items: center;
+      justify-content: center;
       transition: scale 400ms cubic-bezier(0.215, 0.61, 0.355, 1);
     `,
   ),
@@ -69,6 +72,10 @@ const ModelSwitch = memo(() => {
     aiModelSelectors.isModelHasExtendParams(model, provider),
   );
 
+  const modelCard = useAiInfraStore(aiModelSelectors.getEnabledModelById(model, provider));
+  const modelDisplayName =
+    modelCard?.displayName ?? (model.includes('/') ? model.split('/').at(-1)! : model);
+
   const showExtendParams = isDevMode && isModelHasExtendParams;
 
   const handleModelChange = useCallback(
@@ -86,15 +93,22 @@ const ModelSwitch = memo(() => {
         provider={provider}
         onModelChange={handleModelChange}
       >
-        <Center
+        <Flexbox
+          horizontal
+          align={'center'}
           className={cx(styles.model, showExtendParams && styles.modelWithControl)}
+          gap={4}
           height={36}
-          width={36}
+          paddingInline={8}
         >
           <div className={styles.icon}>
-            <ModelIcon model={model} size={22} />
+            <ModelIcon model={model} size={18} type={'mono'} />
           </div>
-        </Center>
+          <Text color={cssVar.colorTextSecondary} ellipsis style={{ fontSize: 14, fontWeight: 500 }}>
+            {modelDisplayName}
+          </Text>
+          <ChevronDown size={12} style={{ color: cssVar.colorTextTertiary, flexShrink: 0 }} />
+        </Flexbox>
       </ModelSwitchPanel>
 
       {showExtendParams && (

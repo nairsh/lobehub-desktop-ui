@@ -431,6 +431,7 @@ export default {
   'navPanel.hideSection': 'Hide Section',
   'navPanel.library': 'Library',
   'navPanel.moveDown': 'Move Down',
+  'navPanel.newChat': 'New Chat',
   'navPanel.pinned': 'Pinned',
   'navPanel.moveUp': 'Move Up',
   'navPanel.show': 'Show',

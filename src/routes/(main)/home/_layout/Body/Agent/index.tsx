@@ -8,6 +8,7 @@ import NeuralNetworkLoading from '@/components/NeuralNetworkLoading';
 import SkeletonList from '@/features/NavPanel/components/SkeletonList';
 import { useFetchAgentList } from '@/hooks/useFetchAgentList';
 
+import AgentRecentTopics from './AgentRecentTopics';
 import { useCreateMenuItems } from '../../hooks';
 import Actions from './Actions';
 import List from './List';
@@ -42,8 +43,9 @@ const Agent = memo<AgentProps>(({ itemKey }) => {
 
   return (
     <AccordionItem
+      hideIndicator
       itemKey={itemKey}
-      paddingBlock={4}
+      paddingBlock={2}
       paddingInline={'8px 4px'}
       action={
         <Actions addMenuItems={addMenuItems} dropdownMenu={dropdownMenu} isLoading={isLoading} />
@@ -53,16 +55,17 @@ const Agent = memo<AgentProps>(({ itemKey }) => {
       )}
       title={
         <Flexbox horizontal align="center" gap={4}>
-          <Text ellipsis fontSize={12} type={'secondary'} weight={500}>
+          <Text ellipsis fontSize={11} type={'secondary'} weight={400} style={{ opacity: 0.6 }}>
             {t('navPanel.agent')}
           </Text>
-          {isRevalidating && <NeuralNetworkLoading size={14} />}
+          {isRevalidating && <NeuralNetworkLoading size={12} />}
         </Flexbox>
       }
     >
       <Suspense fallback={<SkeletonList rows={6} />}>
         <Flexbox gap={4} paddingBlock={1}>
           <List />
+          <AgentRecentTopics />
         </Flexbox>
       </Suspense>
     </AccordionItem>

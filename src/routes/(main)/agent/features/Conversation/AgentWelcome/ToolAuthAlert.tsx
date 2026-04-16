@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useMarketAuth } from '@/layout/AuthProvider/MarketAuth';
 import { useAgentStore } from '@/store/agent';
-import { agentSelectors } from '@/store/agent/selectors';
+import { agentChatConfigSelectors, agentSelectors } from '@/store/agent/selectors';
 import { useToolStore } from '@/store/tool';
 import { type KlavisServer } from '@/store/tool/slices/klavisStore';
 import { KlavisServerStatus, klavisStoreSelectors } from '@/store/tool/slices/klavisStore';
@@ -282,12 +282,16 @@ const ToolAuthAlert = memo(() => {
   const plugins = useAgentStore(agentSelectors.currentAgentPlugins, isEqual);
   const klavisServers = useToolStore(klavisStoreSelectors.getServers, isEqual);
   const { isAuthenticated: isMarketAuthenticated } = useMarketAuth();
+  const isCloudSandboxEnabled = useAgentStore(agentChatConfigSelectors.isCloudSandboxEnabled);
 
   // Filter out tools that need authorization
   const pendingAuthTools = useMemo<PendingAuthTool[]>(() => {
     const result: PendingAuthTool[] = [];
 
     for (const pluginId of plugins) {
+      // Skip cloud sandbox auth alert when cloud sandbox mode is not enabled
+      if (pluginId === 'lobe-cloud-sandbox' && !isCloudSandboxEnabled) continue;
+
       // Check if this is a Klavis tool
       const klavisType = KLAVIS_SERVER_TYPES.find((t) => t.identifier === pluginId);
       if (klavisType) {
@@ -307,7 +311,7 @@ const ToolAuthAlert = memo(() => {
     }
 
     return result;
-  }, [plugins, klavisServers, isMarketAuthenticated]);
+  }, [plugins, klavisServers, isMarketAuthenticated, isCloudSandboxEnabled]);
 
   // Don't render if no pending auth tools
   if (pendingAuthTools.length === 0) {

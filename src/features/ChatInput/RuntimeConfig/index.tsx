@@ -4,6 +4,7 @@ import { Github } from '@lobehub/icons';
 import { Flexbox, Icon, Popover, Skeleton, Tooltip } from '@lobehub/ui';
 import { createStaticStyles, cssVar, cx } from 'antd-style';
 import {
+  Check,
   ChevronDownIcon,
   CloudIcon,
   FolderIcon,
@@ -32,7 +33,7 @@ const MODE_ICONS: Record<RuntimeEnvMode, typeof LaptopIcon> = {
   none: MonitorOffIcon,
 };
 
-const styles = createStaticStyles(({ css }) => ({
+const styles = createStaticStyles(({ css, cssVar }) => ({
   bar: css`
     padding-block: 0;
     padding-inline: 4px;
@@ -58,17 +59,20 @@ const styles = createStaticStyles(({ css }) => ({
       background: ${cssVar.colorFillSecondary};
     }
   `,
-  modeDesc: css`
-    font-size: 12px;
-    color: ${cssVar.colorTextTertiary};
-  `,
   modeOption: css`
     cursor: pointer;
 
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
     width: 100%;
-    padding-block: 8px;
+    padding-block: 6px;
     padding-inline: 8px;
     border-radius: ${cssVar.borderRadius};
+
+    font-size: 13px;
+    color: ${cssVar.colorText};
 
     transition: background-color 0.2s;
 
@@ -77,21 +81,17 @@ const styles = createStaticStyles(({ css }) => ({
     }
   `,
   modeOptionActive: css`
-    background: ${cssVar.colorFillTertiary};
-  `,
-  modeOptionDesc: css`
-    font-size: 12px;
-    color: ${cssVar.colorTextDescription};
-  `,
-  modeOptionIcon: css`
-    border: 1px solid ${cssVar.colorFillTertiary};
-    border-radius: ${cssVar.borderRadius};
-    background: ${cssVar.colorBgElevated};
-  `,
-  modeOptionTitle: css`
-    font-size: 14px;
     font-weight: 500;
-    color: ${cssVar.colorText};
+  `,
+  sectionHeader: css`
+    padding-block: 4px 2px;
+    padding-inline: 8px;
+
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: ${cssVar.colorTextTertiary};
   `,
 }));
 
@@ -153,58 +153,38 @@ const RuntimeConfig = memo(() => {
     ? effectiveWorkingDirectory.split('/').findLast(Boolean) || effectiveWorkingDirectory
     : tPlugin('localSystem.workingDirectory.notSet');
 
-  const modes: { desc: string; icon: typeof LaptopIcon; label: string; mode: RuntimeEnvMode }[] = [
+  const modes: { label: string; mode: RuntimeEnvMode }[] = [
     // Local mode is desktop-only
     ...(isDesktop
       ? [
           {
-            desc: t('runtimeEnv.mode.localDesc'),
-            icon: LaptopIcon,
             label: t('runtimeEnv.mode.local'),
             mode: 'local' as RuntimeEnvMode,
           },
         ]
       : []),
     {
-      desc: t('runtimeEnv.mode.cloudDesc'),
-      icon: CloudIcon,
       label: t('runtimeEnv.mode.cloud'),
       mode: 'cloud',
     },
     {
-      desc: t('runtimeEnv.mode.noneDesc'),
-      icon: MonitorOffIcon,
       label: t('runtimeEnv.mode.none'),
       mode: 'none',
     },
   ];
 
   const modeContent = (
-    <Flexbox gap={4} style={{ minWidth: 280 }}>
-      {modes.map(({ mode, icon, label, desc }) => (
-        <Flexbox
-          horizontal
-          align={'flex-start'}
+    <Flexbox gap={2} style={{ minWidth: 160, paddingBlock: 4 }}>
+      <div className={styles.sectionHeader}>{t('runtimeEnv.selectMode')}</div>
+      {modes.map(({ mode, label }) => (
+        <div
           className={cx(styles.modeOption, runtimeMode === mode && styles.modeOptionActive)}
-          gap={12}
           key={mode}
           onClick={() => switchMode(mode)}
         >
-          <Flexbox
-            align={'center'}
-            className={styles.modeOptionIcon}
-            flex={'none'}
-            height={32}
-            justify={'center'}
-            width={32}
-          >
-            <Icon icon={icon} />
-          </Flexbox>
-          <Flexbox flex={1}>
-            <div className={styles.modeOptionTitle}>{label}</div>
-            <div className={styles.modeOptionDesc}>{desc}</div>
-          </Flexbox>
-        </Flexbox>
+          <span>{label}</span>
+          {runtimeMode === mode && <Icon icon={Check} size={13} />}
+        </div>
       ))}
     </Flexbox>
   );

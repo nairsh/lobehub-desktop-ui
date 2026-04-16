@@ -1,11 +1,28 @@
 'use client';
 
-import { Block, Flexbox, Icon, Text } from '@lobehub/ui';
-import { cssVar } from 'antd-style';
+import { Flexbox, Icon, Text } from '@lobehub/ui';
+import { createStaticStyles, cssVar } from 'antd-style';
 import { CornerRightUp } from 'lucide-react';
 import { memo, useCallback } from 'react';
 
 import { useChatStore } from '@/store/chat';
+
+const styles = createStaticStyles(({ css, cssVar }) => ({
+  item: css`
+    cursor: pointer;
+    border-radius: ${cssVar.borderRadiusSM};
+    padding: 7px 10px;
+    transition: background 0.1s;
+
+    &:hover {
+      background: ${cssVar.colorFillTertiary};
+
+      .arrow-icon {
+        opacity: 1;
+      }
+    }
+  `,
+}));
 
 interface ItemProps {
   description: string;
@@ -13,37 +30,33 @@ interface ItemProps {
   title: string;
 }
 
-const Item = memo<ItemProps>(({ title, description, prompt }) => {
+const Item = memo<ItemProps>(({ title, prompt }) => {
   const mainInputEditor = useChatStore((s) => s.mainInputEditor);
 
   const handleClick = useCallback(() => {
-    // Use the editor instance to set markdown content directly
     mainInputEditor?.instance?.setDocument('markdown', prompt);
     mainInputEditor?.focus();
   }, [prompt, mainInputEditor]);
 
   return (
-    <Block
-      clickable
-      variant={'outlined'}
-      style={{
-        borderRadius: cssVar.borderRadiusLG,
-        cursor: 'pointer',
-      }}
+    <Flexbox
+      className={styles.item}
+      horizontal
+      align={'center'}
+      justify={'space-between'}
       onClick={handleClick}
     >
-      <Flexbox gap={4} paddingBlock={12} paddingInline={14}>
-        <Flexbox horizontal align={'center'} gap={8} justify={'space-between'}>
-          <Text ellipsis fontSize={14} style={{ fontWeight: 500 }}>
-            {title}
-          </Text>
-          <Icon color={cssVar.colorTextQuaternary} icon={CornerRightUp} size={14} />
-        </Flexbox>
-        <Text color={cssVar.colorTextTertiary} ellipsis={{ rows: 2 }} fontSize={12}>
-          {description}
-        </Text>
-      </Flexbox>
-    </Block>
+      <Text ellipsis fontSize={13} style={{ fontWeight: 400 }}>
+        {title}
+      </Text>
+      <Icon
+        className="arrow-icon"
+        color={cssVar.colorTextQuaternary}
+        icon={CornerRightUp}
+        size={13}
+        style={{ flexShrink: 0, opacity: 0, transition: 'opacity 0.1s' }}
+      />
+    </Flexbox>
   );
 });
 

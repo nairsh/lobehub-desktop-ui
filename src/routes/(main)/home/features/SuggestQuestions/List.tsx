@@ -19,7 +19,7 @@ const List = memo<ListProps>(({ questions }) => {
   }
 
   return (
-    <Flexbox gap={12} style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)' }}>
+    <Flexbox gap={0}>
       {questions.map((item) => {
         const prompt = t(item.promptKey as any);
         return (

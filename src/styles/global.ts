@@ -27,11 +27,15 @@ export default ({ token }: { prefixCls: string; token: Theme }) => css`
     /* Increase compositing layer, force hardware acceleration, otherwise render black edges will appear */
     will-change: opacity;
     transform: translateZ(0);
+    font-weight: 400;
   }
 
   * {
     scrollbar-color: ${token.colorFill} transparent;
     scrollbar-width: thin;
+
+    transition-property: color, background-color, border-color, fill, stroke, opacity, box-shadow;
+    transition-duration: 0.1s;
 
     ::-webkit-scrollbar {
       width: 0.75em;

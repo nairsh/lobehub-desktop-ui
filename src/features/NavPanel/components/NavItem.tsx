@@ -68,7 +68,7 @@ const NavItem = memo<NavItemProps>(
     active,
     href,
     icon,
-    iconSize = 18,
+    iconSize = 16,
     title,
     onClick,
     disabled,
@@ -98,7 +98,7 @@ const NavItem = memo<NavItemProps>(
         className={cx(styles.container, className)}
         clickable={!disabled}
         gap={8}
-        height={36}
+        height={30}
         paddingInline={4}
         variant={variant}
         onClick={(e) => {
@@ -114,7 +114,7 @@ const NavItem = memo<NavItemProps>(
         {...rest}
       >
         {icon && (
-          <Center flex={'none'} height={28} width={28}>
+          <Center flex={'none'} height={20} width={20}>
             {loading ? (
               <NeuralNetworkLoading size={iconSize} />
             ) : (
@@ -128,7 +128,7 @@ const NavItem = memo<NavItemProps>(
           {titlePrefix}
           <Text
             color={textColor}
-            style={{ flex: 1 }}
+            style={{ flex: 1, fontSize: 13, fontWeight: 400 }}
             ellipsis={{
               tooltipWhenOverflow: true,
             }}

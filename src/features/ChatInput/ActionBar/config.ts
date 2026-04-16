@@ -1,5 +1,6 @@
 import AgentMode from './AgentMode';
 import Clear from './Clear';
+import PlusActions from './PlusActions';
 import History from './History';
 import Memory from './Memory';
 import Mention from './Mention';
@@ -24,6 +25,7 @@ export const actionMap = {
   mention: Mention,
   model: Model,
   params: Params,
+  plusActions: PlusActions,
   portalToken: PortalToken,
   promptTransform: PromptTransform,
   saveTopic: SaveTopic,

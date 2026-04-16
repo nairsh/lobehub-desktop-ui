@@ -1,7 +1,7 @@
 'use client';
 
 import { Accordion, ActionIcon, DropdownMenu, Flexbox, Icon, type MenuProps } from '@lobehub/ui';
-import { EyeOffIcon, MoreHorizontalIcon, SlidersHorizontalIcon } from 'lucide-react';
+import { EyeOffIcon, MoreHorizontalIcon, SlidersHorizontalIcon, SquarePenIcon } from 'lucide-react';
 import { memo, type ReactElement, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
@@ -154,6 +154,15 @@ const Body = memo(() => {
 
   return (
     <Flexbox flex={1} gap={4} paddingInline={4}>
+      <Link
+        to={'/'}
+        onClick={(e) => {
+          e.preventDefault();
+          navigate('/');
+        }}
+      >
+        <NavItem icon={SquarePenIcon} title={t('navPanel.newChat')} />
+      </Link>
       {content}
       <CustomizeSidebarModal />
     </Flexbox>

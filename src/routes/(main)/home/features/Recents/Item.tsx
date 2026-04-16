@@ -1,26 +1,17 @@
-import { ActionIcon, DropdownMenu, Flexbox, Icon } from '@lobehub/ui';
-import { cssVar } from 'antd-style';
-import { CheckSquareIcon, FileTextIcon, HashIcon, MoreHorizontalIcon } from 'lucide-react';
+import { ActionIcon, DropdownMenu, Flexbox } from '@lobehub/ui';
+import { MoreHorizontalIcon } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
 
 import InlineRename from '@/components/InlineRename';
 import NavItem from '@/features/NavPanel/components/NavItem';
 import { usePrefetchAgent } from '@/hooks/usePrefetchAgent';
 import { usePrefetchPage } from '@/hooks/usePrefetchPage';
-import { getPlatformIcon } from '@/routes/(main)/agent/channel/const';
 import { type RecentItem } from '@/server/routers/lambda/recent';
 
 import { useRecentItemDropdownMenu } from './useDropdownMenu';
 
-const TYPE_ICON_MAP = {
-  document: FileTextIcon,
-  task: CheckSquareIcon,
-  topic: HashIcon,
-};
-
 const RecentListItem = memo<RecentItem>((item) => {
-  const { title, type, agentId, id, metadata } = item;
-  const IconComponent = TYPE_ICON_MAP[type] || FileTextIcon;
+  const { title, type, agentId, id } = item;
   const [editing, setEditing] = useState(false);
   const prefetchAgent = usePrefetchAgent();
   const prefetchPage = usePrefetchPage();
@@ -48,6 +39,7 @@ const RecentListItem = memo<RecentItem>((item) => {
   return (
     <Flexbox style={{ position: 'relative' }}>
       <NavItem
+        height={26}
         contextMenuItems={dropdownMenu}
         disabled={editing}
         title={title}
@@ -56,21 +48,6 @@ const RecentListItem = memo<RecentItem>((item) => {
             <ActionIcon icon={MoreHorizontalIcon} size={'small'} style={{ flex: 'none' }} />
           </DropdownMenu>
         }
-        icon={(() => {
-          if (type === 'topic' && metadata?.bot?.platform) {
-            const ProviderIcon = getPlatformIcon(metadata.bot.platform);
-            if (ProviderIcon) {
-              return <ProviderIcon color={cssVar.colorTextDescription} size={16} />;
-            }
-          }
-          return (
-            <Icon
-              icon={IconComponent}
-              size={'small'}
-              style={{ color: cssVar.colorTextDescription }}
-            />
-          );
-        })()}
         onMouseEnter={handleMouseEnter}
       />
       <InlineRename
