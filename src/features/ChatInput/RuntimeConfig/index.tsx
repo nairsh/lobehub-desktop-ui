@@ -2,7 +2,7 @@ import { isDesktop } from '@lobechat/const';
 import { type RuntimeEnvMode } from '@lobechat/types';
 import { Github } from '@lobehub/icons';
 import { Flexbox, Icon, Popover, Skeleton, Tooltip } from '@lobehub/ui';
-import { createStaticStyles, cssVar, cx } from 'antd-style';
+import { createStaticStyles, cx } from 'antd-style';
 import {
   Check,
   ChevronDownIcon,
@@ -89,9 +89,9 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
 
     font-size: 11px;
     font-weight: 500;
+    color: ${cssVar.colorTextTertiary};
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: ${cssVar.colorTextTertiary};
   `,
 }));
 
