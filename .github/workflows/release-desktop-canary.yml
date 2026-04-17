@@ -194,7 +194,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-15, macos-15-intel, windows-2025, ubuntu-latest]
+        os: [macos-15, windows-2025]
     steps:
       - uses: actions/checkout@v6
 
