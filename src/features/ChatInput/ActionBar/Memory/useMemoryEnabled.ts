@@ -1,17 +1,10 @@
 import { useAgentStore } from '@/store/agent';
 import { chatConfigByIdSelectors } from '@/store/agent/selectors';
-import { useUserStore } from '@/store/user';
-import { settingsSelectors } from '@/store/user/selectors';
 
 /**
  * Returns the effective memory enabled state for an agent.
- * Agent-level config takes priority; falls back to user-level setting.
+ * Memory is only exposed when the current agent explicitly opts in.
  */
 export const useMemoryEnabled = (agentId: string): boolean => {
-  const agentMemoryEnabled = useAgentStore(
-    (s) => chatConfigByIdSelectors.getMemoryToolConfigById(agentId)(s)?.enabled,
-  );
-  const userMemoryEnabled = useUserStore(settingsSelectors.memoryEnabled);
-
-  return agentMemoryEnabled ?? userMemoryEnabled;
+  return useAgentStore((s) => chatConfigByIdSelectors.isMemoryToolEnabledById(agentId)(s));
 };

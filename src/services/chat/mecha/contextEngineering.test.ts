@@ -8,6 +8,18 @@ import * as helpers from '../helper';
 import { contextEngineering } from './contextEngineering';
 import * as memoryManager from './memoryManager';
 
+const localStorageMock = vi.hoisted(() => {
+  const storage = {
+    getItem: vi.fn(() => null),
+    removeItem: vi.fn(),
+    setItem: vi.fn(),
+  };
+
+  vi.stubGlobal('localStorage', storage);
+
+  return storage;
+});
+
 // Mock VARIABLE_GENERATORS
 vi.mock('@/helpers/parserPlaceholder', () => ({
   VARIABLE_GENERATORS: {
@@ -42,6 +54,9 @@ vi.mock('@lobechat/const', async (importOriginal) => {
 afterEach(() => {
   vi.resetModules();
   vi.clearAllMocks();
+  localStorageMock.getItem.mockClear();
+  localStorageMock.removeItem.mockClear();
+  localStorageMock.setItem.mockClear();
 });
 
 // Helper to compute expected date content from SystemDateProvider
@@ -55,6 +70,26 @@ const getCurrentDateContent = () => {
 };
 
 describe('contextEngineering', () => {
+  it('should append a no-memory guard when memory is disabled', async () => {
+    const messages = [{ content: 'Do you have memory?', role: 'user' }] as UIChatMessage[];
+
+    const result = await contextEngineering({
+      enableUserMemories: false,
+      messages,
+      model: 'gpt-4',
+      provider: 'openai',
+      systemRole: 'You are a helpful assistant.',
+    });
+
+    expect(result[0]).toEqual({
+      content: expect.stringContaining(
+        'You are a helpful assistant.\n\n' +
+          'Memory is not enabled in this conversation. Do not claim that you have a memory tool, can save memories, or can recall information across conversations.',
+      ),
+      role: 'system',
+    });
+  });
+
   it('should not fetch agent documents implicitly when agentId is provided', async () => {
     const messages = [{ content: 'Hello', role: 'user' }] as UIChatMessage[];
 

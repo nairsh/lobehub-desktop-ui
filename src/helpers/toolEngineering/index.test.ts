@@ -1,3 +1,4 @@
+import { MemoryManifest } from '@lobechat/builtin-tool-memory';
 import { type ToolManifest } from '@lobechat/types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -59,6 +60,11 @@ vi.mock('@/store/tool', () => ({
         } as unknown as ToolManifest,
         type: 'builtin' as const,
       },
+      {
+        identifier: MemoryManifest.identifier,
+        manifest: MemoryManifest as unknown as ToolManifest,
+        type: 'builtin' as const,
+      },
     ],
   }),
 }));
@@ -84,6 +90,7 @@ vi.mock('../isCanUseFC', () => ({
 }));
 
 let mockCurrentAgentPlugins: string[] = [];
+let mockIsMemoryToolEnabled = false;
 
 vi.mock('@/store/agent', () => ({
   getAgentStoreState: () => ({}),
@@ -98,7 +105,7 @@ vi.mock('@/store/agent/selectors', () => ({
     currentChatConfig: () => ({}),
     isCloudSandboxEnabled: () => false,
     isLocalSystemEnabled: () => false,
-    isMemoryToolEnabled: () => false,
+    isMemoryToolEnabled: () => mockIsMemoryToolEnabled,
   },
 }));
 
@@ -126,6 +133,7 @@ describe('toolEngineering', () => {
   afterEach(() => {
     mockGetInstalledPluginById = () => () => undefined;
     mockInstalledPluginManifestList = () => [];
+    mockIsMemoryToolEnabled = false;
     mockUseApplicationBuiltinSearchTool = true;
     mockCurrentAgentPlugins = [];
   });
@@ -217,6 +225,28 @@ describe('toolEngineering', () => {
 
       expect(result.enabledToolIds).toEqual(['search', 'lobe-web-browsing']);
       expect(result.enabledToolIds).toHaveLength(2);
+    });
+
+    it('should only expose the memory tool when the agent explicitly enables it', () => {
+      const withoutMemory = createAgentToolsEngine({ model: 'gpt-4', provider: 'openai' });
+      const disabledResult = withoutMemory.generateToolsDetailed({
+        model: 'gpt-4',
+        provider: 'openai',
+        toolIds: [MemoryManifest.identifier],
+      });
+
+      expect(disabledResult.enabledToolIds).not.toContain(MemoryManifest.identifier);
+
+      mockIsMemoryToolEnabled = true;
+
+      const withMemory = createAgentToolsEngine({ model: 'gpt-4', provider: 'openai' });
+      const enabledResult = withMemory.generateToolsDetailed({
+        model: 'gpt-4',
+        provider: 'openai',
+        toolIds: [MemoryManifest.identifier],
+      });
+
+      expect(enabledResult.enabledToolIds).toContain(MemoryManifest.identifier);
     });
   });
 

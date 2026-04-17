@@ -19,6 +19,18 @@ import { chatService } from './index';
 import * as mechaModule from './mecha';
 import { type ResolvedAgentConfig } from './mecha';
 
+const localStorageMock = vi.hoisted(() => {
+  const storage = {
+    getItem: vi.fn(() => null),
+    removeItem: vi.fn(),
+    setItem: vi.fn(),
+  };
+
+  vi.stubGlobal('localStorage', storage);
+
+  return storage;
+});
+
 // Helper to compute expected date content from SystemDateProvider
 const getCurrentDateContent = () => {
   const tz = 'UTC';
@@ -96,6 +108,9 @@ afterEach(() => {
 beforeEach(async () => {
   // Reset all mocks
   vi.clearAllMocks();
+  localStorageMock.getItem.mockClear();
+  localStorageMock.removeItem.mockClear();
+  localStorageMock.setItem.mockClear();
   // 清除所有模块的缓存
   vi.resetModules();
 
@@ -1162,7 +1177,7 @@ describe('ChatService', () => {
 
         expect(requestMessages[0]).toEqual(
           expect.objectContaining({
-            content: expect.stringContaining('system\n\n' + getCurrentDateContent()),
+            content: expect.stringContaining(getCurrentDateContent()),
             role: 'system',
           }),
         );
@@ -1214,7 +1229,7 @@ describe('ChatService', () => {
 
         expect(requestMessages[0]).toEqual(
           expect.objectContaining({
-            content: expect.stringContaining('system\n\n' + getCurrentDateContent()),
+            content: expect.stringContaining(getCurrentDateContent()),
             role: 'system',
           }),
         );
@@ -1388,7 +1403,7 @@ describe('ChatService', () => {
       });
     });
 
-    describe('memory enablement priority', () => {
+    describe('memory enablement', () => {
       it('should respect agent-level memory disabled even when user-level memory is enabled', async () => {
         const contextEngineeringSpy = vi
           .spyOn(mechaModule, 'contextEngineering')
@@ -1411,7 +1426,7 @@ describe('ChatService', () => {
         );
       });
 
-      it('should enable memory when agent-level is on even if user-level memory is disabled', async () => {
+      it('should enable memory when the agent-level toggle is on even if user-level memory is disabled', async () => {
         const contextEngineeringSpy = vi
           .spyOn(mechaModule, 'contextEngineering')
           .mockResolvedValue([]);
@@ -1433,12 +1448,13 @@ describe('ChatService', () => {
         );
       });
 
-      it('should fall back to user-level setting when agent-level memory is not configured', async () => {
+      it('should keep memory disabled until the agent explicitly opts in', async () => {
         const contextEngineeringSpy = vi
           .spyOn(mechaModule, 'contextEngineering')
           .mockResolvedValue([]);
-        // user-level memory is disabled
-        vi.spyOn(settingsSelectors, 'memoryEnabled').mockReturnValue(false);
+        // user-level memory may still be enabled globally, but the chat runtime
+        // should not expose memory unless the agent toggles it on.
+        vi.spyOn(settingsSelectors, 'memoryEnabled').mockReturnValue(true);
 
         const messages = [{ content: 'Hello', role: 'user' }] as UIChatMessage[];
 
@@ -1449,7 +1465,7 @@ describe('ChatService', () => {
           }),
         });
 
-        // no agent-level config, fallback to user-level off
+        // no agent-level config means memory stays off
         expect(contextEngineeringSpy).toHaveBeenCalledWith(
           expect.objectContaining({ enableUserMemories: false }),
         );

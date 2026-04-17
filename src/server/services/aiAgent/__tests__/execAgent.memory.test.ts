@@ -1,9 +1,9 @@
 // @vitest-environment node
 /**
- * Integration tests for memory enabled priority in execAgent.
+ * Integration tests for explicit memory opt-in in execAgent.
  *
- * Verifies that agent-level memory config takes priority over user-level setting,
- * and falls back to user setting when agent config is absent.
+ * Verifies that memory is only exposed when the agent explicitly enables it,
+ * regardless of user-level memory settings.
  */
 import type { LobeChatDatabase } from '@lobechat/database';
 import { agents, userSettings } from '@lobechat/database/schemas';
@@ -94,7 +94,7 @@ const createTestAgent = async (chatConfig: Record<string, any> = {}) => {
   return agent;
 };
 
-describe('execAgent - memory enabled priority', () => {
+describe('execAgent - memory enablement', () => {
   it('should disable memory tools when agent config sets memory.enabled = false, even if user enables it', async () => {
     await setUserMemorySettings(true);
     const agent = await createTestAgent({ memory: { enabled: false } });
@@ -119,8 +119,8 @@ describe('execAgent - memory enabled priority', () => {
     expect(hasMemoryTools(callArgs.tools ?? [])).toBe(true);
   });
 
-  it('should fallback to user setting when agent has no memory config', async () => {
-    await setUserMemorySettings(false);
+  it('should keep memory disabled when agent has no memory config, even if user enables it', async () => {
+    await setUserMemorySettings(true);
     const agent = await createTestAgent();
 
     const caller = aiAgentRouter.createCaller(createTestContext());
@@ -131,7 +131,7 @@ describe('execAgent - memory enabled priority', () => {
     expect(hasMemoryTools(callArgs.tools ?? [])).toBe(false);
   });
 
-  it('should enable memory by default when neither agent nor user configures it', async () => {
+  it('should keep memory disabled by default when neither agent nor user configures it', async () => {
     const agent = await createTestAgent();
 
     const caller = aiAgentRouter.createCaller(createTestContext());
@@ -139,6 +139,6 @@ describe('execAgent - memory enabled priority', () => {
     await waitForOperationComplete(inMemoryAgentStateManager, result.operationId);
 
     const callArgs = mockResponsesCreate.mock.calls[0][0] as { tools?: any[] };
-    expect(hasMemoryTools(callArgs.tools ?? [])).toBe(true);
+    expect(hasMemoryTools(callArgs.tools ?? [])).toBe(false);
   });
 });

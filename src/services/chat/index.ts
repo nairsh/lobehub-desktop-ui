@@ -149,10 +149,7 @@ class ChatService {
 
     // =================== 1.1 process user memories =================== //
 
-    const userLevelMemoryEnabled = settingsSelectors.memoryEnabled(getUserStoreState());
-    // Agent-level memory toggle takes priority over user-level setting,
-    // matching the logic in useMemoryEnabled hook
-    const enableUserMemories = chatConfig.memory?.enabled ?? userLevelMemoryEnabled;
+    const enableUserMemories = chatConfig.memory?.enabled === true;
     const userMemorySettings = settingsSelectors.currentMemorySettings(getUserStoreState());
     const effectiveMemoryEffort =
       chatConfig.memory?.effort ?? userMemorySettings.effort ?? 'medium';

@@ -54,6 +54,8 @@ import { combineUserMemoryData, resolveTopicMemories, resolveUserPersona } from 
 import { resolveClientSkills } from './skillEngineering';
 
 const log = debug('context-engine:contextEngineering');
+const MEMORY_DISABLED_SYSTEM_ROLE =
+  'Memory is not enabled in this conversation. Do not claim that you have a memory tool, can save memories, or can recall information across conversations. If asked, say that memory is currently unavailable in this chat.';
 
 interface ContextEngineeringContext {
   /** Agent Builder context for injecting current agent info */
@@ -118,6 +120,11 @@ export const contextEngineering = async ({
   memoryContext,
 }: ContextEngineeringContext): Promise<OpenAIChatMessage[]> => {
   log('tools: %o', tools);
+
+  const effectiveSystemRole =
+    enableUserMemories === false
+      ? [systemRole, MEMORY_DISABLED_SYSTEM_ROLE].filter(Boolean).join('\n\n')
+      : systemRole;
 
   // Check if Agent Builder tool is enabled
   const isAgentBuilderEnabled = tools?.includes(AgentBuilderIdentifier) ?? false;
@@ -627,7 +634,7 @@ export const contextEngineering = async ({
     historyCount,
     historySummary,
     inputTemplate,
-    systemRole,
+    systemRole: effectiveSystemRole,
 
     // Capability injection
     capabilities: {
