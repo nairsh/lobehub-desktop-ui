@@ -91,6 +91,16 @@ export const getDesktopEnv = memoize(() =>
       // e.g., https://releases.lobehub.com/stable or https://your-bucket.s3.amazonaws.com/releases
       UPDATE_SERVER_URL: z.string().optional().default(process.env.UPDATE_SERVER_URL),
 
+      // GitHub repo fallback for updater when UPDATE_SERVER_URL is not configured
+      UPDATE_GITHUB_OWNER: z
+        .string()
+        .optional()
+        .default(process.env.UPDATE_GITHUB_OWNER || 'nairsh'),
+      UPDATE_GITHUB_REPO: z
+        .string()
+        .optional()
+        .default(process.env.UPDATE_GITHUB_REPO || 'lobehub-desktop-ui'),
+
       // Vercel JWT for bypassing deployment protection (dev only)
       VERCEL_JWT: z.string().optional(),
     },

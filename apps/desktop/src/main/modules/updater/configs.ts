@@ -17,6 +17,8 @@ export const UPDATE_CHANNEL: UpdateChannel =
 // e.g., https://releases.lobehub.com
 // Each channel resolves to {base}/{channel}/
 export const UPDATE_SERVER_URL = getDesktopEnv().UPDATE_SERVER_URL;
+export const UPDATE_GITHUB_OWNER = getDesktopEnv().UPDATE_GITHUB_OWNER;
+export const UPDATE_GITHUB_REPO = getDesktopEnv().UPDATE_GITHUB_REPO;
 
 export const updaterConfig = {
   app: {

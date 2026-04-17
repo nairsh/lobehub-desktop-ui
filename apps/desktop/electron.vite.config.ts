@@ -75,6 +75,8 @@ export default defineConfig({
     },
     define: {
       'process.env.UPDATE_CHANNEL': JSON.stringify(process.env.UPDATE_CHANNEL),
+      'process.env.UPDATE_GITHUB_OWNER': JSON.stringify(process.env.UPDATE_GITHUB_OWNER),
+      'process.env.UPDATE_GITHUB_REPO': JSON.stringify(process.env.UPDATE_GITHUB_REPO),
       'process.env.UPDATE_SERVER_URL': JSON.stringify(process.env.UPDATE_SERVER_URL),
     },
     resolve: {

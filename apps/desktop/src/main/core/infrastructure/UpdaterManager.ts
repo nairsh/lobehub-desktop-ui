@@ -11,7 +11,13 @@ import { autoUpdater } from 'electron-updater';
 
 import { isDev, isWindows } from '@/const/env';
 import { getDesktopEnv } from '@/env';
-import { UPDATE_CHANNEL, UPDATE_SERVER_URL, updaterConfig } from '@/modules/updater/configs';
+import {
+  UPDATE_CHANNEL,
+  UPDATE_GITHUB_OWNER,
+  UPDATE_GITHUB_REPO,
+  UPDATE_SERVER_URL,
+  updaterConfig,
+} from '@/modules/updater/configs';
 import { createLogger } from '@/utils/logger';
 
 import type { App as AppCore } from '../App';
@@ -393,15 +399,15 @@ export class UpdaterManager {
         url: feedUrl,
       });
     } else {
-      // Fallback to GitHub when no S3 URL configured (local dev)
+      // Fallback to GitHub when no custom update server is configured
       logger.info(
         `No UPDATE_SERVER_URL configured, falling back to GitHub provider for ${this.currentChannel} channel`,
       );
 
       autoUpdater.setFeedURL({
-        owner: 'lobehub',
+        owner: UPDATE_GITHUB_OWNER,
         provider: 'github',
-        repo: 'lobehub',
+        repo: UPDATE_GITHUB_REPO,
       });
 
       autoUpdater.allowPrerelease = this.currentChannel !== 'stable';

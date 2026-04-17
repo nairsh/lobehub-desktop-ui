@@ -65,6 +65,8 @@ vi.mock('@/utils/logger', () => ({
 // Mock updater configs
 vi.mock('@/modules/updater/configs', () => ({
   UPDATE_CHANNEL: 'stable',
+  UPDATE_GITHUB_OWNER: 'nairsh',
+  UPDATE_GITHUB_REPO: 'lobehub-desktop-ui',
   UPDATE_SERVER_URL: 'https://mock.update.server',
   updaterConfig: {
     app: {

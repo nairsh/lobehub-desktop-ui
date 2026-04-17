@@ -25,6 +25,8 @@ const hasAppleCertificate = Boolean(process.env.CSC_LINK);
 
 // 自定义更新服务器 URL (用于 stable 频道)
 const updateServerUrl = process.env.UPDATE_SERVER_URL;
+const updateGithubOwner = process.env.UPDATE_GITHUB_OWNER || 'nairsh';
+const updateGithubRepo = process.env.UPDATE_GITHUB_REPO || 'lobehub-desktop-ui';
 
 console.info(`🚄 Build Version ${packageJSON.version}, Channel: ${channel}`);
 console.info(`🏗️ Building for architecture: ${arch}`);
@@ -57,13 +59,15 @@ const getPublishConfig = () => {
     ];
   }
 
-  // 本地开发无 S3 时回退到 GitHub
-  console.info(`📦 ${channelPath} channel: No UPDATE_SERVER_URL, falling back to GitHub provider`);
+  // 无 UPDATE_SERVER_URL 时回退到 GitHub
+  console.info(
+    `📦 ${channelPath} channel: No UPDATE_SERVER_URL, falling back to GitHub provider (${updateGithubOwner}/${updateGithubRepo})`,
+  );
   return [
     {
-      owner: 'lobehub',
+      owner: updateGithubOwner,
       provider: 'github',
-      repo: 'lobehub',
+      repo: updateGithubRepo,
     },
   ];
 };

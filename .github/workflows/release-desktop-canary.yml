@@ -4,7 +4,7 @@ name: Release Desktop Canary
 # Canary 自动发版工作流
 # ============================================
 # 触发条件:
-#   1. canary 分支有 push (合入 PR) 且 commit 前缀为 style/feat/fix/refactor/release (支持 gitmoji)
+#   1. main / canary 分支有 push
 #   2. 手动触发 (workflow_dispatch)
 #
 # 并发策略:
@@ -19,6 +19,7 @@ name: Release Desktop Canary
 on:
   push:
     branches:
+      - main
       - canary
   workflow_dispatch:
     inputs:
@@ -39,10 +40,11 @@ env:
 
 jobs:
   # ============================================
-  # 检查 commit 前缀并计算版本号
+  # 计算版本号
   # ============================================
   calculate-version:
     name: Calculate Canary Version
+    if: ${{ github.repository != 'lobehub/lobehub' }}
     runs-on: ubuntu-latest
     outputs:
       release_notes: ${{ steps.release-notes.outputs.release_notes }}
@@ -54,35 +56,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check commit message prefix
+      - name: Enable build for push/dispatch
         id: check
         run: |
-          # 手动触发 + force 时跳过检查
-          if [ "${{ inputs.force }}" == "true" ]; then
-            echo "should_build=true" >> $GITHUB_OUTPUT
-            echo "🔧 Force build requested, skipping commit check"
-            exit 0
-          fi
-
-          # 手动触发 (无 force) 也直接构建
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "should_build=true" >> $GITHUB_OUTPUT
-            echo "🔧 Manual trigger, proceeding with build"
-            exit 0
-          fi
-
-          # 获取本次 push 的 head commit message
-          commit_msg=$(git log -1 --pretty=%s HEAD)
-          echo "📝 Head commit: $commit_msg"
-
-          # 检查是否匹配 style/feat/fix/refactor/release 前缀 (支持 gitmoji 前缀)
-          if echo "$commit_msg" | grep -qiE '^(💄\s*)?style(\(.+\))?:|^(✨\s*)?feat(\(.+\))?:|^(🐛\s*)?fix(\(.+\))?:|^(♻️\s*)?refactor(\(.+\))?:|^(🚀\s*)?release(\(.+\))?:'; then
-            echo "should_build=true" >> $GITHUB_OUTPUT
-            echo "✅ Commit matches canary build trigger: $commit_msg"
-          else
-            echo "should_build=false" >> $GITHUB_OUTPUT
-            echo "⏭️ Commit does not match style/feat/fix/refactor/release prefix, skipping: $commit_msg"
-          fi
+          echo "should_build=true" >> $GITHUB_OUTPUT
+          echo "✅ Build enabled for this trigger"
 
       - name: Calculate canary version
         if: steps.check.outputs.should_build == 'true'
@@ -92,14 +70,14 @@ jobs:
           latest_tag=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
 
           if [ -z "$latest_tag" ]; then
-            echo "❌ No stable tag found"
-            exit 1
+            base_version=$(node -p "require('./apps/desktop/package.json').version.split('-')[0]")
+            echo "⚠️ No stable tag found, fallback to package base version: $base_version"
+          else
+            echo "📌 Latest stable tag: $latest_tag"
+            base_version="${latest_tag#v}"
           fi
 
-          echo "📌 Latest stable tag: $latest_tag"
-
           # 去掉 v 前缀，解析 major.minor.patch → a.b.c 取 c+1
-          base_version="${latest_tag#v}"
           IFS='.' read -r major minor patch <<< "$base_version"
           new_patch=$((patch + 1))
           base_canary="${major}.${minor}.${new_patch}"
@@ -153,7 +131,7 @@ jobs:
             echo "release_notes<<EOF"
             echo "## 🐤 Canary Build — ${TAG}"
             echo
-            echo "> Automated canary build from \`canary\` branch."
+            echo "> Automated canary build from \`${{ github.ref_name }}\` branch."
             echo
             echo "### Commit Information"
             echo
@@ -165,7 +143,7 @@ jobs:
             echo "### ⚠️ Important Notes"
             echo
             echo "- **This is an automated canary build and is NOT intended for production use.**"
-            echo "- Canary builds are triggered by \`build\`/\`fix\`/\`style\` commits on the \`canary\` branch."
+            echo "- Canary builds are triggered by push events on \`main\` / \`canary\`."
             echo "- May contain **unstable or incomplete changes**. **Use at your own risk.**"
             echo "- It is strongly recommended to **back up your data** before using a canary build."
             echo
@@ -242,6 +220,8 @@ jobs:
         run: npm run desktop:package:app
         env:
           UPDATE_CHANNEL: canary
+          UPDATE_GITHUB_OWNER: ${{ github.repository_owner }}
+          UPDATE_GITHUB_REPO: ${{ github.event.repository.name }}
           UPDATE_SERVER_URL: ${{ secrets.UPDATE_SERVER_URL }}
           RELEASE_NOTES: ${{ needs.calculate-version.outputs.release_notes }}
           APP_URL: http://localhost:3015
@@ -262,6 +242,8 @@ jobs:
         run: npm run desktop:package:app
         env:
           UPDATE_CHANNEL: canary
+          UPDATE_GITHUB_OWNER: ${{ github.repository_owner }}
+          UPDATE_GITHUB_REPO: ${{ github.event.repository.name }}
           UPDATE_SERVER_URL: ${{ secrets.UPDATE_SERVER_URL }}
           RELEASE_NOTES: ${{ needs.calculate-version.outputs.release_notes }}
           APP_URL: http://localhost:3015
@@ -278,6 +260,8 @@ jobs:
         run: npm run desktop:package:app
         env:
           UPDATE_CHANNEL: canary
+          UPDATE_GITHUB_OWNER: ${{ github.repository_owner }}
+          UPDATE_GITHUB_REPO: ${{ github.event.repository.name }}
           UPDATE_SERVER_URL: ${{ secrets.UPDATE_SERVER_URL }}
           RELEASE_NOTES: ${{ needs.calculate-version.outputs.release_notes }}
           APP_URL: http://localhost:3015
@@ -365,6 +349,7 @@ jobs:
           prerelease: true
           body: ${{ needs.calculate-version.outputs.release_notes }}
           files: |
+            release/canary*
             release/latest*
             release/*.dmg*
             release/*.zip*
@@ -375,7 +360,7 @@ jobs:
             release/*.rpm*
             release/*.tar.gz*
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # ============================================
   # 发布到 S3 更新服务器
@@ -383,6 +368,7 @@ jobs:
   publish-s3:
     needs: [merge-mac-files, calculate-version]
     name: Publish to S3
+    if: ${{ secrets.UPDATE_S3_BUCKET != '' && secrets.UPDATE_AWS_ACCESS_KEY_ID != '' && secrets.UPDATE_AWS_SECRET_ACCESS_KEY != '' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
