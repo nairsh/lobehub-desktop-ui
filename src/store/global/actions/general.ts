@@ -7,7 +7,8 @@ import { useOnlyFetchOnceSWR } from '@/libs/swr';
 import { globalService } from '@/services/global';
 import { getElectronStoreState } from '@/store/electron';
 import { electronSyncSelectors } from '@/store/electron/selectors';
-import { type SystemStatus } from '@/store/global/initialState';
+import type { SystemStatus } from '@/store/global/initialState';
+import { INITIAL_STATUS } from '@/store/global/initialState';
 import { type StoreSetter } from '@/store/types';
 import { type LocaleMode } from '@/types/locale';
 import { switchLang } from '@/utils/client/switchLang';
@@ -18,6 +19,7 @@ import { DEFAULT_HIDDEN_SECTIONS, DEFAULT_SIDEBAR_ITEMS } from '../selectors/sys
 import { type GlobalStore } from '../store';
 
 const n = setNamespace('g');
+const HOME_SIDEBAR_CHATS_MIGRATION_VERSION = 1;
 
 type Setter = StoreSetter<GlobalStore>;
 export const generalActionSlice = (set: Setter, get: () => GlobalStore, _api?: unknown) =>
@@ -239,7 +241,27 @@ export class GlobalGeneralActionImpl {
             showHotkeyHelper: false,
           };
 
-          this.#get().updateSystemStatus(statusWithResetTransientStates, 'initSystemStatus');
+          const shouldMigrateHomeChatsSidebar =
+            statusWithResetTransientStates.homeSidebarChatsMigrationVersion !==
+            HOME_SIDEBAR_CHATS_MIGRATION_VERSION;
+
+          const statusWithMigrations = shouldMigrateHomeChatsSidebar
+            ? {
+                ...statusWithResetTransientStates,
+                hiddenSidebarSections:
+                  statusWithResetTransientStates.hiddenSidebarSections?.filter(
+                    (section) => section !== 'recents',
+                  ) ?? DEFAULT_HIDDEN_SECTIONS,
+                homeSidebarChatsMigrationVersion: HOME_SIDEBAR_CHATS_MIGRATION_VERSION,
+                recentPageSize:
+                  statusWithResetTransientStates.recentPageSize === 5 ||
+                  statusWithResetTransientStates.recentPageSize === undefined
+                    ? INITIAL_STATUS.recentPageSize
+                    : statusWithResetTransientStates.recentPageSize,
+              }
+            : statusWithResetTransientStates;
+
+          this.#get().updateSystemStatus(statusWithMigrations, 'initSystemStatus');
         },
       },
     );

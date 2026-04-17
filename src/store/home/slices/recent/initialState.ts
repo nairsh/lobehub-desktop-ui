@@ -1,13 +1,11 @@
-import { type RecentItem } from '@/server/routers/lambda/recent';
+import { type RecentChatItem } from './utils';
 
 export interface RecentState {
-  allRecentsDrawerOpen: boolean;
   isRecentsInit: boolean;
-  recents: RecentItem[];
+  recents: RecentChatItem[];
 }
 
 export const initialRecentState: RecentState = {
-  allRecentsDrawerOpen: false,
   isRecentsInit: false,
   recents: [],
 };

@@ -122,6 +122,10 @@ export interface SystemStatus {
   hidePWAInstaller?: boolean;
   hideThreadLimitAlert?: boolean;
   hideTopicSharePrivacyWarning?: boolean;
+  /**
+   * Tracks one-time migrations for the home sidebar chats rollout.
+   */
+  homeSidebarChatsMigrationVersion?: number;
   imagePanelWidth: number;
   imageTopicPanelWidth?: number;
   imageTopicViewMode?: 'grid' | 'list';
@@ -208,6 +212,10 @@ export interface SystemStatus {
   zenMode?: boolean;
 }
 
+export interface CommandMenuOpenState {
+  topicBrowse?: boolean;
+}
+
 export interface GlobalNavigationRef {
   current: NavigateFunction | null;
 }
@@ -216,6 +224,7 @@ export interface GlobalNavigationRef {
 export const createNavigationRef = (): GlobalNavigationRef => ({ current: null });
 
 export interface GlobalState {
+  commandMenuOpenState?: CommandMenuOpenState;
   hasNewVersion?: boolean;
   initClientDBError?: Error;
   initClientDBMigrations?: {
@@ -252,7 +261,7 @@ export const INITIAL_STATUS = {
   agentBuilderPanelWidth: 360,
   agentPageSize: 5,
   chatInputHeight: 64,
-  recentPageSize: 5,
+  recentPageSize: 10,
   disabledModelProvidersSortType: 'default',
   disabledModelsSortType: 'default',
   dismissedBannerIds: [],
@@ -302,6 +311,7 @@ export const INITIAL_STATUS = {
 } satisfies SystemStatus;
 
 export const initialState: GlobalState = {
+  commandMenuOpenState: undefined,
   initClientDBStage: DatabaseLoadingState.Idle,
   isMobile: false,
   isStatusInit: false,

@@ -21,6 +21,7 @@ interface CommandMenuContextValue {
   setSelectedAgent: (agent: SelectedAgent | undefined) => void;
   setTypeFilter: (typeFilter: ValidSearchType | undefined) => void;
   setViewMode: (viewMode: MenuViewMode) => void;
+  topicBrowse: boolean;
   typeFilter: ValidSearchType | undefined;
   viewMode: MenuViewMode;
 }
@@ -31,19 +32,28 @@ const CommandMenuContext = createContext<CommandMenuContextValue | undefined>(un
 
 interface CommandMenuProviderProps {
   children: ReactNode;
+  initialTopicBrowse?: boolean;
   onClose: () => void;
   pathname: string | null;
 }
 
-export const CommandMenuProvider = ({ children, onClose, pathname }: CommandMenuProviderProps) => {
+export const CommandMenuProvider = ({
+  children,
+  initialTopicBrowse = false,
+  onClose,
+  pathname,
+}: CommandMenuProviderProps) => {
   const [pages, setPages] = useState<PageType[]>([]);
   const [search, setSearchState] = useState('');
-  const [typeFilter, setTypeFilterState] = useState<ValidSearchType | undefined>(undefined);
+  const [typeFilter, setTypeFilterState] = useState<ValidSearchType | undefined>(
+    initialTopicBrowse ? 'topic' : undefined,
+  );
   const [selectedAgent, setSelectedAgentState] = useState<SelectedAgent | undefined>(undefined);
 
   // Memoize derived values
   const menuContext = useMemo(() => detectContext(pathname ?? '/'), [pathname]);
   const page = pages.at(-1);
+  const topicBrowse = initialTopicBrowse && typeFilter === 'topic';
   const viewMode: MenuViewMode = search.trim().length > 0 ? 'search' : 'default';
 
   // Memoize setters to maintain stable references
@@ -76,6 +86,7 @@ export const CommandMenuProvider = ({ children, onClose, pathname }: CommandMenu
       setSelectedAgent,
       setTypeFilter,
       setViewMode,
+      topicBrowse,
       typeFilter,
       viewMode,
     }),
@@ -91,6 +102,7 @@ export const CommandMenuProvider = ({ children, onClose, pathname }: CommandMenu
       setSelectedAgent,
       setTypeFilter,
       setViewMode,
+      topicBrowse,
       typeFilter,
       viewMode,
     ],

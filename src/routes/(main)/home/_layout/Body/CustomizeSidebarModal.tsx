@@ -49,7 +49,7 @@ interface SidebarItemConfig {
 
 const ALL_SIDEBAR_ITEMS: SidebarItemConfig[] = [
   { id: 'pages', labelKey: 'tab.pages', routeId: 'page' },
-  { id: 'recents', labelKey: 'recents' },
+  { id: 'recents', labelKey: 'chats' },
   { alwaysVisible: true, id: 'agent', labelKey: 'navPanel.agent' },
   { id: 'community', labelKey: 'tab.community', routeId: 'community' },
   { id: 'resource', labelKey: 'tab.resource', routeId: 'resource' },
@@ -210,7 +210,7 @@ const OverlayItem = memo<{ id: string }>(({ id }) => {
       <Flexbox horizontal align={'center'} className={styles.overlay} gap={8}>
         <Icon icon={GripVertical} size={14} style={{ color: cssVar.colorTextQuaternary }} />
         <Text>{t('navPanel.agent' as any)}</Text>
-        <Text type={'secondary'}>+ {t('recents' as any)}</Text>
+        <Text type={'secondary'}>+ {t('chats' as any)}</Text>
       </Flexbox>
     );
   }

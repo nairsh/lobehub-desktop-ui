@@ -1,10 +1,22 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { merge } from '@/utils/merge';
 
 import { type GlobalState } from '../initialState';
 import { INITIAL_STATUS, initialState } from '../initialState';
 import { DEFAULT_SIDEBAR_ITEMS, reorderSidebarItems, systemStatusSelectors } from './systemStatus';
+
+const localStorageMock = vi.hoisted(() => {
+  const storage = {
+    getItem: vi.fn(() => null),
+    removeItem: vi.fn(),
+    setItem: vi.fn(),
+  };
+
+  vi.stubGlobal('localStorage', storage);
+
+  return storage;
+});
 
 // Mock version constants
 vi.mock('@/const/version', () => ({
@@ -13,6 +25,12 @@ vi.mock('@/const/version', () => ({
 }));
 
 describe('systemStatusSelectors', () => {
+  beforeEach(() => {
+    localStorageMock.getItem.mockClear();
+    localStorageMock.removeItem.mockClear();
+    localStorageMock.setItem.mockClear();
+  });
+
   describe('sessionGroupKeys', () => {
     it('should return expandSessionGroupKeys from status', () => {
       const s: GlobalState = merge(initialState, {
@@ -86,6 +104,13 @@ describe('systemStatusSelectors', () => {
         status: { portalWidth: undefined },
       });
       expect(systemStatusSelectors.portalWidth(noPortalWidth)).toBe(400);
+    });
+
+    it('should return the new default recent page size when not set', () => {
+      const noRecentPageSize = merge(initialState, {
+        status: { recentPageSize: undefined },
+      });
+      expect(systemStatusSelectors.recentPageSize(noRecentPageSize)).toBe(10);
     });
   });
 

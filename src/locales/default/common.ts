@@ -33,6 +33,7 @@ export default {
   'branchingRequiresSavedTopic':
     'Current topic is not saved, please save it first to use subtopic feature',
   'cancel': 'Cancel',
+  'chats': 'Chats',
   'changelog': 'Changelog',
   'alreadyUpToDate': 'Already Up to Date',
   'checkForUpdates': 'Check for Updates',
@@ -120,6 +121,7 @@ export default {
   'cmdk.askAgentHeading': 'Ask Agent',
   'cmdk.askAgentPlaceholder': 'Ask {{agent}} something...',
   'cmdk.askLobeAI': 'Ask Lobe AI',
+  'cmdk.browseChats': 'Recent chats',
   'cmdk.community': 'Community',
   'cmdk.communitySupport': 'Community Support',
   'cmdk.contactUs': 'Contact Us',
@@ -419,6 +421,7 @@ export default {
   'lang.zh-TW': 'Traditional Chinese',
   'layoutInitializing': 'Loading layout...',
   'legal': 'Legal Disclaimer',
+  'loadMoreChats': 'Load more chats',
   'loading': 'Loading...',
   'mail.business': 'Business Cooperation',
   'mail.support': 'Email Support',

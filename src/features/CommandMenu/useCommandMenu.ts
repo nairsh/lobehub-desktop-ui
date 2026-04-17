@@ -1,6 +1,7 @@
 import { useDebounce } from 'ahooks';
 import { useTheme as useNextThemesTheme } from 'next-themes';
 import { useCallback, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import useSWR from 'swr';
 
@@ -11,21 +12,26 @@ import { useGroupWizard } from '@/layout/GlobalProvider/GroupWizardProvider';
 import { lambdaClient } from '@/libs/trpc/client';
 import { useCreateMenuItems } from '@/routes/(main)/home/_layout/hooks';
 import { electronSystemService } from '@/services/electron/system';
+import { topicService } from '@/services/topic';
 import { useAgentStore } from '@/store/agent';
 import { builtinAgentSelectors } from '@/store/agent/selectors/builtinAgentSelectors';
 import { useChatStore } from '@/store/chat';
 import { useGlobalStore } from '@/store/global';
 import { globalHelpers } from '@/store/global/helpers';
 import { useHomeStore } from '@/store/home';
+import { mapRecentTopicToRecentChatItem } from '@/store/home/slices/recent/utils';
 
 import { useCommandMenuContext } from './CommandMenuContext';
 import { type ThemeMode } from './types';
+
+const COMMAND_MENU_TOPIC_BROWSE_LIMIT = 100;
 
 /**
  * Shared methods for CommandMenu
  */
 export const useCommandMenu = () => {
   const [open] = useGlobalStore((s) => [s.status.showCommandMenu]);
+  const { t } = useTranslation('chat');
   const {
     mounted,
     onClose,
@@ -40,6 +46,7 @@ export const useCommandMenu = () => {
     pathname,
     selectedAgent,
     setSelectedAgent,
+    topicBrowse,
   } = useCommandMenuContext();
 
   const navigate = useNavigate();
@@ -64,8 +71,10 @@ export const useCommandMenu = () => {
   const debouncedSearch = useDebounce(search, { wait: 600 });
 
   // Search functionality
-  const hasSearch = debouncedSearch.trim().length > 0;
   const searchQuery = debouncedSearch.trim();
+  const hasSearch = search.trim().length > 0;
+  const isWaitingForSearch = hasSearch && searchQuery !== search.trim();
+  const isTopicBrowseMode = topicBrowse && search.trim().length === 0;
 
   const { data: searchResults, isLoading: isSearching } = useSWR<SearchResult[]>(
     hasSearch ? ['search', searchQuery, agentId, typeFilter] : null,
@@ -78,6 +87,19 @@ export const useCommandMenu = () => {
         query: searchQuery,
         type: typeFilter,
       });
+    },
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    },
+  );
+
+  const { data: browseTopics, isLoading: isBrowsingTopics } = useSWR(
+    isTopicBrowseMode ? ['command-menu-topic-browse', COMMAND_MENU_TOPIC_BROWSE_LIMIT] : null,
+    async () => {
+      const topics = await topicService.getRecentTopics(COMMAND_MENU_TOPIC_BROWSE_LIMIT);
+
+      return topics.map((topic) => mapRecentTopicToRecentChatItem(topic, t('topic.defaultTitle')));
     },
     {
       revalidateOnFocus: false,
@@ -220,7 +242,11 @@ export const useCommandMenu = () => {
     handleSendToSelectedAgent,
     handleThemeChange,
     hasSearch,
+    browseTopics: browseTopics || [],
+    isBrowsingTopics,
+    isTopicBrowseMode,
     isSearching,
+    isWaitingForSearch,
     mounted,
     open,
     page,

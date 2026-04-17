@@ -3,6 +3,7 @@ import { produce } from 'immer';
 import { INBOX_SESSION_ID } from '@/const/session';
 import { SESSION_CHAT_URL } from '@/const/url';
 import { type GlobalStore } from '@/store/global';
+import { type CommandMenuOpenState } from '@/store/global/initialState';
 import { type StoreSetter } from '@/store/types';
 import { getStableNavigate } from '@/utils/stableNavigate';
 import { setNamespace } from '@/utils/storeDebug';
@@ -15,10 +16,11 @@ export const globalWorkspaceSlice = (set: Setter, get: () => GlobalStore, _api?:
 
 export class GlobalWorkspacePaneActionImpl {
   readonly #get: () => GlobalStore;
+  readonly #set: Setter;
 
   constructor(set: Setter, get: () => GlobalStore, _api?: unknown) {
     void _api;
-    void set;
+    this.#set = set;
     this.#get = get;
   }
 
@@ -43,10 +45,13 @@ export class GlobalWorkspacePaneActionImpl {
     );
   };
 
-  toggleCommandMenu = (visible?: boolean): void => {
+  toggleCommandMenu = (visible?: boolean, openState?: CommandMenuOpenState): void => {
     const currentVisible = this.#get().status.showCommandMenu;
+    const nextVisible = typeof visible === 'boolean' ? visible : !currentVisible;
+
+    this.#set({ commandMenuOpenState: nextVisible ? openState : undefined }, false);
     this.#get().updateSystemStatus({
-      showCommandMenu: typeof visible === 'boolean' ? visible : !currentVisible,
+      showCommandMenu: nextVisible,
     });
   };
 

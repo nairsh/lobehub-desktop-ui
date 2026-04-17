@@ -150,8 +150,8 @@ const Recents = memo<RecentsProps>(({ itemKey }) => {
       )}
       title={
         <Flexbox horizontal align="center" gap={4}>
-          <Text ellipsis fontSize={11} type={'secondary'} weight={400} style={{ opacity: 0.6 }}>
-            {t('recents')}
+          <Text ellipsis fontSize={11} style={{ opacity: 0.6 }} type={'secondary'} weight={400}>
+            {t('chats')}
           </Text>
           {isRevalidating && <NeuralNetworkLoading size={12} />}
         </Flexbox>

@@ -19,6 +19,7 @@ import MainMenu from './MainMenu';
 import SearchResults from './SearchResults';
 import { styles } from './styles';
 import ThemeMenu from './ThemeMenu';
+import TopicBrowseResults from './TopicBrowseResults';
 import { useCommandMenu } from './useCommandMenu';
 
 const CLOSE_ANIMATION_DURATION = 150;
@@ -35,9 +36,13 @@ const CommandMenuContent = memo<CommandMenuContentProps>(({ isClosing, onClose }
   const { t } = useTranslation('common');
   const {
     handleBack,
+    browseTopics,
     handleSendToSelectedAgent,
     hasSearch,
+    isBrowsingTopics,
+    isTopicBrowseMode,
     isSearching,
+    isWaitingForSearch,
     searchQuery,
     searchResults,
     selectedAgent,
@@ -45,6 +50,8 @@ const CommandMenuContent = memo<CommandMenuContentProps>(({ isClosing, onClose }
 
   const { setPages, page, pages, search, setSearch, setTypeFilter, setSelectedAgent, typeFilter } =
     useCommandMenuContext();
+
+  const hasBrowseResults = isTopicBrowseMode && (browseTopics.length > 0 || isBrowsingTopics);
 
   // Ref for Command.List to control scroll position
   const listRef = useRef<HTMLDivElement>(null);
@@ -116,9 +123,10 @@ const CommandMenuContent = memo<CommandMenuContentProps>(({ isClosing, onClose }
           <Command.List ref={listRef}>
             {/* Hide cmdk's Empty when we have search results or are loading them,
                since force-mounted items aren't counted by cmdk's internal filter */}
-            {!(hasSearch && (searchResults.length > 0 || isSearching)) && (
-              <Command.Empty>{t('cmdk.noResults')}</Command.Empty>
-            )}
+            {!(
+              (hasSearch && (searchResults.length > 0 || isSearching || isWaitingForSearch)) ||
+              hasBrowseResults
+            ) && <Command.Empty>{t('cmdk.noResults')}</Command.Empty>}
 
             {/* Show send command when agent is selected */}
             {selectedAgent && (
@@ -145,13 +153,24 @@ const CommandMenuContent = memo<CommandMenuContentProps>(({ isClosing, onClose }
             )}
 
             {/* @ mention agent commands */}
-            {!page && !selectedAgent && <AskAgentCommands />}
+            {!page && !selectedAgent && !isTopicBrowseMode && <AskAgentCommands />}
 
             {/* Hide MainMenu and SearchResults when in @ mention mode */}
-            {!page && !selectedAgent && !search.trimStart().startsWith('@') && <MainMenu />}
+            {!page &&
+              !selectedAgent &&
+              !search.trimStart().startsWith('@') &&
+              !isTopicBrowseMode && <MainMenu />}
 
             {page === 'theme' && <ThemeMenu />}
             {page === 'ask-ai' && <AskAIMenu />}
+
+            {!page && !selectedAgent && isTopicBrowseMode && (
+              <TopicBrowseResults
+                isLoading={isBrowsingTopics}
+                topics={browseTopics}
+                onClose={onClose}
+              />
+            )}
 
             {!page && !selectedAgent && hasSearch && !search.trimStart().startsWith('@') && (
               <SearchResults
@@ -180,7 +199,11 @@ CommandMenuContent.displayName = 'CommandMenuContent';
  * Search everything in LobeHub.
  */
 const CommandMenu = memo(() => {
-  const [open, setOpen] = useGlobalStore((s) => [s.status.showCommandMenu, s.updateSystemStatus]);
+  const [open, toggleCommandMenu, commandMenuOpenState] = useGlobalStore((s) => [
+    s.status.showCommandMenu,
+    s.toggleCommandMenu,
+    s.commandMenuOpenState,
+  ]);
   const [mounted, setMounted] = useState(false);
   const [appRoot, setAppRoot] = useState<HTMLElement | null>(null);
   const [isClosing, setIsClosing] = useState(false);
@@ -242,16 +265,20 @@ const CommandMenu = memo(() => {
     if (isClosing) return;
     setIsClosing(true);
     setTimeout(() => {
-      setOpen({ showCommandMenu: false });
+      toggleCommandMenu(false);
       setIsVisible(false);
       setIsClosing(false);
     }, CLOSE_ANIMATION_DURATION);
-  }, [isClosing, setOpen]);
+  }, [isClosing, toggleCommandMenu]);
 
   if (!mounted || !isVisible || !appRoot) return null;
 
   return createPortal(
-    <CommandMenuProvider pathname={pathname} onClose={handleClose}>
+    <CommandMenuProvider
+      initialTopicBrowse={commandMenuOpenState?.topicBrowse}
+      pathname={pathname}
+      onClose={handleClose}
+    >
       <CommandMenuContent isClosing={isClosing} onClose={handleClose} />
     </CommandMenuProvider>,
     appRoot,

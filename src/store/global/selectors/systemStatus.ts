@@ -14,7 +14,8 @@ const topicPageSize = (s: GlobalState): number => s.status.topicPageSize || 20;
 
 const agentPageSize = (s: GlobalState): number => s.status.agentPageSize || 5;
 
-const recentPageSize = (s: GlobalState): number => s.status.recentPageSize || 5;
+const recentPageSize = (s: GlobalState): number =>
+  s.status.recentPageSize || INITIAL_STATUS.recentPageSize;
 
 const pagePageSize = (s: GlobalState): number => s.status.pagePageSize || 20;
 

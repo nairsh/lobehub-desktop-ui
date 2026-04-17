@@ -8,6 +8,18 @@ import { initialState } from '@/store/global/initialState';
 import { switchLang } from '@/utils/client/switchLang';
 import { withSWR } from '~test-utils';
 
+const localStorageMock = vi.hoisted(() => {
+  const storage = {
+    getItem: vi.fn(() => null),
+    removeItem: vi.fn(),
+    setItem: vi.fn(),
+  };
+
+  vi.stubGlobal('localStorage', storage);
+
+  return storage;
+});
+
 vi.mock('@/utils/client/switchLang', () => ({
   switchLang: vi.fn(),
 }));
@@ -21,6 +33,9 @@ vi.mock('@/services/global', () => ({
 describe('generalActionSlice', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorageMock.getItem.mockClear();
+    localStorageMock.removeItem.mockClear();
+    localStorageMock.setItem.mockClear();
     useGlobalStore.setState(initialState);
   });
 
@@ -143,6 +158,56 @@ describe('generalActionSlice', () => {
       expect(useGlobalStore.getState().status.showCommandMenu).toBe(false);
       expect(useGlobalStore.getState().status.showHotkeyHelper).toBe(false);
       expect(useGlobalStore.getState().status.noWideScreen).toBe(false);
+    });
+
+    it('should migrate legacy recents preferences into visible chats defaults', async () => {
+      const mockStatus = {
+        ...initialState.status,
+        hiddenSidebarSections: ['memory', 'recents'],
+        recentPageSize: 5,
+      };
+
+      const { result } = renderHook(() => useGlobalStore());
+      vi.spyOn(result.current.statusStorage, 'getFromLocalStorage').mockResolvedValueOnce(
+        mockStatus,
+      );
+
+      const { result: hookResult } = renderHook(() => useGlobalStore().useInitSystemStatus(), {
+        wrapper: withSWR,
+      });
+
+      await act(async () => {
+        await hookResult.current.data;
+      });
+
+      expect(useGlobalStore.getState().status.hiddenSidebarSections).toEqual(['memory']);
+      expect(useGlobalStore.getState().status.recentPageSize).toBe(10);
+      expect(useGlobalStore.getState().status.homeSidebarChatsMigrationVersion).toBe(1);
+    });
+
+    it('should preserve chats visibility preferences after the migration has run', async () => {
+      const mockStatus = {
+        ...initialState.status,
+        hiddenSidebarSections: ['memory', 'recents'],
+        homeSidebarChatsMigrationVersion: 1,
+        recentPageSize: 15,
+      };
+
+      const { result } = renderHook(() => useGlobalStore());
+      vi.spyOn(result.current.statusStorage, 'getFromLocalStorage').mockResolvedValueOnce(
+        mockStatus,
+      );
+
+      const { result: hookResult } = renderHook(() => useGlobalStore().useInitSystemStatus(), {
+        wrapper: withSWR,
+      });
+
+      await act(async () => {
+        await hookResult.current.data;
+      });
+
+      expect(useGlobalStore.getState().status.hiddenSidebarSections).toEqual(['memory', 'recents']);
+      expect(useGlobalStore.getState().status.recentPageSize).toBe(15);
     });
   });
 

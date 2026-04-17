@@ -11,19 +11,14 @@ import { systemStatusSelectors } from '@/store/global/selectors';
 import { useHomeStore } from '@/store/home';
 import { homeRecentSelectors } from '@/store/home/selectors';
 
-import AllRecentsDrawer from './AllRecentsDrawer';
 import RecentListItem from './Item';
 
 const RecentsList = memo(() => {
-  const { t } = useTranslation('chat');
+  const { t } = useTranslation('common');
   const recents = useHomeStore(homeRecentSelectors.recents);
   const isInit = useHomeStore(homeRecentSelectors.isRecentsInit);
   const recentPageSize = useGlobalStore(systemStatusSelectors.recentPageSize);
-  const [drawerOpen, openDrawer, closeDrawer] = useHomeStore((s) => [
-    s.allRecentsDrawerOpen,
-    s.openAllRecentsDrawer,
-    s.closeAllRecentsDrawer,
-  ]);
+  const toggleCommandMenu = useGlobalStore((s) => s.toggleCommandMenu);
 
   const displayItems = useMemo(() => recents.slice(0, recentPageSize), [recents, recentPageSize]);
   const hasMore = recents.length > recentPageSize;
@@ -44,9 +39,12 @@ const RecentsList = memo(() => {
         </Link>
       ))}
       {hasMore && (
-        <NavItem icon={MoreHorizontalIcon} title={t('input.more')} onClick={openDrawer} />
+        <NavItem
+          icon={MoreHorizontalIcon}
+          title={t('loadMoreChats')}
+          onClick={() => toggleCommandMenu(true, { topicBrowse: true })}
+        />
       )}
-      <AllRecentsDrawer open={drawerOpen} onClose={closeDrawer} />
     </Flexbox>
   );
 });
