@@ -21,7 +21,7 @@ import FlatMode from '../TopicListContent/FlatMode';
 const fetchParams = { excludeTriggers: ['cron', 'eval'] };
 
 const TopicList = memo(() => {
-  const { t } = useTranslation('topic');
+  const { t } = useTranslation('common');
   const router = useQueryRoute();
   const topicLength = useChatStore((s) => topicSelectors.currentTopicLength(s));
   const isUndefinedTopics = useChatStore((s) => topicSelectors.isUndefinedTopics(s));
@@ -43,7 +43,7 @@ const TopicList = memo(() => {
     <>
       {topicLength === 0 && (
         <EmptyNavItem
-          title={t('actions.addNewTopic')}
+          title={t('navPanel.newChat')}
           onClick={() => {
             router.push(urlJoin('/agent', agentId));
           }}

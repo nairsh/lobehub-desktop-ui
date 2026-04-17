@@ -64,7 +64,7 @@ const Tool = memo<GroupToolProps>(
     const isPending = intervention?.status === 'pending';
     const isReject = intervention?.status === 'rejected';
     const isAbort = intervention?.status === 'aborted';
-    const needExpand = renderDisplayControl !== 'collapsed' || isPending;
+    const shouldAutoExpand = renderDisplayControl !== 'collapsed';
     const isAlwaysExpand = renderDisplayControl === 'alwaysExpand';
 
     let isArgumentsStreaming = false;
@@ -108,10 +108,10 @@ const Tool = memo<GroupToolProps>(
     };
 
     useEffect(() => {
-      if (needExpand) {
+      if (shouldAutoExpand) {
         setTimeout(() => handleExpand(true), 100);
       }
-    }, [needExpand]);
+    }, [shouldAutoExpand]);
 
     const isToolDetailExpand = forceShowStreamingRender || showToolRender || showDebug;
 

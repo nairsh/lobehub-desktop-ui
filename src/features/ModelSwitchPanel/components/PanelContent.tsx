@@ -8,7 +8,7 @@ import { useUserStore } from '@/store/user';
 import { userGeneralSettingsSelectors } from '@/store/user/slices/settings/selectors/general';
 import type { EnabledProviderWithModels } from '@/types/aiProvider';
 
-import { DEFAULT_WIDTH, ENABLE_RESIZING, MAX_WIDTH, MIN_WIDTH } from '../const';
+import { DEFAULT_WIDTH, ENABLE_RESIZING, MAX_PANEL_HEIGHT, MAX_WIDTH, MIN_WIDTH } from '../const';
 import { usePanelSize } from '../hooks/usePanelSize';
 import { usePanelState } from '../hooks/usePanelState';
 import { List } from './List';
@@ -88,7 +88,7 @@ export const PanelContent: FC<PanelContentProps> = ({
       style={{
         display: 'flex',
         flexDirection: 'column',
-        height: panelHeight,
+        maxHeight: MAX_PANEL_HEIGHT,
         position: 'relative',
         width: DEFAULT_WIDTH,
       }}

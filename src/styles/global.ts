@@ -33,9 +33,8 @@ export default ({ token }: { prefixCls: string; token: Theme }) => css`
   * {
     scrollbar-color: ${token.colorFill} transparent;
     scrollbar-width: thin;
-
-    transition-property: color, background-color, border-color, fill, stroke, opacity, box-shadow;
     transition-duration: 0.1s;
+    transition-property: color, background-color, border-color, fill, stroke, opacity, box-shadow;
 
     ::-webkit-scrollbar {
       width: 0.75em;
@@ -77,5 +76,27 @@ export default ({ token }: { prefixCls: string; token: Theme }) => css`
     .${CLASSNAMES.DropdownMenuTrigger}[data-popup-open]:not([data-no-highlight])
   ) {
     opacity: 1;
+  }
+
+  /* Snappy pop animation for all dropdown/popover menus */
+  [data-placement] {
+    --lobe-dropdown-animation-duration: 110ms !important;
+    --lobe-dropdown-animation-ease-out: cubic-bezier(0.25, 1.4, 0.5, 1) !important;
+    --lobe-dropdown-animation-ease-in: cubic-bezier(0.4, 0, 1, 1) !important;
+  }
+
+  [data-placement][data-open] > * {
+    transform: scale(1) !important;
+    opacity: 1;
+  }
+
+  [data-placement][data-open] > *[data-starting-style] {
+    transform: scale(0.92) !important;
+    opacity: 0;
+  }
+
+  [data-placement][data-closed] > * {
+    transform: scale(0.92) !important;
+    opacity: 0;
   }
 `;

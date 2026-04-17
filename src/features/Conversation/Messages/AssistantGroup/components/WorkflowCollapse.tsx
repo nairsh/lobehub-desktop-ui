@@ -107,7 +107,7 @@ const WorkflowCollapse = memo<WorkflowCollapseProps>(
   ({
     assistantMessageId,
     blocks,
-    defaultStreamingExpanded = true,
+    defaultStreamingExpanded = false,
     disableEditing,
     workflowChromeComplete = false,
   }) => {

@@ -42,7 +42,7 @@ const Thinking = memo<ThinkingProps>((props) => {
   });
 
   useEffect(() => {
-    setShowDetail(!!thinking);
+    if (thinking) setShowDetail(false);
   }, [thinking]);
 
   return (
@@ -55,7 +55,7 @@ const Thinking = memo<ThinkingProps>((props) => {
         itemKey={'thinking'}
         paddingBlock={4}
         paddingInline={4}
-        title={<Title duration={duration} showDetail={showDetail} thinking={thinking} />}
+        title={<Title duration={duration} thinking={thinking} />}
       >
         <ScrollShadow
           className={styles.contentScroll}

@@ -18,7 +18,7 @@ import { featureFlagsSelectors, useServerConfigStore } from '@/store/serverConfi
 
 const Nav = memo(() => {
   const { t } = useTranslation('chat');
-  const { t: tTopic } = useTranslation('topic');
+  const { t: tCommon } = useTranslation('common');
   const params = useParams();
   const groupId = params.gid;
   const pathname = usePathname();
@@ -33,7 +33,7 @@ const Nav = memo(() => {
     <Flexbox gap={1} paddingInline={4}>
       <NavItem
         icon={MessageSquarePlusIcon}
-        title={tTopic('actions.addNewTopic')}
+        title={tCommon('navPanel.newChat')}
         onClick={switchToNewTopic}
       />
       {isAgentEditable && (

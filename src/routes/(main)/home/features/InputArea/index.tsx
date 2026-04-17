@@ -59,7 +59,7 @@ const InputArea = () => {
   // Override some default behavior of the chat input
   const inputContainerProps = useMemo(
     () => ({
-      minHeight: 52,
+      minHeight: 48,
       resize: false,
       style: {
         borderRadius: 14,
@@ -126,6 +126,8 @@ const InputArea = () => {
             }}
           >
             <DesktopChatInput
+              actionSize={{ blockSize: 32, size: 18 }}
+              borderRadius={16}
               dropdownPlacement="bottomLeft"
               extraActionItems={extraActionItems}
               inputContainerProps={inputContainerProps}

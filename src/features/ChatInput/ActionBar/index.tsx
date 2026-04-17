@@ -44,13 +44,14 @@ const mapActionsToItems = (keys: ActionKeys[]): ChatInputActionsProps['items'] =
   });
 
 export interface ActionToolbarProps {
+  actionSize?: { blockSize: number; size: number };
   borderRadius?: number;
   dropdownPlacement?: DropdownPlacement;
   extraActionItems?: ChatInputActionsProps['items'];
 }
 
 const ActionToolbar = memo<ActionToolbarProps>(
-  ({ borderRadius, dropdownPlacement, extraActionItems = [] }) => {
+  ({ actionSize, borderRadius, dropdownPlacement, extraActionItems = [] }) => {
     const [expandInputActionbar, toggleExpandInputActionbar] = useGlobalStore((s) => [
       systemStatusSelectors.expandInputActionbar(s),
       s.toggleExpandInputActionbar,
@@ -69,8 +70,8 @@ const ActionToolbar = memo<ActionToolbarProps>(
     );
 
     const contextValue = useMemo(
-      () => ({ borderRadius, dropdownPlacement }),
-      [borderRadius, dropdownPlacement],
+      () => ({ actionSize, borderRadius, dropdownPlacement }),
+      [actionSize, borderRadius, dropdownPlacement],
     );
 
     return (

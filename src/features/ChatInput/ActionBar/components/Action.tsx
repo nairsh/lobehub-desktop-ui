@@ -28,6 +28,7 @@ const Action = memo<ActionProps>(
     showTooltip,
     loading,
     icon,
+    style,
     title,
     dropdown,
     popover,
@@ -43,7 +44,7 @@ const Action = memo<ActionProps>(
       value: open,
     });
     const mobile = useServerConfigStore((s) => s.isMobile);
-    const { actionSize, dropdownPlacement } = useActionBarContext();
+    const { actionSize, borderRadius, dropdownPlacement } = useActionBarContext();
     const iconNode = (
       <ActionIcon
         disabled={disabled}
@@ -61,6 +62,7 @@ const Action = memo<ActionProps>(
           setShow(true);
         }}
         {...rest}
+        style={{ borderRadius, ...style }}
         size={
           actionSize ?? {
             blockSize: 36,

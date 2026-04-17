@@ -3,7 +3,7 @@
 import { validateVideoFileSize } from '@lobechat/utils/client';
 import { Flexbox } from '@lobehub/ui';
 import { Upload } from 'antd';
-import { css, cssVar, cx } from 'antd-style';
+import { createStaticStyles, css, cssVar, cx } from 'antd-style';
 import { Blocks, Brain, FileUp, FolderUp, Globe, PlusIcon, TypeIcon } from 'lucide-react';
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -17,13 +17,12 @@ import { useFileStore } from '@/store/file';
 import { useUserStore } from '@/store/user';
 import { labPreferSelectors } from '@/store/user/selectors';
 
-import { useAgentEnableSearch } from '../../hooks/useAgentEnableSearch';
 import { useAgentId } from '../../hooks/useAgentId';
 import { useUpdateAgentConfig } from '../../hooks/useUpdateAgentConfig';
-import { useMemoryEnabled } from '../Memory/useMemoryEnabled';
 import { useChatInputStore } from '../../store';
 import Action from '../components/Action';
 import { type ActionDropdownMenuItems } from '../components/ActionDropdown';
+import { useMemoryEnabled } from '../Memory/useMemoryEnabled';
 
 // Makes the entire label area clickable (for Antd Upload inside a menu item)
 const hotArea = css`
@@ -34,6 +33,36 @@ const hotArea = css`
     background-color: transparent;
   }
 `;
+
+const styles = createStaticStyles(({ css, cssVar }) => ({
+  menu: css`
+    user-select: none;
+
+    [role='menuitem'] {
+      min-height: 36px;
+      margin-block: 1px;
+      margin-inline: 6px;
+      padding-block: 6px;
+      padding-inline: 10px;
+      border-radius: 8px;
+
+      font-size: 14px;
+    }
+
+    [role='separator'] {
+      margin-inline: 10px;
+    }
+  `,
+  popup: css`
+    overflow: hidden;
+
+    padding-block: 5px !important;
+    border: 1px solid ${cssVar.colorBorderSecondary};
+    border-radius: 14px !important;
+
+    box-shadow: 0 8px 24px rgb(0 0 0 / 10%);
+  `,
+}));
 
 const PlusActions = memo(() => {
   const { t } = useTranslation('chat');
@@ -116,11 +145,7 @@ const PlusActions = memo(() => {
     },
     { key: 'divider-1', type: 'divider' },
     {
-      icon: showSearchIndicator ? (
-        <Globe size={16} style={{ color: cssVar.colorInfo }} />
-      ) : (
-        Globe
-      ),
+      icon: showSearchIndicator ? <Globe size={16} style={{ color: cssVar.colorInfo }} /> : Globe,
       key: 'search',
       label: t('search.title'),
       onClick: async () => {
@@ -128,11 +153,7 @@ const PlusActions = memo(() => {
       },
     },
     {
-      icon: isMemoryEnabled ? (
-        <Brain size={16} style={{ color: cssVar.colorInfo }} />
-      ) : (
-        Brain
-      ),
+      icon: isMemoryEnabled ? <Brain size={16} style={{ color: cssVar.colorInfo }} /> : Brain,
       key: 'memory',
       label: t('memory.title'),
       onClick: async () => {
@@ -166,16 +187,17 @@ const PlusActions = memo(() => {
   ];
 
   return (
-    <Flexbox align={'center'} gap={2} horizontal>
+    <Flexbox horizontal align={'center'} gap={2}>
       <Action
         icon={PlusIcon}
         open={open}
         showTooltip={false}
         title={t('input.more')}
         dropdown={{
-          menu: { items },
-          minWidth: 200,
+          menu: { className: styles.menu, items },
+          minWidth: 240,
           placement: 'topLeft',
+          popupProps: { className: styles.popup },
         }}
         onOpenChange={setOpen}
       />

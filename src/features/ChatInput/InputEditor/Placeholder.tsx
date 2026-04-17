@@ -1,5 +1,5 @@
 import { KeyEnum } from '@lobechat/types';
-import { combineKeys,Flexbox, Hotkey } from '@lobehub/ui';
+import { combineKeys, Flexbox, Hotkey } from '@lobehub/ui';
 import { memo } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
@@ -40,7 +40,6 @@ const Placeholder = memo(() => {
           ),
         }}
       />
-      {'...'}
     </Flexbox>
   );
 });

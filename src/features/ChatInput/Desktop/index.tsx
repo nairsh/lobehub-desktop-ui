@@ -75,6 +75,7 @@ const DesktopChatInput = memo<DesktopChatInputProps>(
     inputContainerProps,
     extentHeaderContent,
     actionBarStyle,
+    actionSize,
     borderRadius,
     extraActionItems,
     dropdownPlacement,
@@ -131,6 +132,7 @@ const DesktopChatInput = memo<DesktopChatInputProps>(
               left={
                 leftContent ?? (
                   <ActionBar
+                    actionSize={actionSize}
                     borderRadius={borderRadius}
                     dropdownPlacement={dropdownPlacement}
                     extraActionItems={extraActionItems}

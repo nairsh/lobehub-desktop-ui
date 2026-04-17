@@ -18,8 +18,13 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
     background: ${cssVar.colorBgElevated} !important;
   `,
   button: css`
-    height: 40px;
+    height: 32px;
+    padding-inline: 10px;
     border-color: ${cssVar.colorFillSecondary};
+    border-radius: 10px;
+
+    font-size: 13px;
+
     background: transparent;
     box-shadow: none !important;
 
@@ -120,7 +125,7 @@ const StarterList = memo(() => {
   );
 
   return (
-    <Center horizontal gap={8}>
+    <Center horizontal gap={6}>
       {items.map((item) => {
         const button = (
           <Button
@@ -128,11 +133,10 @@ const StarterList = memo(() => {
             disabled={item.disabled}
             icon={item.icon}
             key={item.key}
-            shape={'round'}
             variant={'outlined'}
             iconProps={{
               color: inputActiveMode === item.key ? cssVar.colorText : cssVar.colorTextSecondary,
-              size: 18,
+              size: 16,
             }}
             onClick={() => handleClick(item.key)}
           >

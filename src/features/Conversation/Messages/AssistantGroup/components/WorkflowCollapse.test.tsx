@@ -108,22 +108,22 @@ describe('WorkflowCollapse', () => {
     vi.useRealTimers();
   });
 
-  it('defaults to expanded while streaming', () => {
+  it('defaults to collapsed while streaming', () => {
     render(<WorkflowCollapse assistantMessageId="msg-1" blocks={makeBlocks()} />);
 
-    expect(getExpandedKeys()).toBe('["workflow"]');
+    expect(getExpandedKeys()).toBe('[]');
   });
 
-  it('respects defaultStreamingExpanded={false} while streaming', () => {
+  it('respects defaultStreamingExpanded={true} while streaming', () => {
     render(
       <WorkflowCollapse
+        defaultStreamingExpanded
         assistantMessageId="msg-1"
         blocks={makeBlocks()}
-        defaultStreamingExpanded={false}
       />,
     );
 
-    expect(getExpandedKeys()).toBe('[]');
+    expect(getExpandedKeys()).toBe('["workflow"]');
   });
 
   it('auto expands and switches the header when confirmation is pending', async () => {

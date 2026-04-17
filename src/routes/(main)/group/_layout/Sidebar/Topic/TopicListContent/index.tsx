@@ -20,7 +20,7 @@ import FlatMode from './FlatMode';
 import SearchResult from './SearchResult';
 
 const TopicListContent = memo(() => {
-  const { t } = useTranslation('topic');
+  const { t } = useTranslation('common');
   const router = useQueryRoute();
   const topicLength = useChatStore((s) => topicSelectors.currentTopicLength(s));
   const [isUndefinedTopics, isInSearchMode] = useChatStore((s) => [
@@ -41,7 +41,7 @@ const TopicListContent = memo(() => {
     <>
       {topicLength === 0 && activeGroupId && (
         <EmptyNavItem
-          title={t('actions.addNewTopic')}
+          title={t('navPanel.newChat')}
           onClick={() => {
             router.push(urlJoin('/group', activeGroupId));
           }}

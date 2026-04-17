@@ -1,13 +1,13 @@
 import { Flexbox } from '@lobehub/ui';
 import { type ComponentType, type FC } from 'react';
-import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
+import { useCallback, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useBusinessModelListGuard } from '@/business/client/hooks/useBusinessModelListGuard';
 import { useEnabledChatModels } from '@/hooks/useEnabledChatModels';
 import type { EnabledProviderWithModels } from '@/types/aiProvider';
 
-import { FOOTER_HEIGHT, ITEM_HEIGHT, MAX_PANEL_HEIGHT, TOOLBAR_HEIGHT } from '../../const';
+import { ITEM_HEIGHT, MAX_PANEL_HEIGHT, TOOLBAR_HEIGHT } from '../../const';
 import { useBuildListItems } from '../../hooks/useBuildListItems';
 import { useModelAndProvider } from '../../hooks/useModelAndProvider';
 import { usePanelHandlers } from '../../hooks/usePanelHandlers';
@@ -55,13 +55,8 @@ export const List: FC<ListProps> = ({
   });
   const listItems = useBuildListItems(enabledList, groupMode, searchKeyword);
 
-  const panelHeight = useMemo(
-    () =>
-      enabledList.length === 0
-        ? TOOLBAR_HEIGHT + ITEM_HEIGHT['no-provider'] + FOOTER_HEIGHT
-        : MAX_PANEL_HEIGHT,
-    [enabledList.length],
-  );
+  const listMaxHeight =
+    enabledList.length === 0 ? ITEM_HEIGHT['no-provider'] : MAX_PANEL_HEIGHT - TOOLBAR_HEIGHT;
 
   const activeKey = menuKey(provider, model);
 
@@ -73,8 +68,6 @@ export const List: FC<ListProps> = ({
   const activeItemRef = useCallback((node: HTMLDivElement | null) => {
     activeNodeRef.current = node;
   }, []);
-
-  const listHeight = panelHeight - TOOLBAR_HEIGHT - FOOTER_HEIGHT;
 
   const scrollListenersRef = useRef(new Set<() => void>());
   const subscribeScroll = useCallback((cb: () => void) => {
@@ -98,14 +91,14 @@ export const List: FC<ListProps> = ({
       activeNode.offsetTop - (container.clientHeight - activeNode.offsetHeight) / 2;
     container.scrollTop = Math.max(0, targetScrollTop);
     hasInitializedPositionRef.current = true;
-  }, [listHeight, activeKey]);
+  }, [listMaxHeight, activeKey]);
 
   return (
     <Flexbox
       className={styles.list}
       flex={1}
       ref={listRef}
-      style={{ height: listHeight }}
+      style={{ maxHeight: listMaxHeight }}
       onScroll={handleListScroll}
     >
       {listItems.map((item, index) => {
