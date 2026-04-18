@@ -80,7 +80,11 @@ const keepLanguages = new Set(['en', 'en_GB', 'en-US', 'en_US']);
 if (!hasAppleCertificate) {
   // Disable auto discovery to keep electron-builder from searching unavailable signing identities
   process.env.CSC_IDENTITY_AUTO_DISCOVERY = 'false';
-  console.info('⚠️ Apple certificate link not found, macOS artifacts will be unsigned.');
+  // Clear CSC_LINK/CSC_KEY_PASSWORD so electron-builder doesn't try to import a non-existent certificate.
+  // With identity: '-', electron-builder will use ad-hoc code signing instead.
+  delete process.env.CSC_LINK;
+  delete process.env.CSC_KEY_PASSWORD;
+  console.info('⚠️ Apple certificate not found — will use ad-hoc code signing.');
 }
 
 // 根据版本类型确定协议 scheme
