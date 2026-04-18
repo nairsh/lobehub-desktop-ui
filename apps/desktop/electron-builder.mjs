@@ -287,7 +287,7 @@ const config = {
     gatekeeperAssess: false,
     hardenedRuntime: hasAppleCertificate,
     notarize: hasAppleCertificate,
-    ...(hasAppleCertificate ? {} : { identity: null }),
+    ...(hasAppleCertificate ? {} : { identity: '-' }),
     target: [
       { arch: [arch === 'arm64' ? 'arm64' : 'x64'], target: 'dmg' },
       { arch: [arch === 'arm64' ? 'arm64' : 'x64'], target: 'zip' },
