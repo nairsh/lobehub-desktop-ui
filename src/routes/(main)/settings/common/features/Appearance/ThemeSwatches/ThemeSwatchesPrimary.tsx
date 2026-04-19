@@ -1,79 +1,90 @@
-import { type PrimaryColors } from '@lobehub/ui';
-import { ColorSwatches, findCustomThemeName, primaryColors } from '@lobehub/ui';
+import type { PrimaryColors } from '@lobehub/ui';
+import { primaryColors } from '@lobehub/ui';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { createThemeSwatchBackground, defaultThemeSwatchBackground } from '@/utils/customTheme';
+
+import ThemeSwatchesBase from './ThemeSwatchesBase';
+
 interface IProps {
-  onChange?: (v: PrimaryColors) => void;
+  onChange?: (v: PrimaryColors | '') => void;
   value?: PrimaryColors;
 }
 
 const ThemeSwatchesPrimary = memo<IProps>(({ onChange, value }) => {
   const { t } = useTranslation('color');
 
-  const handleSelect = (v: any) => {
-    const name = findCustomThemeName('primary', v) as PrimaryColors;
-    onChange?.(name || '');
-  };
-
   return (
-    <ColorSwatches
-      value={value ? primaryColors[value] : undefined}
-      colors={[
+    <ThemeSwatchesBase
+      value={value}
+      options={[
         {
-          color: 'rgba(0, 0, 0, 0)',
-          title: t('default'),
+          background: defaultThemeSwatchBackground,
+          label: t('default'),
         },
         {
-          color: primaryColors.red,
-          title: t('red'),
+          background: createThemeSwatchBackground(primaryColors.red),
+          label: t('red'),
+          value: 'red',
         },
         {
-          color: primaryColors.orange,
-          title: t('orange'),
+          background: createThemeSwatchBackground(primaryColors.orange),
+          label: t('orange'),
+          value: 'orange',
         },
         {
-          color: primaryColors.gold,
-          title: t('gold'),
+          background: createThemeSwatchBackground(primaryColors.gold),
+          label: t('gold'),
+          value: 'gold',
         },
         {
-          color: primaryColors.yellow,
-          title: t('yellow'),
+          background: createThemeSwatchBackground(primaryColors.yellow),
+          label: t('yellow'),
+          value: 'yellow',
         },
         {
-          color: primaryColors.lime,
-          title: t('lime'),
+          background: createThemeSwatchBackground(primaryColors.lime),
+          label: t('lime'),
+          value: 'lime',
         },
         {
-          color: primaryColors.green,
-          title: t('green'),
+          background: createThemeSwatchBackground(primaryColors.green),
+          label: t('green'),
+          value: 'green',
         },
         {
-          color: primaryColors.cyan,
-          title: t('cyan'),
+          background: createThemeSwatchBackground(primaryColors.cyan),
+          label: t('cyan'),
+          value: 'cyan',
         },
         {
-          color: primaryColors.blue,
-          title: t('blue'),
+          background: createThemeSwatchBackground(primaryColors.blue),
+          label: t('blue'),
+          value: 'blue',
         },
         {
-          color: primaryColors.geekblue,
-          title: t('geekblue'),
+          background: createThemeSwatchBackground(primaryColors.geekblue),
+          label: t('geekblue'),
+          value: 'geekblue',
         },
         {
-          color: primaryColors.purple,
-          title: t('purple'),
+          background: createThemeSwatchBackground(primaryColors.purple),
+          label: t('purple'),
+          value: 'purple',
         },
         {
-          color: primaryColors.magenta,
-          title: t('magenta'),
+          background: createThemeSwatchBackground(primaryColors.magenta),
+          label: t('magenta'),
+          value: 'magenta',
         },
         {
-          color: primaryColors.volcano,
-          title: t('volcano'),
+          background: createThemeSwatchBackground(primaryColors.volcano),
+          label: t('volcano'),
+          value: 'volcano',
         },
       ]}
-      onChange={handleSelect}
+      onChange={(next) => onChange?.(next as PrimaryColors | '')}
     />
   );
 });

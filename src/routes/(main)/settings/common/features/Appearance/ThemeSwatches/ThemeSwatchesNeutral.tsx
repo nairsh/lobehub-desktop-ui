@@ -1,51 +1,55 @@
-import { type NeutralColors } from '@lobehub/ui';
-import { ColorSwatches, findCustomThemeName, neutralColors } from '@lobehub/ui';
+import type { NeutralColors } from '@lobehub/ui';
+import { neutralColors } from '@lobehub/ui';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { createThemeSwatchBackground, defaultThemeSwatchBackground } from '@/utils/customTheme';
+
+import ThemeSwatchesBase from './ThemeSwatchesBase';
+
 interface IProps {
-  onChange?: (v: NeutralColors) => void;
+  onChange?: (v: NeutralColors | '') => void;
   value?: NeutralColors;
 }
 
 const ThemeSwatchesNeutral = memo<IProps>(({ value, onChange }) => {
   const { t } = useTranslation('color');
 
-  const handleSelect = (v: any) => {
-    const name = findCustomThemeName('neutral', v) as NeutralColors;
-    onChange?.(name || '');
-  };
-
   return (
-    <ColorSwatches
-      value={value ? neutralColors[value] : undefined}
-      colors={[
+    <ThemeSwatchesBase
+      value={value}
+      options={[
         {
-          color: 'rgba(0, 0, 0, 0)',
-          title: t('default'),
+          background: defaultThemeSwatchBackground,
+          label: t('default'),
         },
         {
-          color: neutralColors.mauve,
-          title: t('mauve'),
+          background: createThemeSwatchBackground(neutralColors.mauve),
+          label: t('mauve'),
+          value: 'mauve',
         },
         {
-          color: neutralColors.olive,
-          title: t('olive'),
+          background: createThemeSwatchBackground(neutralColors.olive),
+          label: t('olive'),
+          value: 'olive',
         },
         {
-          color: neutralColors.sage,
-          title: t('sage'),
+          background: createThemeSwatchBackground(neutralColors.sage),
+          label: t('sage'),
+          value: 'sage',
         },
         {
-          color: neutralColors.sand,
-          title: t('sand'),
+          background: createThemeSwatchBackground(neutralColors.sand),
+          label: t('sand'),
+          value: 'sand',
         },
         {
-          color: neutralColors.slate,
-          title: t('slate'),
+          background: createThemeSwatchBackground(neutralColors.slate),
+          label: t('slate'),
+          value: 'slate',
         },
       ]}
-      onChange={handleSelect}
+      onChange={(next) => onChange?.(next as NeutralColors | '')}
     />
   );
 });

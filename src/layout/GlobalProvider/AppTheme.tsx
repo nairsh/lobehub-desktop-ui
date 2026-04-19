@@ -3,7 +3,7 @@
 import 'antd/dist/reset.css';
 
 import { TITLE_BAR_HEIGHT } from '@lobechat/desktop-bridge';
-import { type NeutralColors, type PrimaryColors } from '@lobehub/ui';
+import type { NeutralColors, PrimaryColors } from '@lobehub/ui';
 import { ConfigProvider, FontLoader, ThemeProvider } from '@lobehub/ui';
 import { message as antdMessage } from 'antd';
 import { AppConfigContext } from 'antd/es/app/context';
@@ -25,6 +25,7 @@ import { useUserStore } from '@/store/user';
 import { userGeneralSettingsSelectors } from '@/store/user/selectors';
 import { GlobalStyle } from '@/styles';
 import { setCookie } from '@/utils/client/cookie';
+import { createEnhancedThemeTokens } from '@/utils/customTheme';
 
 const styles = createStaticStyles(({ css, cssVar }) => ({
   app: css`
@@ -148,6 +149,15 @@ const AppTheme = memo<AppThemeProps>(
     }, [messageTop]);
 
     const currentAppearence = isDark ? 'dark' : 'light';
+    const enhancedThemeTokens = useMemo(
+      () =>
+        createEnhancedThemeTokens({
+          isDarkMode: isDark,
+          neutralColor: neutralColor ?? defaultNeutralColor,
+          primaryColor: primaryColor ?? defaultPrimaryColor,
+        }),
+      [defaultNeutralColor, defaultPrimaryColor, isDark, neutralColor, primaryColor],
+    );
 
     return (
       <AppConfigContext value={appConfig}>
@@ -163,6 +173,7 @@ const AppTheme = memo<AppThemeProps>(
           theme={{
             cssVar: { key: 'lobe-vars' },
             token: {
+              ...enhancedThemeTokens,
               fontFamily: customFontFamily
                 ? `${customFontFamily},${antdTheme.fontFamily}`
                 : undefined,

@@ -5,13 +5,11 @@ import { createStaticStyles, cssVar } from 'antd-style';
 import { type ReactNode } from 'react';
 import { memo, Suspense, useMemo, useRef } from 'react';
 
-import { isDesktop } from '@/const/version';
 import { TOGGLE_BUTTON_ID } from '@/features/NavPanel/ToggleLeftPanelButton';
 import Footer from '@/routes/(main)/home/_layout/Footer';
 import { USER_DROPDOWN_ICON_ID } from '@/routes/(main)/home/_layout/Header/components/User';
 import { useGlobalStore } from '@/store/global';
 import { systemStatusSelectors } from '@/store/global/selectors';
-import { isMacOS } from '@/utils/platform';
 
 import { useNavPanelSizeChangeHandler } from '../hooks/useNavPanel';
 import { BACK_BUTTON_ID } from './BackButton';
@@ -53,9 +51,19 @@ const draggableStyles = createStaticStyles(({ css, cssVar }) => ({
   `,
   panel: css`
     user-select: none;
+
     height: 100%;
+    border-inline-end: 1px solid ${cssVar.colorPrimaryBorder};
+
     color: ${cssVar.colorTextSecondary};
-    background: ${isDesktop && isMacOS() ? 'transparent' : cssVar.colorBgLayout};
+
+    background: linear-gradient(
+      180deg,
+      ${cssVar.colorPrimaryBg} 0%,
+      ${cssVar.colorFillQuaternary} 18%,
+      ${cssVar.colorBgLayout} 42%,
+      ${cssVar.colorBgLayout} 100%
+    );
 
     * {
       user-select: none;
@@ -126,7 +134,13 @@ export const NavPanelDraggable = memo<NavPanelDraggableProps>(({ activeContent }
   );
   const styles = useMemo(
     () => ({
-      background: isDesktop && isMacOS() ? 'transparent' : cssVar.colorBgLayout,
+      background: `linear-gradient(
+        180deg,
+        ${cssVar.colorPrimaryBg} 0%,
+        ${cssVar.colorFillQuaternary} 18%,
+        ${cssVar.colorBgLayout} 42%,
+        ${cssVar.colorBgLayout} 100%
+      )`,
       zIndex: 11,
     }),
     [],

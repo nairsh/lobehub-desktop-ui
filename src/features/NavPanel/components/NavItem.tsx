@@ -12,6 +12,15 @@ import { isModifierClick } from '@/utils/navigation';
 const ACTION_CLASS_NAME = 'nav-item-actions';
 
 const styles = createStaticStyles(({ css }) => ({
+  active: css`
+    border: 1px solid ${cssVar.colorPrimaryBorder} !important;
+    background: linear-gradient(
+      135deg,
+      ${cssVar.colorPrimaryBgHover} 0%,
+      ${cssVar.colorPrimaryBg} 100%
+    ) !important;
+    box-shadow: inset 0 1px 0 ${cssVar.colorBgContainer};
+  `,
   container: css`
     user-select: none;
     overflow: hidden;
@@ -77,8 +86,8 @@ const NavItem = memo<NavItemProps>(
     slots,
     ...rest
   }) => {
-    const iconColor = active ? cssVar.colorText : cssVar.colorTextDescription;
-    const textColor = active ? cssVar.colorText : cssVar.colorTextSecondary;
+    const iconColor = active ? cssVar.colorPrimary : cssVar.colorTextDescription;
+    const textColor = active ? cssVar.colorPrimary : cssVar.colorTextSecondary;
     const variant = active ? 'filled' : 'borderless';
 
     const { titlePrefix, iconPostfix } = slots || {};
@@ -95,7 +104,7 @@ const NavItem = memo<NavItemProps>(
       <Block
         horizontal
         align={'center'}
-        className={cx(styles.container, className)}
+        className={cx(styles.container, active && styles.active, className)}
         clickable={!disabled}
         gap={8}
         height={30}
