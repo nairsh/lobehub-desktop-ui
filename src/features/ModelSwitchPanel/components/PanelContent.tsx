@@ -23,6 +23,7 @@ interface PanelContentProps {
   onOpenChange?: (open: boolean) => void;
   pricingMode?: PricingMode;
   provider?: string;
+  showReasoningLabel?: boolean;
 }
 
 export const PanelContent: FC<PanelContentProps> = ({
@@ -33,6 +34,7 @@ export const PanelContent: FC<PanelContentProps> = ({
   onOpenChange,
   pricingMode,
   provider: providerProp,
+  showReasoningLabel = false,
 }) => {
   const chatEnabledList = useEnabledChatModels();
   const enabledList = enabledListProp ?? chatEnabledList;
@@ -58,6 +60,7 @@ export const PanelContent: FC<PanelContentProps> = ({
         pricingMode={pricingMode}
         provider={providerProp}
         searchKeyword={searchKeyword}
+        showReasoningLabel={showReasoningLabel}
         onModelChange={onModelChangeProp}
         onOpenChange={onOpenChange}
       />

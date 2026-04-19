@@ -97,6 +97,7 @@ const ModelSwitch = memo(() => {
       gap={4}
     >
       <ModelSwitchPanel
+        showReasoningLabel
         model={model}
         placement={dropdownPlacement}
         provider={provider}

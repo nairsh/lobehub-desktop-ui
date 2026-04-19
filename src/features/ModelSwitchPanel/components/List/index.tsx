@@ -28,6 +28,7 @@ interface ListProps {
   pricingMode?: PricingMode;
   provider?: string;
   searchKeyword?: string;
+  showReasoningLabel?: boolean;
 }
 
 export const List: FC<ListProps> = ({
@@ -40,6 +41,7 @@ export const List: FC<ListProps> = ({
   pricingMode,
   provider: providerProp,
   searchKeyword = '',
+  showReasoningLabel = false,
 }) => {
   const { t: tCommon } = useTranslation('common');
   const newLabel = tCommon('new');
@@ -138,6 +140,7 @@ export const List: FC<ListProps> = ({
               key={key}
               newLabel={newLabel}
               proLabel={proLabel}
+              showReasoningLabel={showReasoningLabel}
               subscribeScroll={subscribeScroll}
               onClose={handleClose}
               onModelChange={handleModelChange}

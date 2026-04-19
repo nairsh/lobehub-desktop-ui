@@ -18,7 +18,7 @@ import { Check } from 'lucide-react';
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { ProviderItemRender } from '@/components/ModelSelect';
+import { ModelItemRender, ProviderItemRender } from '@/components/ModelSelect';
 
 import { styles } from '../../styles';
 import { type ModelWithProviders } from '../../types';
@@ -37,6 +37,7 @@ interface MultipleProvidersModelItemProps {
   onRestrictedModelClick?: () => void;
   proLabel?: string;
   showInfoTag?: boolean;
+  showReasoningLabel?: boolean;
 }
 
 export const MultipleProvidersModelItem = memo<MultipleProvidersModelItemProps>(
@@ -49,6 +50,7 @@ export const MultipleProvidersModelItem = memo<MultipleProvidersModelItemProps>(
     onClose,
     onRestrictedModelClick,
     proLabel,
+    showReasoningLabel,
     showInfoTag,
   }) => {
     const { t } = useTranslation('components');
@@ -84,13 +86,22 @@ export const MultipleProvidersModelItem = memo<MultipleProvidersModelItemProps>(
             onClose();
           }}
         >
-          <ModelItemWithReasoning
-            {...data.model}
-            newBadgeLabel={newLabel}
-            proBadgeLabel={allRestricted ? proLabel : undefined}
-            provider={(activeProvider ?? data.providers[0]).id}
-            showInfoTag={showInfoTag}
-          />
+          {showReasoningLabel ? (
+            <ModelItemWithReasoning
+              {...data.model}
+              newBadgeLabel={newLabel}
+              proBadgeLabel={allRestricted ? proLabel : undefined}
+              provider={(activeProvider ?? data.providers[0]).id}
+              showInfoTag={showInfoTag}
+            />
+          ) : (
+            <ModelItemRender
+              {...data.model}
+              newBadgeLabel={newLabel}
+              proBadgeLabel={allRestricted ? proLabel : undefined}
+              showInfoTag={showInfoTag}
+            />
+          )}
         </DropdownMenuSubmenuTrigger>
         <DropdownMenuPortal>
           <DropdownMenuPositioner anchor={null} placement="right" sideOffset={12}>

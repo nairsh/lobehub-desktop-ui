@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import urlJoin from 'url-join';
 
-import { ProviderItemRender } from '@/components/ModelSelect';
+import { ModelItemRender, ProviderItemRender } from '@/components/ModelSelect';
 import { useUserStore } from '@/store/user';
 import { userGeneralSettingsSelectors } from '@/store/user/selectors';
 
@@ -38,6 +38,7 @@ interface ListItemRendererProps {
   onModelChange: (modelId: string, providerId: string) => void;
   onRestrictedModelClick?: () => void;
   proLabel?: string;
+  showReasoningLabel?: boolean;
   subscribeScroll?: (cb: () => void) => () => void;
 }
 
@@ -51,6 +52,7 @@ export const ListItemRenderer = memo<ListItemRendererProps>(
     onClose,
     onRestrictedModelClick,
     proLabel,
+    showReasoningLabel,
     subscribeScroll,
   }) => {
     const { t } = useTranslation('components');
@@ -153,12 +155,16 @@ export const ListItemRenderer = memo<ListItemRendererProps>(
                     onModelChange(item.model.id, item.provider.id);
                   }}
                 >
-                  <ModelItemWithReasoning
-                    {...item.model}
-                    showInfoTag
-                    newBadgeLabel={newLabel}
-                    provider={item.provider.id}
-                  />
+                  {showReasoningLabel ? (
+                    <ModelItemWithReasoning
+                      {...item.model}
+                      showInfoTag
+                      newBadgeLabel={newLabel}
+                      provider={item.provider.id}
+                    />
+                  ) : (
+                    <ModelItemRender {...item.model} showInfoTag newBadgeLabel={newLabel} />
+                  )}
                 </DropdownMenuSubmenuTrigger>
                 <DropdownMenuPortal>
                   <DropdownMenuPositioner anchor={null} placement="right" sideOffset={12}>
@@ -190,12 +196,20 @@ export const ListItemRenderer = memo<ListItemRendererProps>(
                   onModelChange(item.model.id, item.provider.id);
                 }}
               >
-                <ModelItemWithReasoning
-                  {...item.model}
-                  newBadgeLabel={newLabel}
-                  proBadgeLabel={restricted ? proLabel : undefined}
-                  provider={item.provider.id}
-                />
+                {showReasoningLabel ? (
+                  <ModelItemWithReasoning
+                    {...item.model}
+                    newBadgeLabel={newLabel}
+                    proBadgeLabel={restricted ? proLabel : undefined}
+                    provider={item.provider.id}
+                  />
+                ) : (
+                  <ModelItemRender
+                    {...item.model}
+                    newBadgeLabel={newLabel}
+                    proBadgeLabel={restricted ? proLabel : undefined}
+                  />
+                )}
               </DropdownMenuSubmenuTrigger>
               <DropdownMenuPortal>
                 <DropdownMenuPositioner anchor={null} placement="right" sideOffset={12}>
@@ -238,6 +252,7 @@ export const ListItemRenderer = memo<ListItemRendererProps>(
                   newLabel={newLabel}
                   proBadgeLabel={restricted ? proLabel : undefined}
                   showInfoTag={isDevMode}
+                  showReasoningLabel={showReasoningLabel}
                 />
               </DropdownMenuSubmenuTrigger>
               <DropdownMenuPortal>
@@ -262,6 +277,7 @@ export const ListItemRenderer = memo<ListItemRendererProps>(
               newLabel={newLabel}
               proLabel={proLabel}
               showInfoTag={isDevMode}
+              showReasoningLabel={showReasoningLabel}
               onClose={onClose}
               onModelChange={onModelChange}
               onRestrictedModelClick={onRestrictedModelClick}
