@@ -19,6 +19,7 @@ import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { ModelItemRender, ProviderItemRender } from '@/components/ModelSelect';
+import type { LobeAgentChatConfig } from '@/types/agent';
 
 import { styles } from '../../styles';
 import { type ModelWithProviders } from '../../types';
@@ -28,6 +29,7 @@ import ModelItemWithReasoning from './ModelItemWithReasoning';
 
 interface MultipleProvidersModelItemProps {
   activeKey: string;
+  chatConfig?: Partial<LobeAgentChatConfig>;
   data: ModelWithProviders;
   defaultProviderId?: string;
   isModelRestricted?: (modelId: string, providerId: string) => boolean;
@@ -43,6 +45,7 @@ interface MultipleProvidersModelItemProps {
 export const MultipleProvidersModelItem = memo<MultipleProvidersModelItemProps>(
   ({
     activeKey,
+    chatConfig,
     data,
     isModelRestricted,
     newLabel,
@@ -89,6 +92,7 @@ export const MultipleProvidersModelItem = memo<MultipleProvidersModelItemProps>(
           {showReasoningLabel ? (
             <ModelItemWithReasoning
               {...data.model}
+              chatConfig={chatConfig}
               newBadgeLabel={newLabel}
               proBadgeLabel={allRestricted ? proLabel : undefined}
               provider={(activeProvider ?? data.providers[0]).id}

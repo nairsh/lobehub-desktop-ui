@@ -1,11 +1,13 @@
 import { memo } from 'react';
 
 import { ModelItemRender } from '@/components/ModelSelect';
+import type { LobeAgentChatConfig } from '@/types/agent';
 
 import { type ModelWithProviders } from '../../types';
 import ModelItemWithReasoning from './ModelItemWithReasoning';
 
 interface SingleProviderModelItemProps {
+  chatConfig?: Partial<LobeAgentChatConfig>;
   data: ModelWithProviders;
   newLabel: string;
   proBadgeLabel?: string;
@@ -14,7 +16,7 @@ interface SingleProviderModelItemProps {
 }
 
 export const SingleProviderModelItem = memo<SingleProviderModelItemProps>(
-  ({ data, newLabel, proBadgeLabel, showInfoTag, showReasoningLabel }) => {
+  ({ chatConfig, data, newLabel, proBadgeLabel, showInfoTag, showReasoningLabel }) => {
     if (!showReasoningLabel) {
       return (
         <ModelItemRender
@@ -29,6 +31,7 @@ export const SingleProviderModelItem = memo<SingleProviderModelItemProps>(
     return (
       <ModelItemWithReasoning
         {...data.model}
+        chatConfig={chatConfig}
         newBadgeLabel={newLabel}
         proBadgeLabel={proBadgeLabel}
         provider={data.providers[0].id}

@@ -3,8 +3,10 @@ import { memo } from 'react';
 
 import { ModelItemRender } from '@/components/ModelSelect';
 import { useModelReasoning } from '@/features/ModelSwitchPanel/hooks/useModelReasoning';
+import type { LobeAgentChatConfig } from '@/types/agent';
 
 interface ModelItemWithReasoningProps extends ChatModelCard {
+  chatConfig?: Partial<LobeAgentChatConfig>;
   newBadgeLabel?: string;
   proBadgeLabel?: string;
   provider: string;
@@ -12,8 +14,8 @@ interface ModelItemWithReasoningProps extends ChatModelCard {
 }
 
 const ModelItemWithReasoning = memo<ModelItemWithReasoningProps>(
-  ({ provider, showInfoTag, newBadgeLabel, proBadgeLabel, ...model }) => {
-    const reasoning = useModelReasoning(model.id, provider);
+  ({ chatConfig, provider, showInfoTag, newBadgeLabel, proBadgeLabel, ...model }) => {
+    const reasoning = useModelReasoning(model.id, provider, chatConfig);
 
     return (
       <ModelItemRender

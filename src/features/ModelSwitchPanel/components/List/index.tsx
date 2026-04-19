@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useBusinessModelListGuard } from '@/business/client/hooks/useBusinessModelListGuard';
 import { useEnabledChatModels } from '@/hooks/useEnabledChatModels';
+import type { LobeAgentChatConfig } from '@/types/agent';
 import type { EnabledProviderWithModels } from '@/types/aiProvider';
 
 import { ITEM_HEIGHT, MAX_PANEL_HEIGHT, TOOLBAR_HEIGHT } from '../../const';
@@ -19,6 +20,7 @@ import GenerationListItemRenderer from './GenerationListItemRenderer';
 import { ListItemRenderer } from './ListItemRenderer';
 
 interface ListProps {
+  chatConfig?: Partial<LobeAgentChatConfig>;
   enabledList?: EnabledProviderWithModels[];
   groupMode: GroupMode;
   model?: string;
@@ -33,6 +35,7 @@ interface ListProps {
 
 export const List: FC<ListProps> = ({
   ModelItemComponent,
+  chatConfig,
   enabledList: enabledListProp,
   groupMode,
   model: modelProp,
@@ -135,6 +138,7 @@ export const List: FC<ListProps> = ({
           ) : (
             <ListItemRenderer
               activeKey={activeKey}
+              chatConfig={chatConfig}
               isModelRestricted={isModelRestricted}
               item={item}
               key={key}

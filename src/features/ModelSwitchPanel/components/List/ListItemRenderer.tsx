@@ -20,6 +20,7 @@ import urlJoin from 'url-join';
 import { ModelItemRender, ProviderItemRender } from '@/components/ModelSelect';
 import { useUserStore } from '@/store/user';
 import { userGeneralSettingsSelectors } from '@/store/user/selectors';
+import type { LobeAgentChatConfig } from '@/types/agent';
 
 import { styles } from '../../styles';
 import { type ListItem } from '../../types';
@@ -31,6 +32,7 @@ import { SingleProviderModelItem } from './SingleProviderModelItem';
 
 interface ListItemRendererProps {
   activeKey: string;
+  chatConfig?: Partial<LobeAgentChatConfig>;
   isModelRestricted?: (modelId: string, providerId: string) => boolean;
   item: ListItem;
   newLabel: string;
@@ -45,6 +47,7 @@ interface ListItemRendererProps {
 export const ListItemRenderer = memo<ListItemRendererProps>(
   ({
     activeKey,
+    chatConfig,
     isModelRestricted,
     item,
     newLabel,
@@ -159,6 +162,7 @@ export const ListItemRenderer = memo<ListItemRendererProps>(
                     <ModelItemWithReasoning
                       {...item.model}
                       showInfoTag
+                      chatConfig={chatConfig}
                       newBadgeLabel={newLabel}
                       provider={item.provider.id}
                     />
@@ -199,6 +203,7 @@ export const ListItemRenderer = memo<ListItemRendererProps>(
                 {showReasoningLabel ? (
                   <ModelItemWithReasoning
                     {...item.model}
+                    chatConfig={chatConfig}
                     newBadgeLabel={newLabel}
                     proBadgeLabel={restricted ? proLabel : undefined}
                     provider={item.provider.id}
@@ -248,6 +253,7 @@ export const ListItemRenderer = memo<ListItemRendererProps>(
                 }}
               >
                 <SingleProviderModelItem
+                  chatConfig={chatConfig}
                   data={item.data}
                   newLabel={newLabel}
                   proBadgeLabel={restricted ? proLabel : undefined}
@@ -272,6 +278,7 @@ export const ListItemRenderer = memo<ListItemRendererProps>(
           <Flexbox key={item.data.displayName} style={{ marginBlock: 1, marginInline: 4 }}>
             <MultipleProvidersModelItem
               activeKey={activeKey}
+              chatConfig={chatConfig}
               data={item.data}
               isModelRestricted={isModelRestricted}
               newLabel={newLabel}

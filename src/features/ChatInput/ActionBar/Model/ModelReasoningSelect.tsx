@@ -4,8 +4,11 @@ import { Select } from 'antd';
 import { createStaticStyles } from 'antd-style';
 import { memo, useMemo } from 'react';
 
+import { useAgentId } from '@/features/ChatInput/hooks/useAgentId';
 import { useUpdateAgentConfig } from '@/features/ChatInput/hooks/useUpdateAgentConfig';
 import { useModelReasoning } from '@/features/ModelSwitchPanel/hooks/useModelReasoning';
+import { useAgentStore } from '@/store/agent';
+import { chatConfigByIdSelectors } from '@/store/agent/selectors';
 import { formatReasoningLabel } from '@/utils/modelReasoning';
 
 const styles = createStaticStyles(({ css, cssVar }) => ({
@@ -41,8 +44,10 @@ interface ModelReasoningSelectProps {
 }
 
 const ModelReasoningSelect = memo<ModelReasoningSelectProps>(({ model, provider }) => {
+  const agentId = useAgentId();
+  const chatConfig = useAgentStore((s) => chatConfigByIdSelectors.getChatConfigById(agentId)(s));
   const { updateAgentChatConfig } = useUpdateAgentConfig();
-  const reasoning = useModelReasoning(model, provider);
+  const reasoning = useModelReasoning(model, provider, chatConfig);
 
   const options = useMemo(
     () =>

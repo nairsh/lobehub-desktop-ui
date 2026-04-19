@@ -2,6 +2,7 @@ import { type DropdownMenuPlacement } from '@lobehub/ui';
 import { type AiModelForSelect } from 'model-bank';
 import { type ComponentType } from 'react';
 
+import { type LobeAgentChatConfig } from '@/types/agent';
 import { type EnabledProviderWithModels } from '@/types/aiProvider';
 
 import { type PricingMode } from './components/ModelDetailPanel';
@@ -48,6 +49,7 @@ export type ListItem =
 export type DropdownPlacement = DropdownMenuPlacement;
 
 export interface ModelSwitchPanelProps {
+  chatConfig?: Partial<LobeAgentChatConfig>;
   children?: React.ReactNode;
   /**
    * When set (e.g. image/video generation), uses this list instead of enabled chat models.

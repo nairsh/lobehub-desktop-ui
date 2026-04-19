@@ -24,6 +24,16 @@ const panelBackground = `linear-gradient(
   ${cssVar.colorBgLayout} 100%
 )`;
 
+const macOSPanelBackground = `linear-gradient(
+  180deg,
+  color-mix(in srgb, ${cssVar.colorPrimaryBg} 72%, transparent) 0%,
+  color-mix(in srgb, ${cssVar.colorFillQuaternary} 64%, transparent) 18%,
+  color-mix(in srgb, ${cssVar.colorBgLayout} 52%, transparent) 42%,
+  color-mix(in srgb, ${cssVar.colorBgLayout} 58%, transparent) 100%
+)`;
+
+const panelSurfaceBackground = isDesktop && isMacOS() ? macOSPanelBackground : panelBackground;
+
 const draggableStyles = createStaticStyles(({ css, cssVar }) => ({
   content: css`
     position: relative;
@@ -62,25 +72,12 @@ const draggableStyles = createStaticStyles(({ css, cssVar }) => ({
   panel: css`
     user-select: none;
 
-    position: relative;
-
     height: 100%;
     border-inline-end: 1px solid ${cssVar.colorPrimaryBorder};
 
     color: ${cssVar.colorTextSecondary};
 
-    background: ${isDesktop && isMacOS() ? 'transparent' : panelBackground};
-
-    &::before {
-      pointer-events: none;
-      content: '';
-
-      position: absolute;
-      inset: 0;
-
-      opacity: ${isDesktop && isMacOS() ? 1 : 0};
-      background: ${panelBackground};
-    }
+    background: ${panelSurfaceBackground};
 
     * {
       user-select: none;
@@ -151,7 +148,7 @@ export const NavPanelDraggable = memo<NavPanelDraggableProps>(({ activeContent }
   );
   const styles = useMemo(
     () => ({
-      background: isDesktop && isMacOS() ? 'transparent' : panelBackground,
+      background: panelSurfaceBackground,
       zIndex: 11,
     }),
     [],

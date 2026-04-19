@@ -16,6 +16,7 @@ import { type ModelSwitchPanelProps } from './types';
 const ModelSwitchPanel = memo<ModelSwitchPanelProps>(
   ({
     ModelItemComponent,
+    chatConfig,
     children,
     enabledList,
     model: modelProp,
@@ -50,6 +51,7 @@ const ModelSwitchPanel = memo<ModelSwitchPanelProps>(
               <DropdownMenuPopup className={styles.container} onKeyDown={stopPropagation}>
                 <PanelContent
                   ModelItemComponent={ModelItemComponent}
+                  chatConfig={chatConfig}
                   enabledList={enabledList}
                   model={modelProp}
                   pricingMode={pricingMode}

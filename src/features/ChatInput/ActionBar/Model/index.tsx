@@ -11,7 +11,7 @@ import ModelSwitchPanel from '@/features/ModelSwitchPanel';
 import ModelDetailPanel from '@/features/ModelSwitchPanel/components/ModelDetailPanel';
 import { useModelReasoning } from '@/features/ModelSwitchPanel/hooks/useModelReasoning';
 import { useAgentStore } from '@/store/agent';
-import { agentByIdSelectors } from '@/store/agent/selectors';
+import { agentByIdSelectors, chatConfigByIdSelectors } from '@/store/agent/selectors';
 import { aiModelSelectors, useAiInfraStore } from '@/store/aiInfra';
 import { useUserStore } from '@/store/user';
 import { userGeneralSettingsSelectors } from '@/store/user/selectors';
@@ -64,7 +64,8 @@ const ModelSwitch = memo(() => {
   const isDevMode = useUserStore((s) => userGeneralSettingsSelectors.config(s).isDevMode);
 
   const agentId = useAgentId();
-  const [model, provider, updateAgentConfigById] = useAgentStore((s) => [
+  const [chatConfig, model, provider, updateAgentConfigById] = useAgentStore((s) => [
+    chatConfigByIdSelectors.getChatConfigById(agentId)(s),
     agentByIdSelectors.getAgentModelById(agentId)(s),
     agentByIdSelectors.getAgentModelProviderById(agentId)(s),
     s.updateAgentConfigById,
@@ -75,7 +76,7 @@ const ModelSwitch = memo(() => {
   );
 
   const modelCard = useAiInfraStore(aiModelSelectors.getEnabledModelById(model, provider));
-  const reasoning = useModelReasoning(model, provider);
+  const reasoning = useModelReasoning(model, provider, chatConfig);
   const modelDisplayName =
     modelCard?.displayName ?? (model.includes('/') ? model.split('/').at(-1)! : model);
 
@@ -98,6 +99,7 @@ const ModelSwitch = memo(() => {
     >
       <ModelSwitchPanel
         showReasoningLabel
+        chatConfig={chatConfig}
         model={model}
         placement={dropdownPlacement}
         provider={provider}

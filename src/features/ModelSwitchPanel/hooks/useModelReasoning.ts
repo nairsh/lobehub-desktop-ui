@@ -2,15 +2,15 @@
 
 import { useMemo } from 'react';
 
-import { useAgentId } from '@/features/ChatInput/hooks/useAgentId';
-import { useAgentStore } from '@/store/agent';
-import { chatConfigByIdSelectors } from '@/store/agent/selectors';
 import { aiModelSelectors, useAiInfraStore } from '@/store/aiInfra';
+import type { LobeAgentChatConfig } from '@/types/agent';
 import { resolveReasoningOption } from '@/utils/modelReasoning';
 
-export const useModelReasoning = (model: string, provider: string) => {
-  const agentId = useAgentId();
-  const chatConfig = useAgentStore((s) => chatConfigByIdSelectors.getChatConfigById(agentId)(s));
+export const useModelReasoning = (
+  model: string,
+  provider: string,
+  chatConfig?: Partial<LobeAgentChatConfig>,
+) => {
   const modelExtendParams = useAiInfraStore(aiModelSelectors.modelExtendParams(model, provider));
 
   return useMemo(

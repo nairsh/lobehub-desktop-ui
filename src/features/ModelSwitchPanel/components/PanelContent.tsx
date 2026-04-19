@@ -6,6 +6,7 @@ import { Rnd } from 'react-rnd';
 import { useEnabledChatModels } from '@/hooks/useEnabledChatModels';
 import { useUserStore } from '@/store/user';
 import { userGeneralSettingsSelectors } from '@/store/user/slices/settings/selectors/general';
+import type { LobeAgentChatConfig } from '@/types/agent';
 import type { EnabledProviderWithModels } from '@/types/aiProvider';
 
 import { DEFAULT_WIDTH, ENABLE_RESIZING, MAX_PANEL_HEIGHT, MAX_WIDTH, MIN_WIDTH } from '../const';
@@ -16,6 +17,7 @@ import type { PricingMode } from './ModelDetailPanel';
 import { Toolbar } from './Toolbar';
 
 interface PanelContentProps {
+  chatConfig?: Partial<LobeAgentChatConfig>;
   enabledList?: EnabledProviderWithModels[];
   model?: string;
   ModelItemComponent?: ComponentType<any>;
@@ -28,6 +30,7 @@ interface PanelContentProps {
 
 export const PanelContent: FC<PanelContentProps> = ({
   ModelItemComponent,
+  chatConfig,
   enabledList: enabledListProp,
   model: modelProp,
   onModelChange: onModelChangeProp,
@@ -54,6 +57,7 @@ export const PanelContent: FC<PanelContentProps> = ({
       />
       <List
         ModelItemComponent={ModelItemComponent}
+        chatConfig={chatConfig}
         enabledList={enabledList}
         groupMode={isDevMode ? groupMode : 'byModel'}
         model={modelProp}
