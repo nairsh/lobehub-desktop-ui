@@ -17,7 +17,8 @@ export const createThemeSwatchBackground = (color: string) =>
 // Neutral colors are inherently low-saturation (~2-4% HSL saturation).
 // Boost saturation so each hue family is clearly visible in small swatches.
 export const createNeutralSwatchBackground = (color: string) => {
-  const vivid = chroma(color).set('hsl.s', 0.45).hex();
+  // Boost saturation to 20% so hue families are distinguishable (actual saturation is ~2-4%)
+  const vivid = chroma(color).set('hsl.s', 0.2).hex();
   return createThemeSwatchBackground(vivid);
 };
 
