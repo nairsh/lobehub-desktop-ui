@@ -1,7 +1,7 @@
 import { ActionIcon, Block, Button, Flexbox, Text } from '@lobehub/ui';
 import { Modal } from '@lobehub/ui/base-ui';
 import { cssVar } from 'antd-style';
-import { Lightbulb, PencilLineIcon, RefreshCw, X } from 'lucide-react';
+import { PencilLineIcon, RefreshCw, X } from 'lucide-react';
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -60,10 +60,7 @@ const Examples = memo<ExamplesProps>(({ suggestMode, onExampleClick }) => {
   return (
     <Flexbox gap={16}>
       <Flexbox horizontal align={'center'} justify={'space-between'}>
-        <Flexbox horizontal align={'center'} gap={8}>
-          <Lightbulb color={cssVar.colorTextDescription} size={18} />
-          <Text color={cssVar.colorTextSecondary}>{tCommon('home.suggestQuestions')}</Text>
-        </Flexbox>
+        <Text color={cssVar.colorTextSecondary}>{tCommon('home.suggestQuestions')}</Text>
         <Flexbox
           horizontal
           align={'center'}
@@ -208,10 +205,10 @@ export const CreateAgentModal = memo<CreateAgentModalProps>(
             >
               <DesktopChatInput
                 inputContainerProps={inputContainerProps}
+                showRuntimeConfig={false}
                 placeholder={
                   isAgent ? t('createModal.placeholder') : t('createModal.groupPlaceholder')
                 }
-                showRuntimeConfig={false}
               />
             </ChatInputProvider>
           )}

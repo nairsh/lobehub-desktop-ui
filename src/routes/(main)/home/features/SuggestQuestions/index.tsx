@@ -2,7 +2,7 @@
 
 import { ActionIcon, Flexbox, Text } from '@lobehub/ui';
 import { cssVar } from 'antd-style';
-import { Lightbulb, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { memo, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -28,7 +28,6 @@ const SuggestQuestions = memo<SuggestQuestionsProps>(({ mode }) => {
   return (
     <GroupBlock
       actionAlwaysVisible
-      icon={Lightbulb}
       title={t('home.suggestQuestions')}
       action={
         <Flexbox
