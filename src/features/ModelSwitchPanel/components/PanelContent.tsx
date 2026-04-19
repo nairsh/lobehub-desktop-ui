@@ -9,11 +9,20 @@ import { userGeneralSettingsSelectors } from '@/store/user/slices/settings/selec
 import type { LobeAgentChatConfig } from '@/types/agent';
 import type { EnabledProviderWithModels } from '@/types/aiProvider';
 
-import { DEFAULT_WIDTH, ENABLE_RESIZING, MAX_PANEL_HEIGHT, MAX_WIDTH, MIN_WIDTH } from '../const';
+import {
+  DEFAULT_WIDTH,
+  ENABLE_RESIZING,
+  FOOTER_HEIGHT,
+  MAX_PANEL_HEIGHT,
+  MAX_WIDTH,
+  MIN_WIDTH,
+} from '../const';
+import { useModelReasoning } from '../hooks/useModelReasoning';
 import { usePanelSize } from '../hooks/usePanelSize';
 import { usePanelState } from '../hooks/usePanelState';
 import { List } from './List';
 import type { PricingMode } from './ModelDetailPanel';
+import ReasoningFooter from './ReasoningFooter';
 import { Toolbar } from './Toolbar';
 
 interface PanelContentProps {
@@ -21,6 +30,7 @@ interface PanelContentProps {
   enabledList?: EnabledProviderWithModels[];
   model?: string;
   ModelItemComponent?: ComponentType<any>;
+  onChatConfigChange?: (config: Partial<LobeAgentChatConfig>) => void;
   onModelChange?: (params: { model: string; provider: string }) => Promise<void>;
   onOpenChange?: (open: boolean) => void;
   pricingMode?: PricingMode;
@@ -33,6 +43,7 @@ export const PanelContent: FC<PanelContentProps> = ({
   chatConfig,
   enabledList: enabledListProp,
   model: modelProp,
+  onChatConfigChange,
   onModelChange: onModelChangeProp,
   onOpenChange,
   pricingMode,
@@ -45,6 +56,11 @@ export const PanelContent: FC<PanelContentProps> = ({
   const isDevMode = useUserStore((s) => userGeneralSettingsSelectors.config(s).isDevMode);
   const { groupMode, handleGroupModeChange } = usePanelState();
   const { panelHeight, panelWidth, handlePanelWidthChange } = usePanelSize(enabledList.length);
+
+  // Determine if the reasoning footer will be shown to reserve space in the list
+  const reasoning = useModelReasoning(modelProp ?? '', providerProp ?? '', chatConfig);
+  const showReasoningFooter = !!onChatConfigChange && !!reasoning;
+  const reservedFooterHeight = showReasoningFooter ? FOOTER_HEIGHT : 0;
 
   const content = (
     <>
@@ -59,6 +75,7 @@ export const PanelContent: FC<PanelContentProps> = ({
         ModelItemComponent={ModelItemComponent}
         chatConfig={chatConfig}
         enabledList={enabledList}
+        footerHeight={reservedFooterHeight}
         groupMode={isDevMode ? groupMode : 'byModel'}
         model={modelProp}
         pricingMode={pricingMode}
@@ -68,6 +85,14 @@ export const PanelContent: FC<PanelContentProps> = ({
         onModelChange={onModelChangeProp}
         onOpenChange={onOpenChange}
       />
+      {showReasoningFooter && (
+        <ReasoningFooter
+          chatConfig={chatConfig}
+          model={modelProp}
+          provider={providerProp}
+          onChatConfigChange={onChatConfigChange}
+        />
+      )}
     </>
   );
 

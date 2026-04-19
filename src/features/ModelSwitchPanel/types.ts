@@ -64,6 +64,10 @@ export interface ModelSwitchPanelProps {
    */
   ModelItemComponent?: ComponentType<any>;
   /**
+   * Callback to update chat config (e.g. reasoning level). Enables the reasoning footer in the panel.
+   */
+  onChatConfigChange?: (config: Partial<LobeAgentChatConfig>) => void;
+  /**
    * Callback when model changes. If not provided, uses updateAgentConfig from store.
    */
   onModelChange?: (params: { model: string; provider: string }) => Promise<void>;

@@ -22,6 +22,7 @@ import { ListItemRenderer } from './ListItemRenderer';
 interface ListProps {
   chatConfig?: Partial<LobeAgentChatConfig>;
   enabledList?: EnabledProviderWithModels[];
+  footerHeight?: number;
   groupMode: GroupMode;
   model?: string;
   ModelItemComponent?: ComponentType<any>;
@@ -37,6 +38,7 @@ export const List: FC<ListProps> = ({
   ModelItemComponent,
   chatConfig,
   enabledList: enabledListProp,
+  footerHeight = 0,
   groupMode,
   model: modelProp,
   onModelChange: onModelChangeProp,
@@ -61,7 +63,9 @@ export const List: FC<ListProps> = ({
   const listItems = useBuildListItems(enabledList, groupMode, searchKeyword);
 
   const listMaxHeight =
-    enabledList.length === 0 ? ITEM_HEIGHT['no-provider'] : MAX_PANEL_HEIGHT - TOOLBAR_HEIGHT;
+    enabledList.length === 0
+      ? ITEM_HEIGHT['no-provider']
+      : MAX_PANEL_HEIGHT - TOOLBAR_HEIGHT - footerHeight;
 
   const activeKey = menuKey(provider, model);
 

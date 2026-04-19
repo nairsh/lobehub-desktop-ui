@@ -20,6 +20,7 @@ const ModelSwitchPanel = memo<ModelSwitchPanelProps>(
     children,
     enabledList,
     model: modelProp,
+    onChatConfigChange,
     onModelChange,
     onOpenChange,
     open,
@@ -57,6 +58,7 @@ const ModelSwitchPanel = memo<ModelSwitchPanelProps>(
                   pricingMode={pricingMode}
                   provider={providerProp}
                   showReasoningLabel={showReasoningLabel}
+                  onChatConfigChange={onChatConfigChange}
                   onModelChange={onModelChange}
                   onOpenChange={handleOpenChange}
                 />

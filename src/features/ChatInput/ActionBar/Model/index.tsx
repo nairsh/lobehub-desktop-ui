@@ -15,17 +15,14 @@ import { agentByIdSelectors, chatConfigByIdSelectors } from '@/store/agent/selec
 import { aiModelSelectors, useAiInfraStore } from '@/store/aiInfra';
 import { useUserStore } from '@/store/user';
 import { userGeneralSettingsSelectors } from '@/store/user/selectors';
+import type { LobeAgentChatConfig } from '@/types/agent';
 
 import { useAgentId } from '../../hooks/useAgentId';
+import { useUpdateAgentConfig } from '../../hooks/useUpdateAgentConfig';
 import Action from '../components/Action';
 import { useActionBarContext } from '../context';
-import ModelReasoningSelect from './ModelReasoningSelect';
 
 const styles = createStaticStyles(({ css, cssVar }) => ({
-  container: css`
-    border-radius: 24px;
-    background: ${cssVar.colorFillTertiary};
-  `,
   icon: cx(
     'model-switch',
     css`
@@ -49,12 +46,11 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
       }
     }
   `,
-  modelWithControl: css`
-    border-radius: 24px;
-
-    :hover {
-      background: ${cssVar.colorFillTertiary};
-    }
+  reasoningLabel: css`
+    flex-shrink: 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: ${cssVar.colorTextTertiary};
   `,
 }));
 
@@ -71,6 +67,8 @@ const ModelSwitch = memo(() => {
     s.updateAgentConfigById,
   ]);
 
+  const { updateAgentChatConfig } = useUpdateAgentConfig();
+
   const isModelHasExtendParams = useAiInfraStore(
     aiModelSelectors.isModelHasExtendParams(model, provider),
   );
@@ -81,7 +79,6 @@ const ModelSwitch = memo(() => {
     modelCard?.displayName ?? (model.includes('/') ? model.split('/').at(-1)! : model);
 
   const showExtendParams = isDevMode && isModelHasExtendParams;
-  const showModelControls = showExtendParams || !!reasoning;
 
   const handleModelChange = useCallback(
     async (params: { model: string; provider: string }) => {
@@ -90,25 +87,28 @@ const ModelSwitch = memo(() => {
     [agentId, updateAgentConfigById],
   );
 
+  const handleChatConfigChange = useCallback(
+    (config: Partial<LobeAgentChatConfig>) => {
+      updateAgentChatConfig(config);
+    },
+    [updateAgentChatConfig],
+  );
+
   return (
-    <Flexbox
-      horizontal
-      align={'center'}
-      className={showModelControls ? styles.container : ''}
-      gap={4}
-    >
+    <Flexbox horizontal align={'center'} gap={4}>
       <ModelSwitchPanel
         showReasoningLabel
         chatConfig={chatConfig}
         model={model}
         placement={dropdownPlacement}
         provider={provider}
+        onChatConfigChange={handleChatConfigChange}
         onModelChange={handleModelChange}
       >
         <Flexbox
           horizontal
           align={'center'}
-          className={cx(styles.model, showModelControls && styles.modelWithControl)}
+          className={styles.model}
           gap={4}
           height={36}
           paddingInline={8}
@@ -123,11 +123,10 @@ const ModelSwitch = memo(() => {
           >
             {modelDisplayName}
           </Text>
+          {reasoning && <span className={styles.reasoningLabel}>{reasoning.label}</span>}
           <ChevronDown size={12} style={{ color: cssVar.colorTextTertiary, flexShrink: 0 }} />
         </Flexbox>
       </ModelSwitchPanel>
-
-      {reasoning && <ModelReasoningSelect model={model} provider={provider} />}
 
       {showExtendParams && (
         <Action

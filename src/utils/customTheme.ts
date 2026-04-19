@@ -14,6 +14,13 @@ const createEdgeColor = (color: string, amount: number) => {
 export const createThemeSwatchBackground = (color: string) =>
   `linear-gradient(135deg, ${createEdgeColor(color, 1.2)} 0%, ${color} 52%, ${createEdgeColor(color, -1.1)} 100%)`;
 
+// Neutral colors are inherently low-saturation (~2-4% HSL saturation).
+// Boost saturation so each hue family is clearly visible in small swatches.
+export const createNeutralSwatchBackground = (color: string) => {
+  const vivid = chroma(color).set('hsl.s', 0.45).hex();
+  return createThemeSwatchBackground(vivid);
+};
+
 export const defaultThemeSwatchBackground =
   'linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0 45%, rgba(0, 0, 0, 0.06) 45% 55%, rgba(255, 255, 255, 0.94) 55% 100%)';
 
@@ -43,13 +50,13 @@ export const createEnhancedThemeTokens = ({
       colorFillTertiary: createAlphaColor(resolvedNeutral, isDarkMode ? 0.2 : 0.09),
     }),
     ...(resolvedPrimary && {
-      colorPrimaryBg: createAlphaColor(resolvedPrimary, isDarkMode ? 0.34 : 0.16),
-      colorPrimaryBgHover: createAlphaColor(resolvedPrimary, isDarkMode ? 0.42 : 0.22),
-      colorPrimaryBorder: createAlphaColor(resolvedPrimary, isDarkMode ? 0.48 : 0.28),
-      colorPrimaryBorderHover: createAlphaColor(resolvedPrimary, isDarkMode ? 0.62 : 0.4),
-      controlItemBgActive: createAlphaColor(resolvedPrimary, isDarkMode ? 0.28 : 0.12),
-      controlItemBgActiveHover: createAlphaColor(resolvedPrimary, isDarkMode ? 0.36 : 0.18),
-      controlOutline: createAlphaColor(resolvedPrimary, isDarkMode ? 0.46 : 0.24),
+      colorPrimaryBg: createAlphaColor(resolvedPrimary, isDarkMode ? 0.4 : 0.2),
+      colorPrimaryBgHover: createAlphaColor(resolvedPrimary, isDarkMode ? 0.48 : 0.27),
+      colorPrimaryBorder: createAlphaColor(resolvedPrimary, isDarkMode ? 0.54 : 0.34),
+      colorPrimaryBorderHover: createAlphaColor(resolvedPrimary, isDarkMode ? 0.68 : 0.46),
+      controlItemBgActive: createAlphaColor(resolvedPrimary, isDarkMode ? 0.32 : 0.16),
+      controlItemBgActiveHover: createAlphaColor(resolvedPrimary, isDarkMode ? 0.4 : 0.22),
+      controlOutline: createAlphaColor(resolvedPrimary, isDarkMode ? 0.5 : 0.28),
     }),
   };
 };

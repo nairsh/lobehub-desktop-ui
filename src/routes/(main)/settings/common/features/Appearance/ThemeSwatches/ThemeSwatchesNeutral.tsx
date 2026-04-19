@@ -3,7 +3,7 @@ import { neutralColors } from '@lobehub/ui';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { createThemeSwatchBackground, defaultThemeSwatchBackground } from '@/utils/customTheme';
+import { createNeutralSwatchBackground, defaultThemeSwatchBackground } from '@/utils/customTheme';
 
 import ThemeSwatchesBase from './ThemeSwatchesBase';
 
@@ -24,27 +24,27 @@ const ThemeSwatchesNeutral = memo<IProps>(({ value, onChange }) => {
           label: t('default'),
         },
         {
-          background: createThemeSwatchBackground(neutralColors.mauve),
+          background: createNeutralSwatchBackground(neutralColors.mauve),
           label: t('mauve'),
           value: 'mauve',
         },
         {
-          background: createThemeSwatchBackground(neutralColors.olive),
+          background: createNeutralSwatchBackground(neutralColors.olive),
           label: t('olive'),
           value: 'olive',
         },
         {
-          background: createThemeSwatchBackground(neutralColors.sage),
+          background: createNeutralSwatchBackground(neutralColors.sage),
           label: t('sage'),
           value: 'sage',
         },
         {
-          background: createThemeSwatchBackground(neutralColors.sand),
+          background: createNeutralSwatchBackground(neutralColors.sand),
           label: t('sand'),
           value: 'sand',
         },
         {
-          background: createThemeSwatchBackground(neutralColors.slate),
+          background: createNeutralSwatchBackground(neutralColors.slate),
           label: t('slate'),
           value: 'slate',
         },

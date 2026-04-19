@@ -73,7 +73,7 @@ const draggableStyles = createStaticStyles(({ css, cssVar }) => ({
     user-select: none;
 
     height: 100%;
-    border-inline-end: 1px solid ${cssVar.colorPrimaryBorder};
+    border-inline-end: none;
 
     color: ${cssVar.colorTextSecondary};
 
