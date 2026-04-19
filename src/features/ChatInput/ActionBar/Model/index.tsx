@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 
 import ModelSwitchPanel from '@/features/ModelSwitchPanel';
 import ModelDetailPanel from '@/features/ModelSwitchPanel/components/ModelDetailPanel';
+import { useModelReasoning } from '@/features/ModelSwitchPanel/hooks/useModelReasoning';
 import { useAgentStore } from '@/store/agent';
 import { agentByIdSelectors } from '@/store/agent/selectors';
 import { aiModelSelectors, useAiInfraStore } from '@/store/aiInfra';
@@ -18,6 +19,7 @@ import { userGeneralSettingsSelectors } from '@/store/user/selectors';
 import { useAgentId } from '../../hooks/useAgentId';
 import Action from '../components/Action';
 import { useActionBarContext } from '../context';
+import ModelReasoningSelect from './ModelReasoningSelect';
 
 const styles = createStaticStyles(({ css, cssVar }) => ({
   container: css`
@@ -73,10 +75,12 @@ const ModelSwitch = memo(() => {
   );
 
   const modelCard = useAiInfraStore(aiModelSelectors.getEnabledModelById(model, provider));
+  const reasoning = useModelReasoning(model, provider);
   const modelDisplayName =
     modelCard?.displayName ?? (model.includes('/') ? model.split('/').at(-1)! : model);
 
   const showExtendParams = isDevMode && isModelHasExtendParams;
+  const showModelControls = showExtendParams || !!reasoning;
 
   const handleModelChange = useCallback(
     async (params: { model: string; provider: string }) => {
@@ -86,7 +90,12 @@ const ModelSwitch = memo(() => {
   );
 
   return (
-    <Flexbox horizontal align={'center'} className={showExtendParams ? styles.container : ''}>
+    <Flexbox
+      horizontal
+      align={'center'}
+      className={showModelControls ? styles.container : ''}
+      gap={4}
+    >
       <ModelSwitchPanel
         model={model}
         placement={dropdownPlacement}
@@ -96,7 +105,7 @@ const ModelSwitch = memo(() => {
         <Flexbox
           horizontal
           align={'center'}
-          className={cx(styles.model, showExtendParams && styles.modelWithControl)}
+          className={cx(styles.model, showModelControls && styles.modelWithControl)}
           gap={4}
           height={36}
           paddingInline={8}
@@ -104,12 +113,18 @@ const ModelSwitch = memo(() => {
           <div className={styles.icon}>
             <ModelIcon model={model} size={18} type={'mono'} />
           </div>
-          <Text color={cssVar.colorTextSecondary} ellipsis style={{ fontSize: 14, fontWeight: 500 }}>
+          <Text
+            ellipsis
+            color={cssVar.colorTextSecondary}
+            style={{ fontSize: 14, fontWeight: 500 }}
+          >
             {modelDisplayName}
           </Text>
           <ChevronDown size={12} style={{ color: cssVar.colorTextTertiary, flexShrink: 0 }} />
         </Flexbox>
       </ModelSwitchPanel>
+
+      {reasoning && <ModelReasoningSelect model={model} provider={provider} />}
 
       {showExtendParams && (
         <Action

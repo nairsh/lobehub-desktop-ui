@@ -1,16 +1,14 @@
-import { type CreatedLevelSliderProps } from './createLevelSlider';
-import { createLevelSliderComponent } from './createLevelSlider';
+import { MODEL_REASONING_CONFIGS } from '@/utils/modelReasoning';
 
-const REASONING_EFFORT_LEVELS = ['low', 'medium', 'high'] as const;
-type ReasoningEffort = (typeof REASONING_EFFORT_LEVELS)[number];
+import { createLevelSliderComponent } from './createLevelSlider';
+import { type CreatedLevelSliderProps } from './createLevelSlider';
+
+type ReasoningEffort = (typeof MODEL_REASONING_CONFIGS.reasoningEffort.levels)[number];
 
 export type ReasoningEffortSliderProps = CreatedLevelSliderProps<ReasoningEffort>;
 
-const ReasoningEffortSlider = createLevelSliderComponent<ReasoningEffort>({
-  configKey: 'reasoningEffort',
-  defaultValue: 'medium',
-  levels: REASONING_EFFORT_LEVELS,
-  style: { minWidth: 200 },
-});
+const ReasoningEffortSlider = createLevelSliderComponent<ReasoningEffort>(
+  MODEL_REASONING_CONFIGS.reasoningEffort,
+);
 
 export default ReasoningEffortSlider;

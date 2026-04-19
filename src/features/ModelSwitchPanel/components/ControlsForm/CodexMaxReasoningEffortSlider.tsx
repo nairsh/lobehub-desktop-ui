@@ -1,16 +1,15 @@
-import { type CreatedLevelSliderProps } from './createLevelSlider';
-import { createLevelSliderComponent } from './createLevelSlider';
+import { MODEL_REASONING_CONFIGS } from '@/utils/modelReasoning';
 
-const CODEX_MAX_REASONING_EFFORT_LEVELS = ['low', 'medium', 'high', 'xhigh'] as const;
-type CodexMaxReasoningEffort = (typeof CODEX_MAX_REASONING_EFFORT_LEVELS)[number];
+import { createLevelSliderComponent } from './createLevelSlider';
+import { type CreatedLevelSliderProps } from './createLevelSlider';
+
+type CodexMaxReasoningEffort =
+  (typeof MODEL_REASONING_CONFIGS.codexMaxReasoningEffort.levels)[number];
 
 export type CodexMaxReasoningEffortSliderProps = CreatedLevelSliderProps<CodexMaxReasoningEffort>;
 
-const CodexMaxReasoningEffortSlider = createLevelSliderComponent<CodexMaxReasoningEffort>({
-  configKey: 'codexMaxReasoningEffort',
-  defaultValue: 'medium',
-  levels: CODEX_MAX_REASONING_EFFORT_LEVELS,
-  style: { minWidth: 200 },
-});
+const CodexMaxReasoningEffortSlider = createLevelSliderComponent<CodexMaxReasoningEffort>(
+  MODEL_REASONING_CONFIGS.codexMaxReasoningEffort,
+);
 
 export default CodexMaxReasoningEffortSlider;

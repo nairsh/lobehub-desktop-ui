@@ -238,6 +238,7 @@ interface ModelItemRenderProps extends ChatModelCard, Partial<Omit<FlexboxProps,
   abilities?: ModelAbilities;
   newBadgeLabel?: string;
   proBadgeLabel?: string;
+  reasoningLabel?: string;
   showInfoTag?: boolean;
 }
 
@@ -251,6 +252,7 @@ export const ModelItemRender = memo<ModelItemRenderProps>(
     imageOutput,
     newBadgeLabel,
     proBadgeLabel,
+    reasoningLabel,
     video,
     vision,
     id,
@@ -301,6 +303,7 @@ export const ModelItemRender = memo<ModelItemRenderProps>(
               {proBadgeLabel}
             </Tag>
           )}
+          {reasoningLabel && <Tag size="small">{reasoningLabel}</Tag>}
         </Flexbox>
         {showInfoTag && (
           <ModelInfoTags

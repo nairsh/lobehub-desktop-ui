@@ -1,16 +1,11 @@
+import { MODEL_REASONING_CONFIGS } from '@/utils/modelReasoning';
+
 import { type CreatedLevelSliderProps, createLevelSliderComponent } from './createLevelSlider';
 
-const EFFORT_LEVELS = ['low', 'medium', 'high', 'max'] as const;
-
-type EffortLevel = (typeof EFFORT_LEVELS)[number];
+type EffortLevel = (typeof MODEL_REASONING_CONFIGS.effort.levels)[number];
 
 export type EffortSliderProps = CreatedLevelSliderProps<EffortLevel>;
 
-const EffortSlider = createLevelSliderComponent<EffortLevel>({
-  configKey: 'effort',
-  defaultValue: 'high',
-  levels: EFFORT_LEVELS,
-  style: { minWidth: 200 },
-});
+const EffortSlider = createLevelSliderComponent<EffortLevel>(MODEL_REASONING_CONFIGS.effort);
 
 export default EffortSlider;

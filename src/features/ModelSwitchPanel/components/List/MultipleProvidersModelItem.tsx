@@ -18,12 +18,13 @@ import { Check } from 'lucide-react';
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { ModelItemRender, ProviderItemRender } from '@/components/ModelSelect';
+import { ProviderItemRender } from '@/components/ModelSelect';
 
 import { styles } from '../../styles';
 import { type ModelWithProviders } from '../../types';
 import { menuKey } from '../../utils';
 import ModelDetailPanel from '../ModelDetailPanel';
+import ModelItemWithReasoning from './ModelItemWithReasoning';
 
 interface MultipleProvidersModelItemProps {
   activeKey: string;
@@ -83,11 +84,11 @@ export const MultipleProvidersModelItem = memo<MultipleProvidersModelItemProps>(
             onClose();
           }}
         >
-          <ModelItemRender
+          <ModelItemWithReasoning
             {...data.model}
-            {...data.model.abilities}
             newBadgeLabel={newLabel}
             proBadgeLabel={allRestricted ? proLabel : undefined}
+            provider={(activeProvider ?? data.providers[0]).id}
             showInfoTag={showInfoTag}
           />
         </DropdownMenuSubmenuTrigger>

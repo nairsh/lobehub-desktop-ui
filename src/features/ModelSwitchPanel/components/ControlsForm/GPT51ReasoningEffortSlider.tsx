@@ -1,16 +1,14 @@
-import { type CreatedLevelSliderProps } from './createLevelSlider';
-import { createLevelSliderComponent } from './createLevelSlider';
+import { MODEL_REASONING_CONFIGS } from '@/utils/modelReasoning';
 
-const GPT51_REASONING_EFFORT_LEVELS = ['none', 'low', 'medium', 'high'] as const;
-type GPT51ReasoningEffort = (typeof GPT51_REASONING_EFFORT_LEVELS)[number];
+import { createLevelSliderComponent } from './createLevelSlider';
+import { type CreatedLevelSliderProps } from './createLevelSlider';
+
+type GPT51ReasoningEffort = (typeof MODEL_REASONING_CONFIGS.gpt5_1ReasoningEffort.levels)[number];
 
 export type GPT51ReasoningEffortSliderProps = CreatedLevelSliderProps<GPT51ReasoningEffort>;
 
-const GPT51ReasoningEffortSlider = createLevelSliderComponent<GPT51ReasoningEffort>({
-  configKey: 'gpt5_1ReasoningEffort',
-  defaultValue: 'none',
-  levels: GPT51_REASONING_EFFORT_LEVELS,
-  style: { minWidth: 200 },
-});
+const GPT51ReasoningEffortSlider = createLevelSliderComponent<GPT51ReasoningEffort>(
+  MODEL_REASONING_CONFIGS.gpt5_1ReasoningEffort,
+);
 
 export default GPT51ReasoningEffortSlider;

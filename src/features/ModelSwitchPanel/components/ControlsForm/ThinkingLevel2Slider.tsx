@@ -1,16 +1,14 @@
-import { type CreatedLevelSliderProps } from './createLevelSlider';
-import { createLevelSliderComponent } from './createLevelSlider';
+import { MODEL_REASONING_CONFIGS } from '@/utils/modelReasoning';
 
-const THINKING_LEVELS_2 = ['low', 'high'] as const;
-type ThinkingLevel2 = (typeof THINKING_LEVELS_2)[number];
+import { createLevelSliderComponent } from './createLevelSlider';
+import { type CreatedLevelSliderProps } from './createLevelSlider';
+
+type ThinkingLevel2 = (typeof MODEL_REASONING_CONFIGS.thinkingLevel2.levels)[number];
 
 export type ThinkingLevel2SliderProps = CreatedLevelSliderProps<ThinkingLevel2>;
 
-const ThinkingLevel2Slider = createLevelSliderComponent<ThinkingLevel2>({
-  configKey: 'thinkingLevel2',
-  defaultValue: 'high',
-  levels: THINKING_LEVELS_2,
-  style: { minWidth: 110 },
-});
+const ThinkingLevel2Slider = createLevelSliderComponent<ThinkingLevel2>(
+  MODEL_REASONING_CONFIGS.thinkingLevel2,
+);
 
 export default ThinkingLevel2Slider;

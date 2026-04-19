@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import urlJoin from 'url-join';
 
-import { ModelItemRender, ProviderItemRender } from '@/components/ModelSelect';
+import { ProviderItemRender } from '@/components/ModelSelect';
 import { useUserStore } from '@/store/user';
 import { userGeneralSettingsSelectors } from '@/store/user/selectors';
 
@@ -25,6 +25,7 @@ import { styles } from '../../styles';
 import { type ListItem } from '../../types';
 import { menuKey } from '../../utils';
 import ModelDetailPanel from '../ModelDetailPanel';
+import ModelItemWithReasoning from './ModelItemWithReasoning';
 import { MultipleProvidersModelItem } from './MultipleProvidersModelItem';
 import { SingleProviderModelItem } from './SingleProviderModelItem';
 
@@ -152,11 +153,11 @@ export const ListItemRenderer = memo<ListItemRendererProps>(
                     onModelChange(item.model.id, item.provider.id);
                   }}
                 >
-                  <ModelItemRender
+                  <ModelItemWithReasoning
                     {...item.model}
-                    {...item.model.abilities}
                     showInfoTag
                     newBadgeLabel={newLabel}
+                    provider={item.provider.id}
                   />
                 </DropdownMenuSubmenuTrigger>
                 <DropdownMenuPortal>
@@ -189,11 +190,11 @@ export const ListItemRenderer = memo<ListItemRendererProps>(
                   onModelChange(item.model.id, item.provider.id);
                 }}
               >
-                <ModelItemRender
+                <ModelItemWithReasoning
                   {...item.model}
-                  {...item.model.abilities}
                   newBadgeLabel={newLabel}
                   proBadgeLabel={restricted ? proLabel : undefined}
+                  provider={item.provider.id}
                 />
               </DropdownMenuSubmenuTrigger>
               <DropdownMenuPortal>

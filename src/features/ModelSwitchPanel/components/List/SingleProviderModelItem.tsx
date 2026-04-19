@@ -1,8 +1,7 @@
 import { memo } from 'react';
 
-import { ModelItemRender } from '@/components/ModelSelect';
-
 import { type ModelWithProviders } from '../../types';
+import ModelItemWithReasoning from './ModelItemWithReasoning';
 
 interface SingleProviderModelItemProps {
   data: ModelWithProviders;
@@ -14,11 +13,11 @@ interface SingleProviderModelItemProps {
 export const SingleProviderModelItem = memo<SingleProviderModelItemProps>(
   ({ data, newLabel, proBadgeLabel, showInfoTag }) => {
     return (
-      <ModelItemRender
+      <ModelItemWithReasoning
         {...data.model}
-        {...data.model.abilities}
         newBadgeLabel={newLabel}
         proBadgeLabel={proBadgeLabel}
+        provider={data.providers[0].id}
         showInfoTag={showInfoTag}
       />
     );
