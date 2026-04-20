@@ -78,6 +78,32 @@ export default ({ token }: { prefixCls: string; token: Theme }) => css`
     opacity: 1;
   }
 
+  /* Unified dropdown popup styling (matches Plus dropdown design) */
+  [role='menu'] {
+    overflow: hidden;
+
+    padding-block: 5px !important;
+    border: 1px solid ${token.colorBorderSecondary};
+    border-radius: 14px !important;
+
+    box-shadow: 0 8px 24px rgb(0 0 0 / 10%);
+  }
+
+  [role='menu'] [role='menuitem'] {
+    min-height: 36px;
+    margin-block: 1px;
+    margin-inline: 6px;
+    padding-block: 6px;
+    padding-inline: 10px;
+    border-radius: 8px;
+
+    font-size: 14px;
+  }
+
+  [role='menu'] [role='separator'] {
+    margin-inline: 10px;
+  }
+
   /* Snappy pop animation for all dropdown/popover menus */
   [data-placement] {
     --lobe-dropdown-animation-duration: 110ms !important;
