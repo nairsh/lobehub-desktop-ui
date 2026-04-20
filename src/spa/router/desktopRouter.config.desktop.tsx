@@ -60,6 +60,9 @@ import MemoryPreferencesPage from '@/routes/(main)/memory/preferences';
 import PageIndexPage from '@/routes/(main)/page';
 import DesktopPageLayout from '@/routes/(main)/page/_layout';
 import PageDetailPage from '@/routes/(main)/page/[id]';
+import ProjectIndexPage from '@/routes/(main)/project';
+import ProjectLayout from '@/routes/(main)/project/_layout';
+import ProjectDetailPage from '@/routes/(main)/project/[id]';
 import ResourceLayout from '@/routes/(main)/resource/_layout';
 import ResourceHomePage from '@/routes/(main)/resource/(home)';
 import ResourceHomeLayout from '@/routes/(main)/resource/(home)/_layout';
@@ -266,6 +269,23 @@ export const desktopRoutes: RouteObject[] = [
         element: <ResourceLayout />,
         errorElement: <ErrorBoundary resetPath="/resource" />,
         path: 'resource',
+      },
+
+      // Project workspace routes (FIN-76)
+      {
+        children: [
+          {
+            element: <ProjectIndexPage />,
+            index: true,
+          },
+          {
+            element: <ProjectDetailPage />,
+            path: ':id',
+          },
+        ],
+        element: <ProjectLayout />,
+        errorElement: <ErrorBoundary resetPath="/resource" />,
+        path: 'project',
       },
 
       // Settings routes

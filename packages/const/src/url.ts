@@ -53,6 +53,8 @@ export const GROUP_CHAT_URL = (groupId: string) => `/group/${groupId}`;
 
 export const LIBRARY_URL = (id: string) => urlJoin('/resource/library', id);
 
+export const PROJECT_URL = (id: string) => urlJoin('/project', id);
+
 export const imageUrl = (filename: string) => `/images/${filename}`;
 
 export const LOBE_URL_IMPORT_NAME = 'settings';
