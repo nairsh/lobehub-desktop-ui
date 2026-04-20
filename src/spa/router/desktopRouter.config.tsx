@@ -302,6 +302,32 @@ export const desktopRoutes: RouteObject[] = [
         path: 'resource',
       },
 
+      // Project workspace routes (FIN-76)
+      {
+        children: [
+          {
+            element: dynamicElement(
+              () => import('@/routes/(main)/project'),
+              'Desktop > Project > Index',
+            ),
+            index: true,
+          },
+          {
+            element: dynamicElement(
+              () => import('@/routes/(main)/project/[id]'),
+              'Desktop > Project > Detail',
+            ),
+            path: ':id',
+          },
+        ],
+        element: dynamicLayout(
+          () => import('@/routes/(main)/project/_layout'),
+          'Desktop > Project > Layout',
+        ),
+        errorElement: <ErrorBoundary resetPath="/resource" />,
+        path: 'project',
+      },
+
       // Settings routes
       {
         children: [

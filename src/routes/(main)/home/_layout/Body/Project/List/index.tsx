@@ -5,7 +5,7 @@ import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { LIBRARY_URL } from '@/const/url';
+import { PROJECT_URL } from '@/const/url';
 import EmptyNavItem from '@/features/NavPanel/components/EmptyNavItem';
 import SkeletonList from '@/features/NavPanel/components/SkeletonList';
 import { useKnowledgeBaseStore } from '@/store/library';
@@ -34,10 +34,10 @@ const ProjectList = memo(() => {
         <Link
           aria-label={item.id}
           key={item.id}
-          to={LIBRARY_URL(item.id)}
+          to={PROJECT_URL(item.id)}
           onClick={(e) => {
             e.preventDefault();
-            navigate(LIBRARY_URL(item.id));
+            navigate(PROJECT_URL(item.id));
           }}
         >
           <Item {...item} key={item.id} />
