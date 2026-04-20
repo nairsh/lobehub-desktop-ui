@@ -49,6 +49,7 @@ const Thinking = memo<ThinkingProps>((props) => {
     <Accordion
       expandedKeys={showDetail ? ['thinking'] : []}
       gap={8}
+      variant={'borderless'}
       onExpandedChange={(keys) => setShowDetail(keys.length > 0)}
     >
       <AccordionItem
@@ -56,6 +57,7 @@ const Thinking = memo<ThinkingProps>((props) => {
         paddingBlock={4}
         paddingInline={4}
         title={<Title duration={duration} thinking={thinking} />}
+        variant={'borderless'}
       >
         <ScrollShadow
           className={styles.contentScroll}
