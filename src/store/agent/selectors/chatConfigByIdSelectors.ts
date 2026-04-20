@@ -68,7 +68,7 @@ const getRuntimeModeById =
     const runtimeEnv = getChatConfigById(agentId)(s).runtimeEnv;
     const platform = isDesktop ? 'desktop' : 'web';
 
-    return runtimeEnv?.runtimeMode?.[platform] ?? (isDesktop ? 'local' : 'none');
+    return runtimeEnv?.runtimeMode?.[platform] ?? 'local';
   };
 
 const getSkillActivateModeById =
