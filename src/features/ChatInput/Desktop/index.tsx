@@ -19,6 +19,7 @@ import { systemStatusSelectors } from '@/store/global/selectors';
 
 import { type ActionToolbarProps } from '../ActionBar';
 import ActionBar from '../ActionBar';
+import ContextWindowCircle from '../ContextWindowCircle';
 import InputEditor from '../InputEditor';
 import RuntimeConfig from '../RuntimeConfig';
 import SendArea from '../SendArea';
@@ -167,12 +168,27 @@ const DesktopChatInput = memo<DesktopChatInputProps>(
           <InputEditor placeholder={placeholder} />
         </ChatInput>
         {showRuntimeConfig && <RuntimeConfig />}
-        {showFootnote && !expand && (
-          <Center style={{ pointerEvents: 'none', zIndex: 100 }}>
-            <Text className={styles.footnote} type={'secondary'}>
-              {t('input.disclaimer')}
-            </Text>
-          </Center>
+        {!expand && (
+          <Flexbox
+            horizontal
+            align={'center'}
+            gap={8}
+            justify={showFootnote ? 'space-between' : 'flex-end'}
+            paddingInline={8}
+            style={{ zIndex: 100 }}
+          >
+            {showFootnote ? (
+              <>
+                <div style={{ width: 20 }} />
+                <Center style={{ pointerEvents: 'none' }}>
+                  <Text className={styles.footnote} type={'secondary'}>
+                    {t('input.disclaimer')}
+                  </Text>
+                </Center>
+              </>
+            ) : null}
+            <ContextWindowCircle />
+          </Flexbox>
         )}
       </Flexbox>
     );
