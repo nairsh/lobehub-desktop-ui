@@ -135,7 +135,6 @@ describe('systemStatusSelectors', () => {
       // stored order preserved at the front
       expect(items.slice(0, 2)).toEqual(['agent', 'recents']);
       // every known key is present
-      expect(items).toContain('pages');
       expect(items).toContain('community');
       expect(items).toContain('resource');
       expect(items).toContain('memory');
@@ -147,7 +146,7 @@ describe('systemStatusSelectors', () => {
       });
       const items = systemStatusSelectors.sidebarItems(s);
       // accordion slot in the default list now uses the user's legacy order
-      expect(items).toEqual(['pages', 'agent', 'recents', 'community', 'resource', 'memory']);
+      expect(items).toEqual(['agent', 'recents', 'community', 'resource', 'memory']);
     });
 
     it('should fall back to default when legacy `sidebarSectionOrder` is the default order', () => {

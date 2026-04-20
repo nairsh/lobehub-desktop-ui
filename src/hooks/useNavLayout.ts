@@ -1,4 +1,4 @@
-import { HomeIcon, SearchIcon } from 'lucide-react';
+import { HomeIcon, SearchIcon, SquarePenIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -41,6 +41,18 @@ export const useNavLayout = (): NavLayout => {
     () =>
       [
         {
+          icon: SquarePenIcon,
+          key: 'newChat',
+          title: t('navPanel.newChat'),
+          url: '/',
+        },
+        {
+          icon: getRouteById('page')!.icon,
+          key: SidebarTabKey.Pages,
+          title: t('tab.pages'),
+          url: '/page',
+        },
+        {
           icon: SearchIcon,
           key: 'search',
           onClick: () => toggleCommandMenu(true),
@@ -51,12 +63,6 @@ export const useNavLayout = (): NavLayout => {
           key: SidebarTabKey.Home,
           title: t('tab.home'),
           url: '/',
-        },
-        {
-          icon: getRouteById('page')!.icon,
-          key: SidebarTabKey.Pages,
-          title: t('tab.pages'),
-          url: '/page',
         },
       ] as NavItem[],
     [t, toggleCommandMenu],

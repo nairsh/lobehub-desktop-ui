@@ -1,7 +1,7 @@
 'use client';
 
 import { Accordion, ActionIcon, DropdownMenu, Flexbox, Icon, type MenuProps } from '@lobehub/ui';
-import { EyeOffIcon, MoreHorizontalIcon, SlidersHorizontalIcon, SquarePenIcon } from 'lucide-react';
+import { EyeOffIcon, MoreHorizontalIcon, SlidersHorizontalIcon } from 'lucide-react';
 import { memo, type ReactElement, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
@@ -9,6 +9,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import NavItem from '@/features/NavPanel/components/NavItem';
 import { useActiveTabKey } from '@/hooks/useActiveTabKey';
 import { type NavItem as NavItemType, useNavLayout } from '@/hooks/useNavLayout';
+import { HEADER_NAV_KEYS } from '@/routes/(main)/home/_layout/Header/components/Nav';
 import Recents from '@/routes/(main)/home/features/Recents';
 import { useGlobalStore } from '@/store/global';
 import { systemStatusSelectors } from '@/store/global/selectors';
@@ -83,7 +84,10 @@ const Body = memo(() => {
     [hiddenSections],
   );
 
-  const visibleKeys = useMemo(() => sidebarItems.filter(isVisible), [sidebarItems, isVisible]);
+  const visibleKeys = useMemo(
+    () => sidebarItems.filter((k) => isVisible(k) && !HEADER_NAV_KEYS.has(k)),
+    [sidebarItems, isVisible],
+  );
 
   const renderNavLink = useCallback(
     (key: string) => {
@@ -154,15 +158,6 @@ const Body = memo(() => {
 
   return (
     <Flexbox flex={1} gap={4} paddingInline={4}>
-      <Link
-        to={'/'}
-        onClick={(e) => {
-          e.preventDefault();
-          navigate('/');
-        }}
-      >
-        <NavItem icon={SquarePenIcon} title={t('navPanel.newChat')} />
-      </Link>
       {content}
       <CustomizeSidebarModal />
     </Flexbox>
