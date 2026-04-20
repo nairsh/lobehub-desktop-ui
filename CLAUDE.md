@@ -135,6 +135,16 @@ Open it to load your local Vite SPA inside the production backend environment wi
 
 For Electron-shell work (windows, IPC, menus, tray, updater, shortcuts), follow `apps/desktop/Development.md`.
 
+### Authenticated Electron QA sessions
+
+When a task needs real logged-in desktop testing, prefer the already authenticated Electron renderer instead of a fresh browser profile.
+
+- Relaunch Electron with the local-testing helper so the existing profile is preserved: `./.agents/skills/local-testing/scripts/electron-dev.sh restart`
+- Attach agent-browser to the exposed CDP endpoint on `localhost:9222`
+- Keep the existing Electron user data directory (`~/Library/Application Support/lobehub-desktop-dev`) so cookies and auth state survive the relaunch
+- Use `window.__LOBE_STORES` in the renderer when you need to inspect live chat/agent state
+- If the route loads before the chat store hydrates, reload the current agent page before continuing QA
+
 ### Package management
 
 - `pnpm` for dependency management.

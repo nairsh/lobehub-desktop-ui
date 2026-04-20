@@ -10,8 +10,8 @@ export const styles = createStaticStyles(({ css, cssVar }) => ({
       position: absolute;
       z-index: 50;
       inset-block-end: 16px;
-      inset-inline-end: 16px;
-      transform: translateY(16px);
+      inset-inline-start: 50%;
+      transform: translate(-50%, 16px);
 
       opacity: 0;
       background: color-mix(in srgb, ${cssVar.colorBgElevated} 50%, transparent) !important;
@@ -19,7 +19,7 @@ export const styles = createStaticStyles(({ css, cssVar }) => ({
   ),
   visible: css`
     pointer-events: all;
-    transform: translateY(0);
+    transform: translate(-50%, 0);
     opacity: 1;
   `,
 }));

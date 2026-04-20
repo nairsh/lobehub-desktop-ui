@@ -9,13 +9,18 @@ import Action from '@/features/ChatInput/ActionBar/components/Action';
 import { usePromptTransform } from './usePromptTransform';
 
 interface PromptTransformActionProps {
+  getPrompt?: () => string;
   mode: 'image' | 'video' | 'text';
   onPromptChange: (prompt: string) => void;
   prompt?: string | null;
+  taskConfig?: {
+    model?: string;
+    provider?: string;
+  };
 }
 
 const PromptTransformAction = memo<PromptTransformActionProps>(
-  ({ mode, onPromptChange, prompt }) => {
+  ({ getPrompt, mode, onPromptChange, prompt, taskConfig }) => {
     const { t } = useTranslation('common');
 
     const {
@@ -26,9 +31,11 @@ const PromptTransformAction = memo<PromptTransformActionProps>(
       rewritePrompt,
       translatePrompt,
     } = usePromptTransform({
+      getPrompt,
       mode,
       onPromptChange,
       prompt,
+      taskConfig,
     });
 
     const menuItems = useMemo(
@@ -55,13 +62,13 @@ const PromptTransformAction = memo<PromptTransformActionProps>(
     );
 
     const dropdown = useMemo(() => {
-      if (!isRewriteEnabled) return undefined;
+      if (!isRewriteEnabled || mode === 'text') return undefined;
 
       return {
         menu: { items: menuItems },
         trigger: 'hover' as const,
       };
-    }, [isRewriteEnabled, menuItems]);
+    }, [isRewriteEnabled, menuItems, mode]);
 
     const primaryIcon = isRewriteEnabled ? Lightbulb : Languages;
     const isActionDisabled = isTransformDisabled || isTransforming;

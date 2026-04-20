@@ -31,6 +31,7 @@ describe('chainRewriteGenerationPrompt', () => {
     const result = chainRewriteGenerationPrompt({ mode: 'text', prompt });
 
     expect(result.messages![0].content).toContain('expert prompt optimizer');
+    expect(result.messages![0].content).toContain("Clarify the user's core goal");
     expect(result.messages![0].content).toContain('Do NOT add new requirements');
     expect(result.messages![1].content).toBe(prompt);
   });

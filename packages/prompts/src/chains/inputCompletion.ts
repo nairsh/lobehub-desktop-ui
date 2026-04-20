@@ -12,22 +12,27 @@ ${context.map((m) => `${m.role}: ${m.content}`).join('\n')}`;
   }
 
   return {
-    max_tokens: 100,
+    max_tokens: 24,
     messages: [
       {
-        content: `You are an autocomplete engine for a chat input box. The user is composing a message to send to an AI assistant. Predict and complete what the USER is typing. Output ONLY the missing text to insert at the cursor.
+        content: `You are an autocomplete engine for a chat input box. The user is composing a message to send to an AI assistant. Predict the most likely next words the USER wants to type and output ONLY the missing text to insert at the cursor.
 
 CRITICAL RULES:
 - You are completing the USER's message, NOT the AI assistant's response
 - The completed text should read as something a human would type to ask, request, or tell an AI
 - NEVER generate text that sounds like an AI assistant responding (e.g., "help you", "assist you", "I can help")
-- Keep it short and natural, under 15 words
+- If the cursor is in the middle of a word, complete that partial word first
+- Continue with 1 to 8 natural words, not a whole paragraph
+- Output plain text only, with no quotes, code fences, bullets, or explanations
 - Match the user's language
+- Prefer a useful continuation over returning nothing
 
 GOOD examples (user perspective):
 "How can I " → "optimize my React component's performance?"
 "Hi" → ", I need help with a TypeScript issue"
 "Can you " → "explain how useEffect cleanup works?"
+"Please hel" → "p me debug this API error"
+"Summar" → "ize the key differences"
 "帮我" → "写一个数据库查询的优化方案"
 "Let me " → "describe the bug I'm seeing"
 "我想" → "了解一下如何部署到 Kubernetes"

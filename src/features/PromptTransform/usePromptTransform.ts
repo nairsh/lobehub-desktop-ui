@@ -4,23 +4,36 @@ import { useCallback, useState } from 'react';
 import { chatService } from '@/services/chat';
 import { useUserStore } from '@/store/user';
 import { systemAgentSelectors } from '@/store/user/selectors';
+import { buildTextOnlyPresetTaskConfig } from '@/utils/chat/textOnlyPresetTaskConfig';
 import { merge } from '@/utils/merge';
 
 interface UsePromptTransformParams {
+  getPrompt?: () => string;
   mode: 'image' | 'video' | 'text';
   onPromptChange: (prompt: string) => void;
   prompt?: string | null;
+  taskConfig?: {
+    model?: string;
+    provider?: string;
+  };
 }
 
 type PromptTransformAction = 'rewrite' | 'translate';
 
-export const usePromptTransform = ({ mode, prompt, onPromptChange }: UsePromptTransformParams) => {
+export const usePromptTransform = ({
+  getPrompt,
+  mode,
+  prompt,
+  onPromptChange,
+  taskConfig,
+}: UsePromptTransformParams) => {
   const [isTransforming, setIsTransforming] = useState(false);
   const [transformAction, setTransformAction] = useState<PromptTransformAction>('rewrite');
 
   const rewriteConfig = useUserStore(systemAgentSelectors.promptRewrite);
   const translateConfig = useUserStore(systemAgentSelectors.translation);
   const isRewriteActionEnabled = rewriteConfig?.enabled ?? false;
+  const currentPrompt = getPrompt?.()?.trim() || prompt?.trim() || '';
 
   const getConfigByAction = useCallback(
     (action: PromptTransformAction) =>
@@ -28,43 +41,81 @@ export const usePromptTransform = ({ mode, prompt, onPromptChange }: UsePromptTr
     [rewriteConfig, translateConfig],
   );
 
+  const runPresetTask = useCallback(
+    async (config: Record<string, unknown>, action: PromptTransformAction) => {
+      let transformedPrompt = '';
+      let requestFailed = false;
+      const promptContent = getPrompt?.()?.trim() || prompt?.trim();
+
+      if (!promptContent) return null;
+
+      await chatService.fetchPresetTaskResult({
+        onError: (error, rawError) => {
+          requestFailed = true;
+          console.error('[PromptTransform] request failed:', rawError ?? error, config);
+        },
+        onFinish: async (text) => {
+          const nextPrompt = text.trim();
+          if (nextPrompt) transformedPrompt = nextPrompt;
+        },
+        onMessageHandle: (chunk) => {
+          if (chunk.type === 'text') {
+            transformedPrompt += chunk.text;
+          }
+        },
+        params: merge(
+          buildTextOnlyPresetTaskConfig(config),
+          action === 'rewrite'
+            ? chainRewriteGenerationPrompt({
+                mode,
+                prompt: promptContent,
+              })
+            : chainTranslate(promptContent, 'English'),
+        ),
+      });
+
+      if (requestFailed) return null;
+
+      return transformedPrompt.trim() || null;
+    },
+    [getPrompt, mode, prompt],
+  );
+
   const runTransform = useCallback(
     async (action: PromptTransformAction) => {
-      if (isTransforming || !prompt?.trim()) return;
+      const promptContent = getPrompt?.()?.trim() || prompt?.trim();
+
+      if (isTransforming || !promptContent) return;
       if (action === 'rewrite' && !isRewriteActionEnabled) return;
 
-      let transformedPrompt = '';
       setTransformAction(action);
+      setIsTransforming(true);
 
       try {
-        await chatService.fetchPresetTaskResult({
-          onError: () => {
-            setIsTransforming(false);
-          },
-          onFinish: async (text) => {
-            const nextPrompt = text.trim() || transformedPrompt.trim();
-            if (nextPrompt) onPromptChange(nextPrompt);
-          },
-          onLoadingChange: setIsTransforming,
-          onMessageHandle: (chunk) => {
-            if (chunk.type === 'text') transformedPrompt += chunk.text;
-          },
-          params: merge(
-            getConfigByAction(action),
-            action === 'rewrite'
-              ? chainRewriteGenerationPrompt({
-                  mode,
-                  prompt,
-                })
-              : chainTranslate(prompt, 'English'),
-          ),
-        });
+        const resolvedConfig =
+          mode === 'text' && taskConfig?.model && taskConfig?.provider
+            ? taskConfig
+            : getConfigByAction(action);
+
+        const nextPrompt = await runPresetTask(resolvedConfig, action);
+        if (nextPrompt) {
+          onPromptChange(nextPrompt);
+        }
       } finally {
         setIsTransforming(false);
         setTransformAction('rewrite');
       }
     },
-    [getConfigByAction, isRewriteActionEnabled, isTransforming, mode, onPromptChange, prompt],
+    [
+      getPrompt,
+      getConfigByAction,
+      isRewriteActionEnabled,
+      isTransforming,
+      mode,
+      onPromptChange,
+      runPresetTask,
+      taskConfig,
+    ],
   );
 
   const rewritePrompt = useCallback(async () => {
@@ -77,7 +128,7 @@ export const usePromptTransform = ({ mode, prompt, onPromptChange }: UsePromptTr
 
   return {
     isRewriteEnabled: isRewriteActionEnabled,
-    isTransformDisabled: !prompt?.trim(),
+    isTransformDisabled: !currentPrompt,
     isTransforming,
     rewritePrompt,
     transformAction,

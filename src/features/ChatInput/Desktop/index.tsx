@@ -11,6 +11,8 @@ import { useTranslation } from 'react-i18next';
 
 import { useChatInputStore } from '@/features/ChatInput/store';
 import { LayoutContainerContext } from '@/routes/(main)/_layout/DesktopLayoutContainer/LayoutContainerContext';
+import { useAgentStore } from '@/store/agent';
+import { agentSelectors } from '@/store/agent/selectors';
 import { useChatStore } from '@/store/chat';
 import { chatSelectors } from '@/store/chat/selectors';
 import { fileChatSelectors, useFileStore } from '@/store/file';
@@ -101,6 +103,7 @@ const DesktopChatInput = memo<DesktopChatInputProps>(
     ]);
 
     const chatKey = useChatStore(chatSelectors.currentChatKey);
+    const hasKnowledge = useAgentStore(agentSelectors.hasEnabledKnowledge);
 
     const setExpand = useChatInputStore((s) => s.setExpand);
 
@@ -110,7 +113,7 @@ const DesktopChatInput = memo<DesktopChatInputProps>(
     }, [chatKey, editor, setExpand]);
 
     const shouldShowContextContainer =
-      leftActions.flat().includes('fileUpload') || hasContextSelections || hasFiles;
+      leftActions.flat().includes('fileUpload') || hasContextSelections || hasFiles || hasKnowledge;
     const contextContainerNode = shouldShowContextContainer && <ContextContainer />;
 
     const content = (

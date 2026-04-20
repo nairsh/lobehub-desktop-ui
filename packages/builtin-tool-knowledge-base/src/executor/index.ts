@@ -3,6 +3,7 @@ import type { BuiltinToolContext, BuiltinToolResult } from '@lobechat/types';
 import { BaseExecutor } from '@lobechat/types';
 
 import { lambdaClient } from '@/libs/trpc/client';
+import { fileService } from '@/services/file';
 import { ragService } from '@/services/rag';
 import { agentSelectors } from '@/store/agent/selectors';
 import { getAgentStoreState } from '@/store/agent/store';
@@ -159,7 +160,7 @@ class KnowledgeBaseExecutor extends BaseExecutor<typeof KnowledgeBaseApiName> {
       const knowledgeIds = agentSelectors.currentKnowledgeIds(agentState);
       const knowledgeBaseIds = knowledgeIds.knowledgeBaseIds;
 
-      const { chunks, fileResults } = await ragService.semanticSearchForChat(
+      const { chunks, fileResults } = await ragService.semanticSearchForChatWithFallback(
         { knowledgeIds: knowledgeBaseIds, query, topK },
         ctx.signal,
       );
@@ -190,7 +191,7 @@ class KnowledgeBaseExecutor extends BaseExecutor<typeof KnowledgeBaseApiName> {
         return { content: 'Error: No file IDs provided', success: false };
       }
 
-      const fileContents = await ragService.getFileContents(fileIds);
+      const fileContents = await ragService.getKnowledgeContents(fileIds);
       const formattedContent = promptFileContents(fileContents);
 
       const state: ReadKnowledgeState = {
@@ -416,7 +417,7 @@ class KnowledgeBaseExecutor extends BaseExecutor<typeof KnowledgeBaseApiName> {
     try {
       const { id } = params;
 
-      const item = await lambdaClient.file.getFileItemById.query({ id });
+      const item = await fileService.getKnowledgeItem(id);
 
       if (!item) {
         return { content: `File with ID "${id}" not found.`, success: false };

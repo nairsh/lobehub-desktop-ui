@@ -14,7 +14,7 @@ import { usePasteFile, useUploadFiles } from '@/components/DragUploadZone';
 import { useIMECompositionEvent } from '@/hooks/useIMECompositionEvent';
 import { chatService } from '@/services/chat';
 import { useAgentStore } from '@/store/agent';
-import { agentByIdSelectors } from '@/store/agent/selectors';
+import { agentByIdSelectors, agentSelectors } from '@/store/agent/selectors';
 import { useUserStore } from '@/store/user';
 import {
   labPreferSelectors,
@@ -22,6 +22,7 @@ import {
   settingsSelectors,
   systemAgentSelectors,
 } from '@/store/user/selectors';
+import { buildTextOnlyPresetTaskConfig } from '@/utils/chat/textOnlyPresetTaskConfig';
 
 import { useAgentId } from '../hooks/useAgentId';
 import { useChatInputStore, useStoreApi } from '../store';
@@ -100,10 +101,20 @@ const InputEditor = memo<{ defaultRows?: number; placeholder?: ReactNode }>(
     const enableMention = allMentionItems.length > 0;
 
     // Get agent's model info for vision support check and handle paste upload
-    const agentId = useAgentId();
-    const model = useAgentStore((s) => agentByIdSelectors.getAgentModelById(agentId)(s));
-    const provider = useAgentStore((s) => agentByIdSelectors.getAgentModelProviderById(agentId)(s));
-    const { handleUploadFiles } = useUploadFiles({ model, provider });
+    const routeAgentId = useAgentId();
+    const activeAgentId = useAgentStore((s) => s.activeAgentId);
+    const agentId = activeAgentId || routeAgentId || '';
+    const taskModel = useAgentStore((s) =>
+      agentId
+        ? agentByIdSelectors.getAgentModelById(agentId)(s)
+        : agentSelectors.currentAgentModel(s),
+    );
+    const taskProvider = useAgentStore((s) =>
+      agentId
+        ? agentByIdSelectors.getAgentModelProviderById(agentId)(s)
+        : agentSelectors.currentAgentModelProvider(s),
+    );
+    const { handleUploadFiles } = useUploadFiles({ model: taskModel, provider: taskProvider });
 
     // Listen to editor's paste event for file uploads
     usePasteFile(editor, handleUploadFiles);
@@ -144,11 +155,23 @@ const InputEditor = memo<{ defaultRows?: number; placeholder?: ReactNode }>(
     const isAutoCompleteEnabled = inputCompletionConfig.enabled;
 
     const getMessagesRef = useRef(storeApi.getState().getMessages);
+    const inputCompletionConfigRef = useRef(inputCompletionConfig);
+    const taskModelRef = useRef(taskModel);
+    const taskProviderRef = useRef(taskProvider);
     useEffect(() => {
       return storeApi.subscribe((s) => {
         getMessagesRef.current = s.getMessages;
       });
     }, [storeApi]);
+    useEffect(() => {
+      inputCompletionConfigRef.current = inputCompletionConfig;
+    }, [inputCompletionConfig]);
+    useEffect(() => {
+      taskModelRef.current = taskModel;
+    }, [taskModel]);
+    useEffect(() => {
+      taskProviderRef.current = taskProvider;
+    }, [taskProvider]);
 
     const handleAutoComplete = useCallback(
       async ({
@@ -158,9 +181,7 @@ const InputEditor = memo<{ defaultRows?: number; placeholder?: ReactNode }>(
       }: {
         abortSignal: AbortSignal;
         afterText: string;
-        editor: any;
         input: string;
-        selectionType: string;
       }): Promise<string | null> => {
         // Skip autocomplete during IME composition (e.g. Chinese input method)
         if (isComposingRef.current) {
@@ -170,14 +191,15 @@ const InputEditor = memo<{ defaultRows?: number; placeholder?: ReactNode }>(
 
         if (!input.trim()) return null;
 
-        const { enabled: _, ...config } = systemAgentSelectors.inputCompletion(
-          useUserStore.getState(),
-        );
+        const completionConfig = buildTextOnlyPresetTaskConfig({
+          model: taskModelRef.current ?? inputCompletionConfigRef.current.model,
+          provider: taskProviderRef.current ?? inputCompletionConfigRef.current.provider,
+        });
 
-        if (!config.model || !config.provider) {
+        if (!completionConfig.model || !completionConfig.provider) {
           console.warn(
-            '[InputAutoComplete] skipped: missing model or provider in inputCompletion config',
-            config,
+            '[InputAutoComplete] skipped: missing model or provider in task config',
+            completionConfig,
           );
           return null;
         }
@@ -186,10 +208,10 @@ const InputEditor = memo<{ defaultRows?: number; placeholder?: ReactNode }>(
         const chainParams = chainInputCompletion(input, afterText, context);
 
         const abortController = new AbortController();
-        abortSignal.addEventListener('abort', () => abortController.abort());
+        abortSignal.addEventListener('abort', () => abortController.abort(), { once: true });
 
-        let result = '';
         let requestError: unknown = null;
+        let result = '';
 
         try {
           await chatService.fetchPresetTaskResult({
@@ -197,17 +219,21 @@ const InputEditor = memo<{ defaultRows?: number; placeholder?: ReactNode }>(
             onError: (error, errorContent) => {
               requestError = errorContent ?? error;
             },
+            onFinish: async (text) => {
+              const nextText = text.trimEnd();
+              if (nextText) result = nextText;
+            },
             onMessageHandle: (chunk) => {
               if (chunk.type === 'text') {
                 result += chunk.text;
               }
             },
-            params: merge(config, chainParams),
+            params: merge(completionConfig, chainParams),
           });
         } catch (error) {
           console.error('[InputAutoComplete] fetchPresetTaskResult threw:', error, {
-            model: config.model,
-            provider: config.provider,
+            model: completionConfig.model,
+            provider: completionConfig.provider,
           });
           return null;
         }
@@ -216,22 +242,21 @@ const InputEditor = memo<{ defaultRows?: number; placeholder?: ReactNode }>(
 
         if (requestError) {
           console.error('[InputAutoComplete] request failed:', requestError, {
-            model: config.model,
-            provider: config.provider,
+            model: completionConfig.model,
+            provider: completionConfig.provider,
           });
           return null;
         }
 
         const completion = result.trimEnd();
-        if (!completion) {
-          console.warn('[InputAutoComplete] empty completion result', {
-            model: config.model,
-            provider: config.provider,
-          });
-          return null;
-        }
+        if (completion) return completion;
 
-        return completion;
+        console.warn('[InputAutoComplete] empty completion result', {
+          model: completionConfig.model,
+          provider: completionConfig.provider,
+        });
+
+        return null;
       },
       [],
     );

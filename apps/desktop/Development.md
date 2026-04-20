@@ -129,6 +129,15 @@ apps/desktop/src/common/
 └── routes.ts         // 路由拦截配置类型 (RouteInterceptConfig)
 ```
 
+## 认证后的 Electron 调试会话
+
+当你需要真实登录态做 QA 时，优先使用已经登录的 Electron 进程，而不是新开的无痕浏览器。
+
+1. 使用 `./.agents/skills/local-testing/scripts/electron-dev.sh restart` 重启 Electron，并保留现有 profile。
+2. 复用 `~/Library/Application Support/lobehub-desktop-dev`，这样 cookies 和登录态会继续保留。
+3. 用 agent-browser 连接 `localhost:9222` 上暴露的 CDP，然后在渲染进程里通过 `window.__LOBE_STORES` 查看实时状态。
+4. 如果路由先于 chat store hydration 完成，先刷新当前 agent 页面，再继续验证。
+
 ## 功能模块实现
 
 ### 菜单实现框架

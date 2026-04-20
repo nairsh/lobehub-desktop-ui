@@ -1,13 +1,17 @@
+import { KnowledgeType } from '@lobechat/types';
 import { Flexbox, ScrollShadow } from '@lobehub/ui';
 import { createStaticStyles } from 'antd-style';
 import { memo, useEffect, useMemo, useRef } from 'react';
 
+import { useAgentStore } from '@/store/agent';
+import { agentByIdSelectors } from '@/store/agent/selectors';
 import { fileChatSelectors, useFileStore } from '@/store/file';
 import { UPLOAD_STATUS_SET } from '@/types/files/upload';
 
 import { useAgentId } from '../../hooks/useAgentId';
 import FileItem from '../FilePreview/FileItem';
 import ContextItem from './ContextItem';
+import KnowledgeSelectionItem from './KnowledgeSelectionItem';
 import SelectionItem from './SelectionItem';
 
 const styles = createStaticStyles(({ css }) => ({
@@ -24,13 +28,38 @@ const styles = createStaticStyles(({ css }) => ({
 
 const ContextList = memo(() => {
   const agentId = useAgentId();
+  const activeAgentId = useAgentStore((s) => s.activeAgentId);
+  const knowledgeAgentId = agentId || activeAgentId || '';
   const prevAgentIdRef = useRef<string | undefined>(undefined);
   const inputFilesList = useFileStore(fileChatSelectors.chatUploadFileList);
   const showFileList = useFileStore(fileChatSelectors.chatUploadFileListHasItem);
   const rawSelectionList = useFileStore(fileChatSelectors.chatContextSelections);
   const showSelectionList = useFileStore(fileChatSelectors.chatContextSelectionHasItem);
   const clearChatContextSelections = useFileStore((s) => s.clearChatContextSelections);
+  const enabledKnowledge = useAgentStore((s) => {
+    if (!knowledgeAgentId) return [];
 
+    const files = agentByIdSelectors
+      .getAgentFilesById(knowledgeAgentId)(s)
+      .filter((item) => item.enabled)
+      .map((item) => ({
+        fileType: item.type,
+        id: item.id,
+        name: item.name,
+        type: KnowledgeType.File,
+      }));
+
+    const knowledgeBases = agentByIdSelectors
+      .getAgentKnowledgeBasesById(knowledgeAgentId)(s)
+      .filter((item) => item.enabled)
+      .map((item) => ({
+        id: item.id,
+        name: item.name,
+        type: KnowledgeType.KnowledgeBase,
+      }));
+
+    return [...knowledgeBases, ...files];
+  });
 
   // Clear selections only when agentId changes (not on initial mount)
   useEffect(() => {
@@ -58,10 +87,11 @@ const ContextList = memo(() => {
 
   const hasUploadingFiles = uploadingFiles.length > 0;
   const hasCompletedFiles = completedFiles.length > 0;
+  const hasKnowledgeItems = enabledKnowledge.length > 0;
   const hasSelections = showSelectionList && selectionList.length > 0;
 
-  if (!showFileList && !showSelectionList) return null;
-  if (!hasUploadingFiles && !hasCompletedFiles && !hasSelections) return null;
+  if (!showFileList && !showSelectionList && !hasKnowledgeItems) return null;
+  if (!hasUploadingFiles && !hasCompletedFiles && !hasKnowledgeItems && !hasSelections) return null;
 
   return (
     <Flexbox gap={0}>
@@ -83,7 +113,7 @@ const ContextList = memo(() => {
       )}
 
       {/* Completed files and selections - show with compact Tag */}
-      {(hasCompletedFiles || hasSelections) && (
+      {(hasCompletedFiles || hasKnowledgeItems || hasSelections) && (
         <ScrollShadow
           hideScrollBar
           horizontal
@@ -100,6 +130,9 @@ const ContextList = memo(() => {
           >
             {selectionList.map((item) => (
               <SelectionItem key={item.id} {...item} />
+            ))}
+            {enabledKnowledge.map((item) => (
+              <KnowledgeSelectionItem key={item.id} {...item} />
             ))}
             {completedFiles.map((item) => (
               <ContextItem key={item.id} {...item} />
