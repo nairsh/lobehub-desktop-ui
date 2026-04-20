@@ -1,8 +1,7 @@
 'use client';
 
 import { Flexbox } from '@lobehub/ui';
-import { BotPromptIcon } from '@lobehub/ui/icons';
-import { MessageSquarePlusIcon, RadioTowerIcon, SearchIcon } from 'lucide-react';
+import { MessageSquarePlusIcon, SearchIcon } from 'lucide-react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
@@ -14,7 +13,6 @@ import { usePathname } from '@/libs/router/navigation';
 import { useActionSWR } from '@/libs/swr';
 import { useChatStore } from '@/store/chat';
 import { useGlobalStore } from '@/store/global';
-import { featureFlagsSelectors, useServerConfigStore } from '@/store/serverConfig';
 
 const Nav = memo(() => {
   const { t } = useTranslation('chat');
@@ -25,10 +23,8 @@ const Nav = memo(() => {
   const isProfileActive = pathname.includes('/profile');
   const isChannelActive = pathname.includes('/channel');
   const router = useQueryRoute();
-  const { isAgentEditable } = useServerConfigStore(featureFlagsSelectors);
   const toggleCommandMenu = useGlobalStore((s) => s.toggleCommandMenu);
-  const hideProfile = !isAgentEditable;
-  const switchTopic = useChatStore((s) => s.switchTopic);
+
   const [openNewTopicOrSaveTopic] = useChatStore((s) => [s.openNewTopicOrSaveTopic]);
 
   const { mutate } = useActionSWR('openNewTopicOrSaveTopic', openNewTopicOrSaveTopic);
@@ -47,28 +43,6 @@ const Nav = memo(() => {
         title={tCommon('navPanel.newChat')}
         onClick={handleNewTopic}
       />
-      {!hideProfile && (
-        <NavItem
-          active={isProfileActive}
-          icon={BotPromptIcon}
-          title={t('tab.profile')}
-          onClick={() => {
-            switchTopic(null, { skipRefreshMessage: true });
-            router.push(urlJoin('/agent', agentId!, 'profile'));
-          }}
-        />
-      )}
-      {!hideProfile && (
-        <NavItem
-          active={isChannelActive}
-          icon={RadioTowerIcon}
-          title={t('tab.integration')}
-          onClick={() => {
-            switchTopic(null, { skipRefreshMessage: true });
-            router.push(urlJoin('/agent', agentId!, 'channel'));
-          }}
-        />
-      )}
       <NavItem
         icon={SearchIcon}
         title={t('tab.search')}
