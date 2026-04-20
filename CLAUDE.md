@@ -1,123 +1,197 @@
-# CLAUDE.md
+# CLAUDE.md — Desktop UI Fork of LobeHub
 
-Guidelines for using Claude Code in this LobeHub repository.
+> Guide for Claude Code (and other AI assistants) working in this repository.
+> **This repo is a desktop-UI-only fork of LobeHub.** The LobeHub server runs separately on a hosted instance.
+> Your job is to customize the **Electron desktop client UI** — never the server.
 
-## Tech Stack
+For the human-readable contributor guide and the full directory allow/deny list, see [`AGENTS.md`](./AGENTS.md). This file repeats the essentials and adds Claude-specific guidance.
 
-- Next.js 16 + React 19 + TypeScript
-- SPA inside Next.js with `react-router-dom`
-- `@lobehub/ui`, antd for components; antd-style for CSS-in-JS — **prefer `createStaticStyles` with `cssVar.*`** (zero-runtime); only fall back to `createStyles` + `token` when styles genuinely need runtime computation. See `.cursor/docs/createStaticStyles_migration_guide.md`.
-- react-i18next for i18n; zustand for state management
-- SWR for data fetching; TRPC for type-safe backend
-- Drizzle ORM with PostgreSQL; Vitest for testing
+---
 
-## Project Structure
+## 1. Scope (read this first)
+
+This fork ships **only** the Electron desktop client. Anything backend-shaped that still exists in the tree is upstream code we keep for merge hygiene — **do not modify it**.
+
+### ✅ Work here
+
+- `apps/desktop/` — Electron app (`main/`, `preload/`, `common/`).
+- `src/spa/` — SPA entries (`entry.*.tsx`) and React Router config.
+- `src/routes/` — Thin SPA page segments.
+- `src/features/` — Domain UI (sidebars, panels, editors, etc.).
+- `src/components/` — Shared UI.
+- `src/store/` — Zustand client stores.
+- `src/hooks/` — Client React hooks.
+- `src/services/` — Client request builders (may _call_ TRPC, may not modify it).
+- `src/styles/`, `src/locales/`, `src/config/`, `src/const/`, `src/types/`, `src/utils/`.
+
+### ⛔ Do not touch
+
+- `src/server/` — Server services and TRPC routers.
+- `src/app/` — Next.js App Router (backend pages and API routes).
+- `src/app/(backend)/` — Backend API routes.
+- `src/instrumentation*.ts` — Server instrumentation.
+- `packages/database/` — Drizzle schemas/models/repositories.
+- `packages/agent-runtime/` — Server-side agent runtime.
+- `docker-compose/`, `Dockerfile` — Deployment artifacts.
+- `drizzle.config.ts` — DB migration config.
+- `next.config.ts` — Next.js server config.
+
+If a task seems to require any of the above, **stop and flag the scope conflict**. Don't silently refactor server code.
+
+---
+
+## 2. Where to look first
+
+1. **`apps/desktop/Development.md`** — authoritative architecture for the Electron main/preload (managers, controllers, IPC, i18n, updater, shortcuts).
+2. **`src/spa/router/`** — SPA route tree.
+3. **`src/routes/(desktop)/`, `src/routes/(main)/`** — desktop page segments.
+4. **`src/features/`** — most UI work.
+5. **`src/store/`** — state changes.
+6. **`.agents/skills/`** — auto-loaded skills; read the relevant `SKILL.md` before non-trivial work.
+
+---
+
+## 3. Tech stack
+
+- **Desktop shell:** Electron — main process in `apps/desktop/src/main/`, preload in `apps/desktop/src/preload/`.
+- **Renderer:** Vite + React 19 + TypeScript SPA, routed with `react-router-dom`.
+- **UI:** `@lobehub/ui` + `antd`, styling with `antd-style`. **Prefer `createStaticStyles` + `cssVar.*`** (zero-runtime). Fall back to `createStyles` + `token` only when styles genuinely need runtime computation. See `.cursor/docs/createStaticStyles_migration_guide.md` if present.
+- **State:** `zustand` for client state, `SWR` for data fetching.
+- **i18n:** `react-i18next`.
+- **Backend transport:** TRPC clients invoked from `src/services/` (read-only from this repo).
+- **Tests:** Vitest + Testing Library.
+
+> Next.js still exists in the tree but is **not** this fork's runtime. The desktop app loads the Vite-built SPA. Don't add Next.js-specific code or rely on App Router behavior.
+
+---
+
+## 4. Project structure (essentials)
 
 ```plaintext
 lobehub/
-├── apps/desktop/           # Electron desktop app
-├── packages/               # Shared packages (@lobechat/*)
-│   ├── database/           # Database schemas, models, repositories
-│   ├── agent-runtime/      # Agent runtime
-│   └── ...
+├── apps/
+│   └── desktop/                    # ✅ Electron app — see Development.md
+│       └── src/{main,preload,common}/
 ├── src/
-│   ├── app/                # Next.js App Router (backend API + auth)
-│   │   ├── (backend)/     # API routes (trpc, webapi, etc.)
-│   │   ├── spa/            # SPA HTML template service
-│   │   └── [variants]/(auth)/  # Auth pages (SSR required)
-│   ├── routes/             # SPA page components (Vite)
-│   │   ├── (main)/         # Desktop pages
-│   │   ├── (mobile)/       # Mobile pages
-│   │   ├── (desktop)/      # Desktop-specific pages
-│   │   ├── onboarding/     # Onboarding pages
-│   │   └── share/          # Share pages
-│   ├── spa/                # SPA entry points and router config
-│   │   ├── entry.web.tsx   # Web entry
-│   │   ├── entry.mobile.tsx
-│   │   ├── entry.desktop.tsx
-│   │   └── router/         # React Router configuration
-│   ├── store/              # Zustand stores
-│   ├── services/           # Client services
-│   ├── server/             # Server services and routers
-│   └── ...
-└── e2e/                    # E2E tests (Cucumber + Playwright)
+│   ├── spa/                        # ✅ SPA entries + router config
+│   │   └── router/
+│   │       ├── desktopRouter.config.tsx          # dynamic imports
+│   │       └── desktopRouter.config.desktop.tsx  # sync imports — KEEP IN SYNC
+│   ├── routes/                     # ✅ Thin route segments
+│   │   ├── (main)/  (mobile)/  (desktop)/  onboarding/  share/
+│   ├── features/                   # ✅ Domain UI
+│   ├── components/                 # ✅ Shared UI
+│   ├── store/  hooks/  services/   # ✅ Client logic
+│   ├── styles/  config/  const/  types/  utils/  locales/   # ✅
+│   ├── server/                     # ⛔ Server services, TRPC routers
+│   ├── app/                        # ⛔ Next.js App Router (backend)
+│   └── instrumentation*.ts         # ⛔ Server instrumentation
+├── packages/
+│   ├── database/                   # ⛔ Drizzle, PG schemas
+│   └── agent-runtime/              # ⛔ Server agent runtime
+├── docker-compose/  Dockerfile     # ⛔ Deployment
+├── drizzle.config.ts               # ⛔ DB migrations
+├── next.config.ts                  # ⛔ Next.js config
+└── .agents/skills/                 # 👀 Auto-loaded skills
 ```
 
-## SPA Routes and Features
+---
 
-SPA-related code is grouped under `src/spa/` (entries + router) and `src/routes/` (page segments). We use a **roots vs features** split: route trees only hold page segments; business logic and UI live in features.
+## 5. SPA routes & features
 
-- **`src/spa/`** – SPA entry points (`entry.web.tsx`, `entry.mobile.tsx`, `entry.desktop.tsx`) and React Router config (`router/`). Keeps router config next to entries to avoid confusion with `src/routes/`.
+We use a **roots vs features** split:
 
-- **`src/routes/` (roots)**\
-  Only page-segment files: `_layout/index.tsx`, `index.tsx` (or `page.tsx`), and dynamic segments like `[id]/index.tsx`. Keep these **thin**: they should only import from `@/features/*` and compose layout/page, with no business logic or heavy UI.
+- **`src/spa/`** — entries (`entry.web.tsx`, `entry.mobile.tsx`, `entry.desktop.tsx`) and React Router configuration.
+- **`src/routes/` (roots)** — only page-segment files: `_layout/index.tsx`, `index.tsx`, `[id]/index.tsx`. Keep these **thin** — import from `@/features/*` and compose. No business logic.
+- **`src/features/`** — business UI by **domain** (e.g. `Pages`, `PageEditor`, `Home`). Layout chunks, hooks, and domain UI go here. Each feature exports via `index.ts(x)`.
 
-- **`src/features/`**\
-  Business components by **domain** (e.g. `Pages`, `PageEditor`, `Home`). Put layout chunks (sidebar, header, body), hooks, and domain-specific UI here. Each feature exposes an `index.ts` (or `index.tsx`) with clear exports.
+When adding/changing SPA routes:
 
-When adding or changing SPA routes:
+1. Add only route segment files under `src/routes/` that delegate to features.
+2. Implement the layout/page content in `src/features/<Domain>/` and export it.
+3. Import via `import { X } from '@/features/<Domain>'`. Do **not** create `features/` folders under `src/routes/`.
+4. **Desktop router parity:** update **both** `src/spa/router/desktopRouter.config.tsx` (dynamic imports) and `src/spa/router/desktopRouter.config.desktop.tsx` (sync imports). Paths and nesting must match — **a mismatch causes blank screens** in the desktop build.
 
-1. In `src/routes/`, add only the route segment files (layout + page) that delegate to features.
-2. Implement layout and page content under `src/features/<Domain>/` and export from there.
-3. In route files, use `import { X } from '@/features/<Domain>'` (or `import Y from '@/features/<Domain>/...'`). Do not add new `features/` folders inside `src/routes/`.
-4. **Register the desktop route tree in both configs:** `src/spa/router/desktopRouter.config.tsx` and `src/spa/router/desktopRouter.config.desktop.tsx` must stay in sync (same paths and nesting). Updating only one can cause **blank screens** if the other build path expects the route.
+See `.agents/skills/spa-routes/SKILL.md` for the full convention.
 
-See the **spa-routes** skill (`.agents/skills/spa-routes/SKILL.md`) for the full convention and file-division rules.
+---
 
-## Development
+## 6. Development
 
-### Starting the Dev Environment
+### Starting the dev environment
 
 ```bash
-# SPA dev mode (frontend only, proxies API to localhost:3010)
+# Frontend-only SPA dev (recommended for UI work)
 bun run dev:spa
-
-# Full-stack dev (Next.js + Vite SPA concurrently)
-bun run dev
 ```
 
-After `dev:spa` starts, the terminal prints a **Debug Proxy** URL:
+`dev:spa` prints a **Debug Proxy** URL such as:
 
-```plaintext
+```
 Debug Proxy: https://app.lobehub.com/_dangerous_local_dev_proxy?debug-host=http%3A%2F%2Flocalhost%3A9876
 ```
 
-Open this URL to develop locally against the production backend (app.lobehub.com). The proxy page loads your local Vite dev server's SPA into the online environment, enabling HMR with real server config.
+Open it to load your local Vite SPA inside the production backend environment with HMR.
 
-### Git Workflow
+For Electron-shell work (windows, IPC, menus, tray, updater, shortcuts), follow `apps/desktop/Development.md`.
 
-- **Branch strategy**: `canary` is the development branch (cloud production); `main` is the release branch (periodically cherry-picks from canary)
-- New branches should be created from `canary`; PRs should target `canary`
-- Use rebase for `git pull`
-- Commit messages: prefix with gitmoji
-- Branch format: `<type>/<feature-name>`
+### Package management
 
-### Package Management
-
-- `pnpm` for dependency management
-- `bun` to run npm scripts
-- `bunx` for executable npm packages
+- `pnpm` for dependency management.
+- `bun` to run npm scripts.
+- `bunx` for executable npm packages.
 
 ### Testing
 
 ```bash
-# Run specific test (NEVER run `bun run test` - takes ~10 minutes)
+# Single test file — always quote the path
 bunx vitest run --silent='passed-only' '[file-path]'
-
-# Database package
-cd packages/database && bunx vitest run --silent='passed-only' '[file]'
 ```
 
-- Prefer `vi.spyOn` over `vi.mock`
-- Tests must pass type check: `bun run type-check`
-- After 2 failed fix attempts, stop and ask for help
+- **Never** run `bun run test` — it runs the entire suite (\~10 min), including server tests we do not own.
+- Prefer `vi.spyOn` over `vi.mock`.
+- Tests must pass `bun run type-check`.
+- After two failed fix attempts on a test, stop and ask.
 
 ### i18n
 
-- Add keys to `src/locales/default/namespace.ts`
-- For dev preview: translate `locales/zh-CN/` and `locales/en-US/`
-- Don't run `pnpm i18n` - CI handles it
+- Add keys to `src/locales/default/<namespace>.ts`.
+- For local preview, translate `locales/zh-CN/<namespace>.json` and/or `locales/en-US/<namespace>.json`.
+- Don't run `pnpm i18n` — CI handles it.
 
-## Skills (Auto-loaded by Claude)
+---
 
-Claude Code automatically loads relevant skills from `.agents/skills/`.
+## 7. Git workflow
+
+- **Branches:** `canary` is the development branch; `main` is the release branch (periodically cherry-picks from canary).
+- Branch from `canary`. PRs target `canary`.
+- Use `git pull --rebase`.
+- Branch format: `<type>/<feature-name>` (e.g. `feat/desktop-tab-strip`).
+- Commit messages prefix with **gitmoji** (`:sparkles:`, `:bug:`, `:lipstick:`, …).
+- **Never** run destructive Git commands (`git restore`, `git checkout --`, `git reset --hard`, etc.) against files with uncommitted local changes without explicit user confirmation.
+
+---
+
+## 8. Skills
+
+Skills under `.agents/skills/` are auto-loaded by Claude Code when relevant. Useful in this fork:
+
+- `spa-routes`, `react`, `zustand`, `i18n`, `hotkey`, `modal`, `microcopy`, `typescript`, `testing`, `code-review`.
+
+When reviewing code or diffs, **always read `.agents/skills/code-review/SKILL.md` first**.
+
+Backend-oriented skills (`trpc-router`, `drizzle`, `db-migrations`, `upstash-workflow`, etc.) are **out of scope** for this fork — if a task seems to require them, you've crossed the line into server territory.
+
+---
+
+## 9. Pre-edit checklist
+
+Before changing any file, confirm:
+
+1. ☐ The file is under an **ALLOWED** path (Section 1).
+2. ☐ The change is **client/UI** behavior, not server logic.
+3. ☐ If editing SPA routes, both `desktopRouter.config.tsx` files will be kept in sync.
+4. ☐ If adding i18n keys, the default locale and at least one preview locale are updated.
+5. ☐ A targeted `bunx vitest run` covers the change (no full-suite runs).
+
+If any box is unchecked, stop and reconsider.
