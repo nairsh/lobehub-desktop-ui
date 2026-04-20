@@ -123,7 +123,9 @@ const ModelSwitch = memo(() => {
           >
             {modelDisplayName}
           </Text>
-          {reasoning && <span className={styles.reasoningLabel}>{reasoning.label}</span>}
+          {reasoning && reasoning.value !== 'none' && (
+            <span className={styles.reasoningLabel}>{reasoning.label}</span>
+          )}
           <ChevronDown size={12} style={{ color: cssVar.colorTextTertiary, flexShrink: 0 }} />
         </Flexbox>
       </ModelSwitchPanel>
