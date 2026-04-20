@@ -31,8 +31,6 @@ export const resolvePrimaryThemeColor = (value?: PrimaryColors) =>
 export const resolveNeutralThemeColor = (value?: NeutralColors) => {
   if (!value) return undefined;
   const baseColor = neutralColors[value];
-  // 'gray' has no hue to boost; return as-is to preserve a true neutral.
-  if (value === 'gray') return baseColor;
   // Radix neutral palettes ship with ~2-4% HSL saturation, which makes
   // mauve/olive/sage/sand/slate visually indistinguishable. Boost to ~12%
   // so the hue is subtle but clearly noticeable in the resolved theme.

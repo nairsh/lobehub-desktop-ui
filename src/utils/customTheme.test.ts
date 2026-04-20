@@ -19,8 +19,7 @@ describe('customTheme', () => {
     );
   });
 
-  it('boosts neutral hue saturation while leaving gray untouched', () => {
-    expect(resolveNeutralThemeColor('gray')).toBe(neutralColors.gray);
+  it('boosts neutral hue saturation across the supported neutral palettes', () => {
     for (const name of ['mauve', 'olive', 'sage', 'sand', 'slate'] as const) {
       const resolved = resolveNeutralThemeColor(name)!;
       expect(chroma(resolved).get('hsl.s')).toBeCloseTo(0.12, 2);
