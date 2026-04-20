@@ -282,7 +282,7 @@ const WorkflowCollapse = memo<WorkflowCollapseProps>(
           height={24}
           justify="center"
           style={{ fontSize: 12 }}
-          variant="outlined"
+          variant="borderless"
           width={24}
         >
           {statusIcon}
