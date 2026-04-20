@@ -151,9 +151,11 @@ const AppTheme = memo<AppThemeProps>(
 
     const currentAppearence = isDark ? 'dark' : 'light';
 
-    // When a preset is active, it supplies its own primary/neutral; ignore user overrides.
-    const resolvedPrimaryColor = themePreset ? undefined : (primaryColor ?? defaultPrimaryColor);
-    const resolvedNeutralColor = themePreset ? undefined : (neutralColor ?? defaultNeutralColor);
+    // Presets supply their own primary/neutral named colors via customTheme.
+    const resolvedPrimaryColor =
+      themePreset === 'perplexity' ? 'cyan' : (primaryColor ?? defaultPrimaryColor);
+    const resolvedNeutralColor =
+      themePreset === 'perplexity' ? 'slate' : (neutralColor ?? defaultNeutralColor);
 
     const enhancedThemeTokens = useMemo(
       () =>

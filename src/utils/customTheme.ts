@@ -75,7 +75,6 @@ export const createEnhancedThemeTokens = ({
           colorFillQuaternary: 'rgba(32, 178, 170, 0.06)',
           colorFillSecondary: 'rgba(32, 178, 170, 0.14)',
           colorFillTertiary: 'rgba(32, 178, 170, 0.09)',
-          colorPrimary: PERPLEXITY_PRIMARY,
           colorPrimaryBg: 'rgba(32, 178, 170, 0.18)',
           colorPrimaryBgHover: 'rgba(32, 178, 170, 0.26)',
           colorPrimaryBorder: 'rgba(32, 178, 170, 0.38)',

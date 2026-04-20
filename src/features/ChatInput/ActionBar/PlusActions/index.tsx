@@ -61,11 +61,14 @@ const PlusActions = memo(() => {
   const [showTypoBar, setShowTypoBar] = useChatInputStore((s) => [s.showTypoBar, s.setShowTypoBar]);
   const enableRichRender = useUserStore(labPreferSelectors.enableInputMarkdown);
 
-  const [searchMode, rawSearchMode, model, provider] = useAgentStore((s) => [
+  const [searchMode, rawSearchMode, model, provider, enabledKnowledgeBases] = useAgentStore((s) => [
     chatConfigByIdSelectors.getSearchModeById(agentId)(s),
     chatConfigByIdSelectors.getChatConfigById(agentId)(s)?.searchMode,
     agentByIdSelectors.getAgentModelById(agentId)(s),
     agentByIdSelectors.getAgentModelProviderById(agentId)(s),
+    agentByIdSelectors
+      .getAgentKnowledgeBasesById(agentId)(s)
+      .filter((kb) => kb.enabled),
   ]);
   const isMemoryEnabled = useMemoryEnabled(agentId);
   const supportToolUse = useModelSupportToolUse(model, provider);
@@ -74,6 +77,7 @@ const PlusActions = memo(() => {
   const showSearchIndicator = rawSearchMode === 'auto';
   const showMemoryIndicator = isMemoryEnabled;
   const showTypoIndicator = enableRichRender && !!showTypoBar;
+  const showLibraryIndicator = enableKnowledgeBase && enabledKnowledgeBases.length > 0;
 
   const items: ActionDropdownMenuItems = [
     {
@@ -219,6 +223,15 @@ const PlusActions = memo(() => {
             onClick={async () => {
               await updateAgentChatConfig({ memory: { enabled: false } });
             }}
+          />
+        )}
+        {showLibraryIndicator && (
+          <Action
+            color={cssVar.colorInfo}
+            icon={LibraryBig}
+            showTooltip={false}
+            title={t('knowledgeBase.title')}
+            onClick={() => setLibraryOpen(true)}
           />
         )}
         {showTypoIndicator && (

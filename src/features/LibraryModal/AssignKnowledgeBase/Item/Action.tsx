@@ -1,5 +1,5 @@
-import { ActionIcon, Button, DropdownMenu, Flexbox, Icon } from '@lobehub/ui';
-import { InfoIcon, MoreVerticalIcon, Trash2 } from 'lucide-react';
+import { ActionIcon, Button, Flexbox, Icon } from '@lobehub/ui';
+import { Check, X } from 'lucide-react';
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -52,35 +52,18 @@ const Actions = memo<ActionsProps>(({ id, type, enabled }) => {
   };
 
   return (
-    <Flexbox horizontal align={'center'}>
+    <Flexbox horizontal align={'center'} gap={4}>
       {enabled ? (
-        <DropdownMenu
-          placement="bottomRight"
-          items={[
-            {
-              icon: <Icon icon={InfoIcon} />,
-              key: 'detail',
-              label: t('knowledgeBase.library.action.detail'),
-              onClick: () => {
-                if (type === KnowledgeType.KnowledgeBase) {
-                  window.open(`/resource/library/${id}`);
-                  return;
-                }
-
-                window.open(`/resource?file=${id}`);
-              },
-            },
-            {
-              danger: true,
-              icon: <Icon icon={Trash2} />,
-              key: 'remove',
-              label: t('knowledgeBase.library.action.remove'),
-              onClick: removeKnowledge,
-            },
-          ]}
-        >
-          <ActionIcon icon={MoreVerticalIcon} loading={loading} />
-        </DropdownMenu>
+        <>
+          <Icon icon={Check} size={16} style={{ color: 'var(--lobe-colorSuccess, #52c41a)' }} />
+          <ActionIcon
+            icon={X}
+            loading={loading}
+            size={'small'}
+            title={t('knowledgeBase.library.action.remove')}
+            onClick={removeKnowledge}
+          />
+        </>
       ) : (
         <Button
           loading={loading}

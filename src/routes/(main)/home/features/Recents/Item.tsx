@@ -1,5 +1,5 @@
 import { ActionIcon, DropdownMenu, Flexbox } from '@lobehub/ui';
-import { MessageSquareIcon, MoreHorizontalIcon, UsersIcon } from 'lucide-react';
+import { MoreHorizontalIcon, UsersIcon } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
@@ -34,7 +34,7 @@ const RecentListItem = memo<RecentChatItem>((item) => {
         contextMenuItems={dropdownMenu}
         disabled={editing}
         height={26}
-        icon={type === 'group' ? UsersIcon : MessageSquareIcon}
+        icon={type === 'group' ? UsersIcon : undefined}
         title={title}
         actions={
           <DropdownMenu items={dropdownMenu()} nativeButton={false}>
