@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useUserStore } from '@/store/user';
+import { userProfileSelectors } from '@/store/user/slices/auth/selectors';
+
 import { parseGreetingTime } from './greetingTime';
 
 export const useGreeting = () => {
   const { t } = useTranslation('welcome');
+  const userName = useUserStore(userProfileSelectors.displayUserName) || 'there';
 
   const [greeting, setGreeting] = useState<'morning' | 'noon' | 'afternoon' | 'night'>();
 
@@ -12,5 +16,5 @@ export const useGreeting = () => {
     setGreeting(parseGreetingTime());
   }, []);
 
-  return greeting && t(`guide.welcome.${greeting}`);
+  return greeting && t(`guide.welcome.${greeting}`, { userName });
 };
