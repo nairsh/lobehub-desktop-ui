@@ -1,3 +1,5 @@
+import { neutralColors } from '@lobehub/ui';
+import chroma from 'chroma-js';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -11,7 +13,18 @@ import {
 describe('customTheme', () => {
   it('resolves named theme colors', () => {
     expect(resolvePrimaryThemeColor('magenta')).toBe('#e34ba9');
-    expect(resolveNeutralThemeColor('mauve')).toBe('#737177');
+    // mauve is boosted from Radix's ~3% saturation to ~12% so the hue is visible.
+    expect(resolveNeutralThemeColor('mauve')).toBe(
+      chroma(neutralColors.mauve).set('hsl.s', 0.12).hex(),
+    );
+  });
+
+  it('boosts neutral hue saturation while leaving gray untouched', () => {
+    expect(resolveNeutralThemeColor('gray')).toBe(neutralColors.gray);
+    for (const name of ['mauve', 'olive', 'sage', 'sand', 'slate'] as const) {
+      const resolved = resolveNeutralThemeColor(name)!;
+      expect(chroma(resolved).get('hsl.s')).toBeCloseTo(0.12, 2);
+    }
   });
 
   it('creates visible swatch gradients', () => {
