@@ -32,17 +32,11 @@ import { type LobeBuiltinTool } from '@lobechat/types';
  * Shared between frontend (createAgentToolsEngine) and server (createServerAgentToolsEngine).
  */
 export const defaultToolIds = [
-  LobeActivatorManifest.identifier,
-  SkillsManifest.identifier,
-  SkillStoreManifest.identifier,
-  WebBrowsingManifest.identifier,
-  KnowledgeBaseManifest.identifier,
-  MemoryManifest.identifier,
   LocalSystemManifest.identifier,
-  CloudSandboxManifest.identifier,
+  WebBrowsingManifest.identifier,
+  MemoryManifest.identifier,
+  KnowledgeBaseManifest.identifier,
   TopicReferenceManifest.identifier,
-  AgentDocumentsManifest.identifier,
-  GTDManifest.identifier,
 ];
 
 /**
