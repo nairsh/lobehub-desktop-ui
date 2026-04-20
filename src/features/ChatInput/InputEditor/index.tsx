@@ -163,13 +163,25 @@ const InputEditor = memo<{ defaultRows?: number; placeholder?: ReactNode }>(
         selectionType: string;
       }): Promise<string | null> => {
         // Skip autocomplete during IME composition (e.g. Chinese input method)
-        if (isComposingRef.current) return null;
+        if (isComposingRef.current) {
+          console.warn('[InputAutoComplete] skipped: IME composition in progress');
+          return null;
+        }
 
         if (!input.trim()) return null;
 
         const { enabled: _, ...config } = systemAgentSelectors.inputCompletion(
           useUserStore.getState(),
         );
+
+        if (!config.model || !config.provider) {
+          console.warn(
+            '[InputAutoComplete] skipped: missing model or provider in inputCompletion config',
+            config,
+          );
+          return null;
+        }
+
         const context = getMessagesRef.current?.();
         const chainParams = chainInputCompletion(input, afterText, context);
 
@@ -177,10 +189,14 @@ const InputEditor = memo<{ defaultRows?: number; placeholder?: ReactNode }>(
         abortSignal.addEventListener('abort', () => abortController.abort());
 
         let result = '';
+        let requestError: unknown = null;
 
         try {
           await chatService.fetchPresetTaskResult({
             abortController,
+            onError: (error, errorContent) => {
+              requestError = errorContent ?? error;
+            },
             onMessageHandle: (chunk) => {
               if (chunk.type === 'text') {
                 result += chunk.text;
@@ -188,13 +204,34 @@ const InputEditor = memo<{ defaultRows?: number; placeholder?: ReactNode }>(
             },
             params: merge(config, chainParams),
           });
-        } catch {
+        } catch (error) {
+          console.error('[InputAutoComplete] fetchPresetTaskResult threw:', error, {
+            model: config.model,
+            provider: config.provider,
+          });
           return null;
         }
 
         if (abortSignal.aborted) return null;
 
-        return result.trimEnd() || null;
+        if (requestError) {
+          console.error('[InputAutoComplete] request failed:', requestError, {
+            model: config.model,
+            provider: config.provider,
+          });
+          return null;
+        }
+
+        const completion = result.trimEnd();
+        if (!completion) {
+          console.warn('[InputAutoComplete] empty completion result', {
+            model: config.model,
+            provider: config.provider,
+          });
+          return null;
+        }
+
+        return completion;
       },
       [],
     );
