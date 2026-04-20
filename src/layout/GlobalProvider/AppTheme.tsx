@@ -105,10 +105,11 @@ const AppTheme = memo<AppThemeProps>(
     const antdTheme = useTheme();
     const isDark = useIsDark();
 
-    const [primaryColor, neutralColor, animationMode] = useUserStore((s) => [
+    const [primaryColor, neutralColor, animationMode, themePreset] = useUserStore((s) => [
       userGeneralSettingsSelectors.primaryColor(s),
       userGeneralSettingsSelectors.neutralColor(s),
       userGeneralSettingsSelectors.animationMode(s),
+      userGeneralSettingsSelectors.themePreset(s),
     ]);
     const messageTop = isDesktop ? TITLE_BAR_HEIGHT + 8 : undefined;
     const appConfig = useMemo(
@@ -149,14 +150,20 @@ const AppTheme = memo<AppThemeProps>(
     }, [messageTop]);
 
     const currentAppearence = isDark ? 'dark' : 'light';
+
+    // When a preset is active, it supplies its own primary/neutral; ignore user overrides.
+    const resolvedPrimaryColor = themePreset ? undefined : (primaryColor ?? defaultPrimaryColor);
+    const resolvedNeutralColor = themePreset ? undefined : (neutralColor ?? defaultNeutralColor);
+
     const enhancedThemeTokens = useMemo(
       () =>
         createEnhancedThemeTokens({
           isDarkMode: isDark,
-          neutralColor: neutralColor ?? defaultNeutralColor,
-          primaryColor: primaryColor ?? defaultPrimaryColor,
+          neutralColor: resolvedNeutralColor,
+          primaryColor: resolvedPrimaryColor,
+          themePreset,
         }),
-      [defaultNeutralColor, defaultPrimaryColor, isDark, neutralColor, primaryColor],
+      [isDark, resolvedNeutralColor, resolvedPrimaryColor, themePreset],
     );
 
     return (
@@ -167,8 +174,8 @@ const AppTheme = memo<AppThemeProps>(
           defaultAppearance={currentAppearence}
           defaultThemeMode={currentAppearence}
           customTheme={{
-            neutralColor: neutralColor ?? defaultNeutralColor,
-            primaryColor: primaryColor ?? defaultPrimaryColor,
+            neutralColor: resolvedNeutralColor,
+            primaryColor: resolvedPrimaryColor,
           }}
           theme={{
             cssVar: { key: 'lobe-vars' },

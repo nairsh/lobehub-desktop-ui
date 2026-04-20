@@ -6,6 +6,8 @@ export type AnimationMode = 'disabled' | 'agile' | 'elegant';
 
 export type ContextMenuMode = 'disabled' | 'default';
 
+export type ThemePreset = 'perplexity';
+
 export interface UserGeneralConfig {
   animationMode?: AnimationMode;
   contextMenuMode?: ContextMenuMode;
@@ -23,6 +25,7 @@ export interface UserGeneralConfig {
   primaryColor?: PrimaryColors;
   responseLanguage?: string;
   telemetry: boolean;
+  themePreset?: ThemePreset;
   timezone?: string;
   transitionMode?: ResponseAnimationStyle;
 }

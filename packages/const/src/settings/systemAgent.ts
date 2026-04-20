@@ -31,7 +31,7 @@ export const DEFAULT_PROMPT_REWRITE_SYSTEM_AGENT_ITEM: PromptRewriteSystemAgent 
 };
 
 export const DEFAULT_INPUT_COMPLETION_SYSTEM_AGENT_ITEM: SystemAgentItem = {
-  enabled: false,
+  enabled: true,
   model: DEFAULT_MINI_SYSTEM_AGENT_ITEM.model,
   provider: DEFAULT_MINI_SYSTEM_AGENT_ITEM.provider,
 };

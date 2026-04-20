@@ -13,16 +13,16 @@ import {
 describe('customTheme', () => {
   it('resolves named theme colors', () => {
     expect(resolvePrimaryThemeColor('magenta')).toBe('#e34ba9');
-    // mauve is boosted from Radix's ~3% saturation to ~12% so the hue is visible.
+    // mauve is boosted from Radix's ~3% saturation to ~35% so the hue is clearly visible.
     expect(resolveNeutralThemeColor('mauve')).toBe(
-      chroma(neutralColors.mauve).set('hsl.s', 0.12).hex(),
+      chroma(neutralColors.mauve).set('hsl.s', 0.35).hex(),
     );
   });
 
   it('boosts neutral hue saturation across the supported neutral palettes', () => {
     for (const name of ['mauve', 'olive', 'sage', 'sand', 'slate'] as const) {
       const resolved = resolveNeutralThemeColor(name)!;
-      expect(chroma(resolved).get('hsl.s')).toBeCloseTo(0.12, 2);
+      expect(chroma(resolved).get('hsl.s')).toBeCloseTo(0.35, 2);
     }
   });
 

@@ -12,7 +12,7 @@ import { useUserStore } from '@/store/user';
 import { settingsSelectors } from '@/store/user/slices/settings/selectors';
 
 import Preview from './Preview';
-import { ThemeSwatchesNeutral, ThemeSwatchesPrimary } from './ThemeSwatches';
+import { ThemePresets, ThemeSwatchesNeutral, ThemeSwatchesPrimary } from './ThemeSwatches';
 
 const Appearance = memo(() => {
   const { t } = useTranslation('setting');
@@ -28,6 +28,13 @@ const Appearance = memo(() => {
         children: <Preview />,
         label: t('settingAppearance.preview.title'),
         minWidth: undefined,
+      },
+      {
+        children: <ThemePresets />,
+        desc: t('settingAppearance.themePreset.desc'),
+        label: t('settingAppearance.themePreset.title'),
+        minWidth: undefined,
+        name: 'themePreset',
       },
       {
         children: <ThemeSwatchesPrimary />,

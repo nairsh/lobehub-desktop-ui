@@ -548,6 +548,11 @@ export default {
   'settingAppearance.preview.title': 'Color Palette',
   'settingAppearance.primaryColor.desc': 'Custom theme color',
   'settingAppearance.primaryColor.title': 'Theme Color',
+  'settingAppearance.themePreset.desc':
+    'Apply a curated color theme preset (overrides primary & neutral color)',
+  'settingAppearance.themePreset.none': 'None',
+  'settingAppearance.themePreset.perplexity': 'Perplexity',
+  'settingAppearance.themePreset.title': 'Theme Preset',
   'settingAppearance.title': 'Application Appearance',
   'settingChat.autoCreateTopicThreshold.desc':
     'Automatically create a topic when the current message count exceeds this value',

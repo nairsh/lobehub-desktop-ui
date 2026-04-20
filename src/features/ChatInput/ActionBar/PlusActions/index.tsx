@@ -4,16 +4,27 @@ import { validateVideoFileSize } from '@lobechat/utils/client';
 import { Flexbox } from '@lobehub/ui';
 import { Upload } from 'antd';
 import { css, cssVar, cx } from 'antd-style';
-import { Blocks, Brain, FileUp, FolderUp, Globe, PlusIcon, TypeIcon } from 'lucide-react';
+import {
+  Blocks,
+  Brain,
+  FileUp,
+  FolderUp,
+  Globe,
+  LibraryBig,
+  PlusIcon,
+  TypeIcon,
+} from 'lucide-react';
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { message } from '@/components/AntdStaticMethods';
+import { AttachKnowledgeModal } from '@/features/LibraryModal';
 import { createSkillStoreModal } from '@/features/SkillStore';
 import { useModelSupportToolUse } from '@/hooks/useModelSupportToolUse';
 import { useAgentStore } from '@/store/agent';
 import { agentByIdSelectors, chatConfigByIdSelectors } from '@/store/agent/selectors';
 import { useFileStore } from '@/store/file';
+import { featureFlagsSelectors, useServerConfigStore } from '@/store/serverConfig';
 import { useUserStore } from '@/store/user';
 import { labPreferSelectors } from '@/store/user/selectors';
 
@@ -39,10 +50,13 @@ const PlusActions = memo(() => {
   const { t: tSetting } = useTranslation('setting');
   const { t: tEditor } = useTranslation('editor');
   const [open, setOpen] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
 
   const upload = useFileStore((s) => s.uploadChatFiles);
   const agentId = useAgentId();
   const { updateAgentChatConfig } = useUpdateAgentConfig();
+
+  const { enableKnowledgeBase } = useServerConfigStore(featureFlagsSelectors);
 
   const [showTypoBar, setShowTypoBar] = useChatInputStore((s) => [s.showTypoBar, s.setShowTypoBar]);
   const enableRichRender = useUserStore(labPreferSelectors.enableInputMarkdown);
@@ -139,6 +153,20 @@ const PlusActions = memo(() => {
         createSkillStoreModal();
       },
     },
+    ...(enableKnowledgeBase
+      ? [
+          { key: 'divider-library', type: 'divider' as const },
+          {
+            icon: LibraryBig,
+            key: 'library',
+            label: t('knowledgeBase.title'),
+            onClick: () => {
+              setOpen(false);
+              setLibraryOpen(true);
+            },
+          },
+        ]
+      : []),
     ...(enableRichRender
       ? [
           { key: 'divider-2', type: 'divider' as const },
@@ -157,51 +185,54 @@ const PlusActions = memo(() => {
   ];
 
   return (
-    <Flexbox horizontal align={'center'} gap={2}>
-      <Action
-        icon={PlusIcon}
-        open={open}
-        showTooltip={false}
-        title={t('input.more')}
-        dropdown={{
-          menu: { items },
-          minWidth: 240,
-          placement: 'topLeft',
-        }}
-        onOpenChange={setOpen}
-      />
-      {showSearchIndicator && (
+    <>
+      <Flexbox horizontal align={'center'} gap={2}>
         <Action
-          color={cssVar.colorInfo}
-          icon={Globe}
+          icon={PlusIcon}
+          open={open}
           showTooltip={false}
-          title={t('search.title')}
-          onClick={async () => {
-            await updateAgentChatConfig({ searchMode: 'off' });
+          title={t('input.more')}
+          dropdown={{
+            menu: { items },
+            minWidth: 240,
+            placement: 'topLeft',
           }}
+          onOpenChange={setOpen}
         />
-      )}
-      {showMemoryIndicator && (
-        <Action
-          color={cssVar.colorInfo}
-          icon={Brain}
-          showTooltip={false}
-          title={t('memory.title')}
-          onClick={async () => {
-            await updateAgentChatConfig({ memory: { enabled: false } });
-          }}
-        />
-      )}
-      {showTypoIndicator && (
-        <Action
-          color={cssVar.colorInfo}
-          icon={TypeIcon}
-          showTooltip={false}
-          title={tEditor('actions.typobar.off')}
-          onClick={() => setShowTypoBar(false)}
-        />
-      )}
-    </Flexbox>
+        {showSearchIndicator && (
+          <Action
+            color={cssVar.colorInfo}
+            icon={Globe}
+            showTooltip={false}
+            title={t('search.title')}
+            onClick={async () => {
+              await updateAgentChatConfig({ searchMode: 'off' });
+            }}
+          />
+        )}
+        {showMemoryIndicator && (
+          <Action
+            color={cssVar.colorInfo}
+            icon={Brain}
+            showTooltip={false}
+            title={t('memory.title')}
+            onClick={async () => {
+              await updateAgentChatConfig({ memory: { enabled: false } });
+            }}
+          />
+        )}
+        {showTypoIndicator && (
+          <Action
+            color={cssVar.colorInfo}
+            icon={TypeIcon}
+            showTooltip={false}
+            title={tEditor('actions.typobar.off')}
+            onClick={() => setShowTypoBar(false)}
+          />
+        )}
+      </Flexbox>
+      {enableKnowledgeBase && <AttachKnowledgeModal open={libraryOpen} setOpen={setLibraryOpen} />}
+    </>
   );
 });
 

@@ -97,11 +97,6 @@ const Nav = memo(() => {
 
   return (
     <Flexbox gap={4} paddingInline={4}>
-      {PRIMARY_KEYS.map((key) => {
-        const item = itemMap.get(key);
-        if (!item || item.hidden) return null;
-        return renderPrimary(item);
-      })}
       <Flexbox horizontal align={'center'} gap={4} paddingInline={4}>
         {ICON_KEYS.map((key) => {
           const item = itemMap.get(key);
@@ -109,6 +104,11 @@ const Nav = memo(() => {
           return renderIcon(item);
         })}
       </Flexbox>
+      {PRIMARY_KEYS.map((key) => {
+        const item = itemMap.get(key);
+        if (!item || item.hidden) return null;
+        return renderPrimary(item);
+      })}
     </Flexbox>
   );
 });
