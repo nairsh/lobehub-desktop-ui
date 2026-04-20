@@ -12,6 +12,7 @@ import { agentSelectors, builtinAgentSelectors } from '@/store/agent/selectors';
 import { agentGroupSelectors, useAgentGroupStore } from '@/store/agentGroup';
 import { useUserStore } from '@/store/user';
 import { userGeneralSettingsSelectors } from '@/store/user/selectors';
+import { userProfileSelectors } from '@/store/user/slices/auth/selectors';
 
 import OpeningQuestions from './OpeningQuestions';
 import ToolAuthAlert from './ToolAuthAlert';
@@ -21,6 +22,7 @@ const InboxWelcome = memo(() => {
   const mobile = useIsMobile();
   const isInbox = useAgentStore(builtinAgentSelectors.isInboxAgent);
   const fontSize = useUserStore(userGeneralSettingsSelectors.fontSize);
+  const userName = useUserStore(userProfileSelectors.displayUserName) || 'there';
   const meta = useAgentStore(agentSelectors.currentAgentMeta, isEqual);
   const [groupMeta] = useAgentGroupStore((s) => [agentGroupSelectors.currentGroupMeta(s)]);
 
@@ -68,7 +70,9 @@ const InboxWelcome = memo(() => {
         </Text>
         <Flexbox width={'min(100%, 640px)'}>
           <Markdown fontSize={fontSize} variant={'chat'}>
-            {isInbox ? t('guide.defaultMessageWithoutCreate', { appName: 'Lobe AI' }) : message}
+            {isInbox
+              ? t('guide.defaultMessageWithoutCreate', { appName: 'Lobe AI', userName })
+              : message}
           </Markdown>
         </Flexbox>
         {openingQuestions.length > 0 && (

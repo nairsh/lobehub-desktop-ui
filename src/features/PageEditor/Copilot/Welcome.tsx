@@ -9,11 +9,14 @@ import { conversationSelectors, useConversationStore } from '@/features/Conversa
 import SuggestQuestions from '@/features/SuggestQuestions';
 import { useAgentStore } from '@/store/agent';
 import { agentByIdSelectors } from '@/store/agent/selectors';
+import { useUserStore } from '@/store/user';
+import { userProfileSelectors } from '@/store/user/slices/auth/selectors';
 
 const AgentBuilderWelcome = memo(() => {
   const { t } = useTranslation('chat');
   const agentId = useConversationStore(conversationSelectors.agentId);
   const agent = useAgentStore(agentByIdSelectors.getAgentConfigById(agentId));
+  const userName = useUserStore(userProfileSelectors.displayUserName) || 'there';
 
   return (
     <>
@@ -30,7 +33,7 @@ const AgentBuilderWelcome = memo(() => {
           {t('pageCopilot.title')}
         </Text>
         <Markdown fontSize={14} variant={'chat'}>
-          {t('pageCopilot.welcome')}
+          {t('pageCopilot.welcome', { userName })}
         </Markdown>
         <SuggestQuestions count={3} mode="write" />
       </Flexbox>

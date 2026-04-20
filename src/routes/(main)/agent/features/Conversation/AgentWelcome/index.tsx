@@ -11,6 +11,7 @@ import { useAgentStore } from '@/store/agent';
 import { agentSelectors, builtinAgentSelectors } from '@/store/agent/selectors';
 import { useUserStore } from '@/store/user';
 import { userGeneralSettingsSelectors } from '@/store/user/selectors';
+import { userProfileSelectors } from '@/store/user/slices/auth/selectors';
 
 import OpeningQuestions from './OpeningQuestions';
 import ToolAuthAlert from './ToolAuthAlert';
@@ -21,6 +22,7 @@ const InboxWelcome = memo(() => {
   const isInbox = useAgentStore(builtinAgentSelectors.isInboxAgent);
   const openingQuestions = useAgentStore(agentSelectors.openingQuestions, isEqual);
   const fontSize = useUserStore(userGeneralSettingsSelectors.fontSize);
+  const userName = useUserStore(userProfileSelectors.displayUserName) || 'there';
   const meta = useAgentStore(agentSelectors.currentAgentMeta, isEqual);
 
   const agentSystemRoleMsg = t('agentDefaultMessageWithSystemRole', {
@@ -58,7 +60,9 @@ const InboxWelcome = memo(() => {
         </Text>
         <Flexbox width={'min(100%, 640px)'}>
           <Markdown fontSize={fontSize} variant={'chat'}>
-            {isInbox ? t('guide.defaultMessageWithoutCreate', { appName: inboxTitle }) : message}
+            {isInbox
+              ? t('guide.defaultMessageWithoutCreate', { appName: inboxTitle, userName })
+              : message}
           </Markdown>
         </Flexbox>
         {openingQuestions.length > 0 && (

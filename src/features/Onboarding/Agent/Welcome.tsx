@@ -4,6 +4,8 @@ import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import LobeMessage from '@/routes/onboarding/components/LobeMessage';
+import { useUserStore } from '@/store/user';
+import { userProfileSelectors } from '@/store/user/slices/auth/selectors';
 
 import { staticStyle } from './staticStyle';
 
@@ -13,22 +15,23 @@ interface WelcomeProps {
 
 const Welcome = memo<WelcomeProps>(({ content }) => {
   const { t } = useTranslation('onboarding');
+  const userName = useUserStore(userProfileSelectors.displayUserName) || 'there';
 
   const guids = [
     {
       avatar: '👋',
-      title: t('agent.welcome.guide.name.title'),
-      desc: t('agent.welcome.guide.name.desc'),
+      title: t('agent.welcome.guide.name.title', { userName }),
+      desc: t('agent.welcome.guide.name.desc', { userName }),
     },
     {
       avatar: '💬',
-      title: t('agent.welcome.guide.knowYou.title'),
-      desc: t('agent.welcome.guide.knowYou.desc'),
+      title: t('agent.welcome.guide.knowYou.title', { userName }),
+      desc: t('agent.welcome.guide.knowYou.desc', { userName }),
     },
     {
       avatar: '🌱',
-      title: t('agent.welcome.guide.growTogether.title'),
-      desc: t('agent.welcome.guide.growTogether.desc'),
+      title: t('agent.welcome.guide.growTogether.title', { userName }),
+      desc: t('agent.welcome.guide.growTogether.desc', { userName }),
     },
   ];
   return (
@@ -47,9 +50,9 @@ const Welcome = memo<WelcomeProps>(({ content }) => {
           fontSize={32}
           gap={16}
           sentences={[
-            t('agent.welcome.sentence.1'),
-            t('agent.welcome.sentence.2'),
-            t('agent.welcome.sentence.3'),
+            t('agent.welcome.sentence.1', { userName }),
+            t('agent.welcome.sentence.2', { userName }),
+            t('agent.welcome.sentence.3', { userName }),
           ]}
         />
         <Divider dashed style={{ margin: 0 }} />
