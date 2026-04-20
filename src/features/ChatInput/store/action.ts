@@ -1,5 +1,7 @@
 import { type StateCreator } from 'zustand/vanilla';
 
+import { hasPlaceholderSuggestion } from '@/utils/chat/placeholderSuggestion';
+
 import { type PublicState, type State } from './initialState';
 import { initialState } from './initialState';
 
@@ -29,6 +31,8 @@ export const store: CreateStore = (publicState) => (set, get) => ({
     return get().editor?.getDocument('json') as Record<string, any> | undefined;
   },
   getMarkdownContent: () => {
+    if (hasPlaceholderSuggestion(get().editor)) return get().markdownContent.trimEnd();
+
     return String(get().editor?.getDocument('markdown') || '').trimEnd();
   },
   handleSendButton: () => {

@@ -36,6 +36,7 @@ import type { MentionMenuState } from './MentionMenu/types';
 import Placeholder from './Placeholder';
 import { CHAT_INPUT_EMBED_PLUGINS, createChatInputRichPlugins } from './plugins';
 import { INSERT_REFER_TOPIC_COMMAND } from './ReferTopic';
+import ReactRefineSuggestionPlugin from './RefineSuggestionPlugin';
 import { useMentionCategories } from './useMentionCategories';
 
 const className = cx(css`
@@ -189,6 +190,7 @@ const InputEditor = memo<{ defaultRows?: number; placeholder?: ReactNode }>(
           return null;
         }
 
+        if (!inputCompletionConfigRef.current.enabled) return null;
         if (!input.trim()) return null;
 
         const completionConfig = buildTextOnlyPresetTaskConfig({
@@ -263,13 +265,11 @@ const InputEditor = memo<{ defaultRows?: number; placeholder?: ReactNode }>(
 
     const autoCompletePlugin = useMemo(
       () =>
-        isAutoCompleteEnabled
-          ? Editor.withProps(ReactAutoCompletePlugin, {
-              delay: 600,
-              onAutoComplete: handleAutoComplete,
-            })
-          : null,
-      [isAutoCompleteEnabled, handleAutoComplete],
+        Editor.withProps(ReactAutoCompletePlugin, {
+          delay: 600,
+          onAutoComplete: handleAutoComplete,
+        }),
+      [handleAutoComplete],
     );
 
     // --- Stable mentionOption & slashOption to prevent infinite re-render on paste ---
@@ -333,7 +333,7 @@ const InputEditor = memo<{ defaultRows?: number; placeholder?: ReactNode }>(
             }),
           });
 
-      const plugins = autoCompletePlugin ? [...basePlugins, autoCompletePlugin] : basePlugins;
+      const plugins = [...basePlugins, autoCompletePlugin, ReactRefineSuggestionPlugin];
 
       return !enableRichRender
         ? { enablePasteMarkdown: false, markdownOption: false, plugins }

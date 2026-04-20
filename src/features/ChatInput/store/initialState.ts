@@ -53,6 +53,10 @@ export interface State extends PublicState {
   editor?: IEditor;
   isContentEmpty: boolean;
   markdownContent: string;
+  pendingSuggestion: null | {
+    id: number;
+    text: string;
+  };
   slashMenuRef: ChatInputProps['slashMenuRef'];
 }
 
@@ -62,6 +66,7 @@ export const initialState: State = {
   isContentEmpty: false,
   leftActions: [],
   markdownContent: '',
+  pendingSuggestion: null,
   rightActions: [],
   slashMenuRef: { current: null },
   slashPlacement: 'top',
