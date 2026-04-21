@@ -20,8 +20,11 @@ const SEGMENT_ABBREV: Partial<Record<string, string>> = {
 
 const labelStyles = createStaticStyles(({ css, cssVar }) => ({
   label: css`
-    font-size: 11px;
+    display: block;
+
+    font-size: 12px;
     font-weight: 500;
+    line-height: 18px;
     color: ${cssVar.colorTextTertiary};
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -51,8 +54,9 @@ const ReasoningFooter = memo<ReasoningFooterProps>(
       // Prevent clicks inside the footer from closing the dropdown
       <Flexbox
         className={panelStyles.footer}
-        gap={8}
-        padding="10px 12px"
+        gap={10}
+        paddingBlock="16px 12px"
+        paddingInline={12}
         onClick={stopPropagation}
         onMouseDown={stopPropagation}
       >
