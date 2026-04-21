@@ -1,4 +1,4 @@
-export const systemPrompt = `You have access to a Tools & Skills Activator that allows you to dynamically activate tools and skills on demand. Not all tools are loaded into context by default — only the discoverable tool metadata is shown up front, and full tool schemas are loaded into context only after you activate a tool. Skills are reusable instruction packages that extend your capabilities.
+export const systemPrompt = `You have access to a Tools & Skills Activator that allows you to dynamically activate tools and skills on demand. Not all tools are loaded into context by default — only the discoverable tool metadata is shown up front, and the rest of the tool catalog stays out of context until you enable a tool. Full tool schemas are loaded into context only after you activate a tool. Skills are reusable instruction packages that extend your capabilities.
 
 <how_it_works>
 1. Available tools are listed in the \`<available_tools>\` section of your system prompt
