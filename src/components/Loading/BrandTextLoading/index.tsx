@@ -1,4 +1,5 @@
-import { BrandLoading, LobeHubText } from '@lobehub/ui/brand';
+import type { BrandLoadingProps } from '@lobehub/ui/brand';
+import { BrandLoading } from '@lobehub/ui/brand';
 
 import { isCustomBranding } from '@/const/version';
 
@@ -8,6 +9,22 @@ import styles from './index.module.css';
 interface BrandTextLoadingProps {
   debugId: string;
 }
+
+const ComposerText: BrandLoadingProps['text'] = ({ size = 40, style, ...rest }) => (
+  <span
+    style={{
+      display: 'inline-flex',
+      fontSize: size * 0.6,
+      fontWeight: 700,
+      lineHeight: 1,
+      userSelect: 'none',
+      ...style,
+    }}
+    {...rest}
+  >
+    Composer
+  </span>
+);
 
 const BrandTextLoading = ({ debugId }: BrandTextLoadingProps) => {
   if (isCustomBranding)
@@ -22,7 +39,7 @@ const BrandTextLoading = ({ debugId }: BrandTextLoadingProps) => {
   return (
     <div className={styles.container}>
       <div aria-label="Loading" className={styles.brand} role="status">
-        <BrandLoading size={40} text={LobeHubText} />
+        <BrandLoading size={40} text={ComposerText} />
       </div>
       {showDebug && (
         <div className={styles.debug}>
