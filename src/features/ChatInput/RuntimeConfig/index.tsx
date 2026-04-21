@@ -24,6 +24,7 @@ import { topicSelectors } from '@/store/chat/selectors';
 import { useAgentId } from '../hooks/useAgentId';
 import { useUpdateAgentConfig } from '../hooks/useUpdateAgentConfig';
 import ApprovalMode from './ApprovalMode';
+import OpenTerminalConfigButton from './OpenTerminalConfigButton';
 import { getRecentDirs } from './recentDirs';
 import WorkingDirectory from './WorkingDirectory';
 
@@ -229,6 +230,10 @@ const RuntimeConfig = memo(() => {
           </div>
         </Popover>
       );
+    }
+
+    if (runtimeMode === 'cloud' && isDesktop) {
+      return <OpenTerminalConfigButton />;
     }
 
     return null;

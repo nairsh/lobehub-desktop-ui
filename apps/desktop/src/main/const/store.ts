@@ -35,6 +35,8 @@ export const STORE_DEFAULTS: ElectronMainStore = {
   gatewayUrl: 'https://device-gateway.lobehub.com',
   locale: 'auto',
   networkProxy: defaultProxySettings,
+  openTerminalBaseUrl: '',
+  openTerminalEncryptedApiKey: '',
   shortcuts: DEFAULT_SHORTCUTS_CONFIG,
   storagePath: appStorageDir,
   themeMode: 'system',
