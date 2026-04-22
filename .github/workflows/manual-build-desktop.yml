@@ -369,24 +369,44 @@ jobs:
             } >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Prepare release asset patterns
+        id: assets
+        env:
+          CHANNEL: ${{ inputs.channel }}
+        run: |
+          case "$CHANNEL" in
+            stable)
+              channel_assets=$'release/latest*.yml\nrelease/stable*.yml'
+              ;;
+            canary)
+              channel_assets=$'release/latest*.yml\nrelease/canary*.yml'
+              ;;
+            *)
+              channel_assets='release/latest*.yml'
+              ;;
+          esac
+
+          {
+            echo "files<<EOF"
+            printf '%s\n' "$channel_assets"
+            echo "release/*.dmg*"
+            echo "release/*.zip*"
+            echo "release/*.exe*"
+            echo "release/*.AppImage"
+            echo "release/*.deb*"
+            echo "release/*.snap*"
+            echo "release/*.rpm*"
+            echo "release/*.tar.gz*"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.version.outputs.version }}
           name: Desktop ${{ needs.version.outputs.version }}
           prerelease: ${{ inputs.prerelease }}
           body: ${{ steps.notes.outputs.body }}
-          files: |
-            release/latest*
-            release/stable*
-            release/canary*
-            release/*.dmg*
-            release/*.zip*
-            release/*.exe*
-            release/*.AppImage
-            release/*.deb*
-            release/*.snap*
-            release/*.rpm*
-            release/*.tar.gz*
+          files: ${{ steps.assets.outputs.files }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
