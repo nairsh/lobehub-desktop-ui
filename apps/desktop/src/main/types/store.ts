@@ -6,6 +6,8 @@ import type {
 } from '@lobechat/electron-client-ipc';
 
 export interface ElectronMainStore {
+  customAppIconPath: string;
+  customAppIconVersion: number;
   dataSyncConfig: DataSyncConfig;
   encryptedTokens: {
     accessToken?: string;

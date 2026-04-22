@@ -55,7 +55,9 @@ describe('TrayManager', () => {
     };
 
     // Mock App
-    mockApp = {} as unknown as App;
+    mockApp = {
+      getCustomAppIconPath: vi.fn(() => undefined),
+    } as unknown as App;
 
     // Mock Tray constructor
     vi.mocked(Tray).mockImplementation(() => mockTray);
@@ -143,6 +145,20 @@ describe('TrayManager', () => {
 
       expect(firstTray).toBe(secondTray);
       expect(Tray).not.toHaveBeenCalled();
+    });
+
+    it('should prefer the stored custom app icon when available', () => {
+      mockApp.getCustomAppIconPath = vi.fn(() => '/mock/custom-icon.png');
+
+      trayManager.initializeMainTray();
+
+      expect(Tray).toHaveBeenCalledWith(
+        expect.objectContaining({
+          iconPath: '/mock/custom-icon.png',
+          identifier: 'main',
+        }),
+        mockApp,
+      );
     });
   });
 

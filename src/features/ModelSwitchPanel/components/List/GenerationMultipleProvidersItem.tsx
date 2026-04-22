@@ -18,7 +18,11 @@ import { useTranslation } from 'react-i18next';
 import { ProviderItemRender } from '@/components/ModelSelect';
 import type { PricingMode } from '@/features/ModelSwitchPanel/components/ModelDetailPanel';
 import ModelDetailPanel from '@/features/ModelSwitchPanel/components/ModelDetailPanel';
-import { styles as modelSwitchPanelStyles } from '@/features/ModelSwitchPanel/styles';
+import {
+  MENU_ITEM_TRIGGER_STYLE,
+  MENU_ITEM_WRAPPER_STYLE,
+  styles as modelSwitchPanelStyles,
+} from '@/features/ModelSwitchPanel/styles';
 import type { ListItem } from '@/features/ModelSwitchPanel/types';
 import { menuKey } from '@/features/ModelSwitchPanel/utils';
 import type { EnabledProviderWithModels } from '@/types/index';
@@ -43,11 +47,15 @@ const GenerationMultipleProvidersItem = memo<GenerationMultipleProvidersItemProp
     const isActive = !!activeProvider;
 
     return (
-      <Flexbox style={{ marginBlock: 1, marginInline: 4 }}>
+      <Flexbox style={MENU_ITEM_WRAPPER_STYLE}>
         <DropdownMenuSubmenuRoot open={subOpen} onOpenChange={setSubOpen}>
           <DropdownMenuSubmenuTrigger
-            className={cx(menuSharedStyles.item, isActive && modelSwitchPanelStyles.menuItemActive)}
-            style={{ paddingBlock: 8, paddingInline: 8 }}
+            style={MENU_ITEM_TRIGGER_STYLE}
+            className={cx(
+              menuSharedStyles.item,
+              modelSwitchPanelStyles.menuTrigger,
+              isActive && modelSwitchPanelStyles.menuItemActive,
+            )}
             onClick={() => {
               setSubOpen(false);
               onModelChange(item.data.model.id, (activeProvider ?? item.data.providers[0]).id);

@@ -1,5 +1,11 @@
 export default {
   '_cloud.officialProvider': '{{name}} Official Model Service',
+  'about.appIcon.desc': 'Click the app icon to choose a custom desktop icon.',
+  'about.appIcon.reset': 'Reset Icon',
+  'about.appIcon.resetError': 'Failed to reset the app icon',
+  'about.appIcon.resetSuccess': 'App icon reset',
+  'about.appIcon.updateError': 'Failed to update the app icon',
+  'about.appIcon.updateSuccess': 'App icon updated',
   'about.title': 'About',
   'accountDeletion.cancelButton': 'Cancel Deletion',
   'accountDeletion.cancelConfirmTitle': 'Cancel account deletion request?',

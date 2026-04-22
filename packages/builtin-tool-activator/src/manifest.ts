@@ -7,6 +7,26 @@ export const LobeActivatorManifest: BuiltinToolManifest = {
   api: [
     {
       description:
+        'Search the discoverable tool catalog by capability, keywords, or task intent. Returns a concise ranked shortlist with tool identifiers, descriptions, source, and available APIs. Use this when you are not sure which tool to activate from the <available_tools> list.',
+      name: ActivatorApiName.searchTools,
+      parameters: {
+        properties: {
+          limit: {
+            description: 'Maximum number of matching tools to return. Default: 5. Maximum: 10.',
+            type: 'number',
+          },
+          query: {
+            description:
+              'A short natural-language description of the capability you need, such as "search PDFs", "edit local files", or "send message to another agent".',
+            type: 'string',
+          },
+        },
+        required: ['query'],
+        type: 'object',
+      },
+    },
+    {
+      description:
         'Activate tools from the <available_tools> list so their full API schemas become available for use. Call this before using any tool that is not yet activated. You can activate multiple tools at once.',
       humanIntervention: 'required',
       name: ActivatorApiName.activateTools,

@@ -56,12 +56,16 @@ export class TrayManager {
    */
   initializeMainTray() {
     logger.debug('Initialize main tray');
+    const customIconPath = this.app.getCustomAppIconPath();
+
     return this.retrieveOrInitialize({
-      iconPath: isMac
-        ? nativeTheme.shouldUseDarkColorsForSystemIntegratedUI
-          ? 'tray-dark.png'
-          : 'tray-light.png'
-        : 'tray.png',
+      iconPath:
+        customIconPath ||
+        (isMac
+          ? nativeTheme.shouldUseDarkColorsForSystemIntegratedUI
+            ? 'tray-dark.png'
+            : 'tray-light.png'
+          : 'tray.png'),
       identifier: 'main', // Use app icon, ensure this file exists in resources directory
       tooltip: name, // Can use app.getName() or localized string
     });

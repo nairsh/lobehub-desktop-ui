@@ -26,6 +26,17 @@ import NewModelBadgeI18n, { NewModelBadge as NewModelBadgeCore } from './NewMode
 export const TAG_CLASSNAME = 'lobe-model-info-tags';
 
 const styles = createStaticStyles(({ css, cssVar }) => ({
+  meta: css`
+    flex-shrink: 0;
+    min-width: 0;
+  `,
+  name: css`
+    overflow: hidden;
+    min-width: 0;
+  `,
+  row: css`
+    width: 100%;
+  `,
   tag: css`
     cursor: default;
 
@@ -267,7 +278,8 @@ export const ModelItemRender = memo<ModelItemRenderProps>(
       <Flexbox
         horizontal
         align={'center'}
-        gap={32}
+        className={styles.row}
+        gap={12}
         justify={'space-between'}
         {...rest}
         style={{
@@ -285,7 +297,8 @@ export const ModelItemRender = memo<ModelItemRenderProps>(
         >
           <ModelIcon model={id} size={20} type={'mono'} />
           <Text
-            style={mobile ? { maxWidth: '60vw' } : { minWidth: 0, overflow: 'hidden' }}
+            className={styles.name}
+            style={mobile ? { maxWidth: '60vw' } : undefined}
             ellipsis={{
               tooltip: displayNameOrId,
               tooltipWhenOverflow: true,
@@ -293,6 +306,8 @@ export const ModelItemRender = memo<ModelItemRenderProps>(
           >
             {displayNameOrId}
           </Text>
+        </Flexbox>
+        <Flexbox horizontal align={'center'} className={styles.meta} gap={6}>
           {newBadgeLabel ? (
             <NewModelBadgeCore label={newBadgeLabel} releasedAt={releasedAt} />
           ) : (

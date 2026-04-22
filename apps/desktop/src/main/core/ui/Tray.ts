@@ -1,15 +1,8 @@
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 
 import type { MainBroadcastEventKey, MainBroadcastParams } from '@lobechat/electron-client-ipc';
-import type {
-  DisplayBalloonOptions,
-  MenuItemConstructorOptions} from 'electron';
-import {
-  app,
-  Menu,
-  nativeImage,
-  Tray as ElectronTray,
-} from 'electron';
+import type { DisplayBalloonOptions, MenuItemConstructorOptions } from 'electron';
+import { app, Menu, nativeImage, Tray as ElectronTray } from 'electron';
 
 import { resourcesDir } from '@/const/dir';
 import { createLogger } from '@/utils/logger';
@@ -21,7 +14,7 @@ const logger = createLogger('core:Tray');
 
 export interface TrayOptions {
   /**
-   * Tray icon path (relative to resource directory)
+   * Tray icon path (absolute or relative to resource directory)
    */
   iconPath: string;
 
@@ -91,7 +84,7 @@ export class Tray {
 
     // Load tray icon
     logger.info(`Creating new tray instance: ${this.identifier}`);
-    const iconFile = join(resourcesDir, iconPath);
+    const iconFile = this.resolveIconPath(iconPath);
     logger.debug(`[${this.identifier}] Loading icon: ${iconFile}`);
 
     try {
@@ -173,12 +166,12 @@ export class Tray {
 
   /**
    * Update tray icon
-   * @param iconPath New icon path (relative to resource directory)
+   * @param iconPath New icon path (absolute or relative to resource directory)
    */
   updateIcon(iconPath: string) {
     logger.debug(`[${this.identifier}] Updating icon: ${iconPath}`);
     try {
-      const iconFile = join(resourcesDir, iconPath);
+      const iconFile = this.resolveIconPath(iconPath);
       const icon = nativeImage.createFromPath(iconFile);
       this._tray?.setImage(icon);
       this.options.iconPath = iconPath;
@@ -186,6 +179,12 @@ export class Tray {
     } catch (error) {
       logger.error(`[${this.identifier}] Failed to update icon:`, error);
     }
+  }
+
+  private resolveIconPath(iconPath: string) {
+    if (isAbsolute(iconPath)) return iconPath;
+
+    return join(resourcesDir, iconPath);
   }
 
   /**

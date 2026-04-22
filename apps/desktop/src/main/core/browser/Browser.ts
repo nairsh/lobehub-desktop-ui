@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { APP_WINDOW_MIN_SIZE } from '@lobechat/desktop-bridge';
 import type { MainBroadcastEventKey, MainBroadcastParams } from '@lobechat/electron-client-ipc';
-import type { BrowserWindowConstructorOptions } from 'electron';
+import type { BrowserWindowConstructorOptions, NativeImage } from 'electron';
 import { BrowserWindow, ipcMain, screen, session as electronSession, shell } from 'electron';
 
 import { preloadDir, resourcesDir } from '@/const/dir';
@@ -148,6 +148,7 @@ export default class Browser {
       y: resolvedState.y,
       // Platform visual config is the SOLE source of vibrancy / transparency / titleBarOverlay.
       ...this.themeManager.getPlatformConfig(),
+      ...(isMac ? {} : { icon: this.app.getCurrentAppIcon() }),
     });
   }
 
@@ -175,6 +176,12 @@ export default class Browser {
 
     // Setup external link handler (prevents opening new windows in renderer)
     this.setupWindowOpenHandler(browserWindow);
+  }
+
+  updateIcon(icon: NativeImage) {
+    if (isMac || !this._browserWindow || this._browserWindow.isDestroyed()) return;
+
+    this._browserWindow.setIcon(icon);
   }
 
   private initiateContentLoading(): void {

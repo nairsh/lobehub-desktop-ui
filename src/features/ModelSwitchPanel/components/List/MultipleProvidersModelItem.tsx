@@ -21,7 +21,7 @@ import { useTranslation } from 'react-i18next';
 import { ModelItemRender, ProviderItemRender } from '@/components/ModelSelect';
 import type { LobeAgentChatConfig } from '@/types/agent';
 
-import { styles } from '../../styles';
+import { MENU_ITEM_TRIGGER_STYLE, styles } from '../../styles';
 import { type ModelWithProviders } from '../../types';
 import { menuKey } from '../../utils';
 import ModelDetailPanel from '../ModelDetailPanel';
@@ -76,8 +76,12 @@ export const MultipleProvidersModelItem = memo<MultipleProvidersModelItemProps>(
         }}
       >
         <DropdownMenuSubmenuTrigger
-          className={cx(menuSharedStyles.item, isActive && styles.menuItemActive)}
-          style={{ paddingBlock: 8, paddingInline: 8 }}
+          className={cx(
+            menuSharedStyles.item,
+            styles.menuTrigger,
+            isActive && styles.menuItemActive,
+          )}
+          style={MENU_ITEM_TRIGGER_STYLE}
           onClick={() => {
             if (allRestricted) {
               onRestrictedModelClick?.();

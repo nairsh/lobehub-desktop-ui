@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { type ToolStoreState } from '../initialState';
 import { initialState } from '../initialState';
-import { toolSelectors } from './tool';
+import { searchAvailableToolsForDiscovery, toolSelectors } from './tool';
 
 // Mock builtin skill for testing
 const mockBuiltinSkill = {
@@ -190,6 +190,102 @@ describe('toolSelectors', () => {
 
     it('should return false if the tool does not exist', () => {
       expect(toolSelectors.isToolHasUI('non-existent')(mockState)).toBe(false);
+    });
+  });
+
+  describe('availableToolsForDiscovery', () => {
+    it('includes source and api descriptions for discoverable tools', () => {
+      const result = toolSelectors.availableToolsForDiscovery(mockState);
+
+      expect(result).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            apiDescriptions: [{ description: '', name: 'builtin-api-1' }],
+            identifier: 'builtin-1',
+            source: 'builtin',
+          }),
+          expect.objectContaining({
+            apiDescriptions: [{ description: '', name: 'api-1' }],
+            identifier: 'plugin-1',
+            source: 'community plugin',
+          }),
+          expect.objectContaining({
+            apiDescriptions: [{ description: '123123', name: 'api-3' }],
+            identifier: 'plugin-3',
+            source: 'custom plugin',
+          }),
+        ]),
+      );
+    });
+  });
+
+  describe('searchAvailableToolsForDiscovery', () => {
+    it('ranks tools by capability matches and respects the result limit', () => {
+      const result = searchAvailableToolsForDiscovery(
+        [
+          {
+            apiDescriptions: [
+              {
+                description: 'Search attached knowledge base documents',
+                name: 'searchKnowledgeBase',
+              },
+            ],
+            description: 'Search indexed documents and notes',
+            identifier: 'knowledge-base',
+            name: 'Knowledge Base',
+            source: 'builtin',
+          },
+          {
+            apiDescriptions: [
+              {
+                description: 'Search local files with glob and grep helpers',
+                name: 'searchLocalFiles',
+              },
+            ],
+            description: 'Search files on the local runtime',
+            identifier: 'local-system',
+            name: 'Local System',
+            source: 'builtin',
+          },
+          {
+            apiDescriptions: [
+              { description: 'Store and retrieve long-term memories', name: 'searchUserMemory' },
+            ],
+            description: 'Recall user memories',
+            identifier: 'memory',
+            name: 'Memory',
+            source: 'builtin',
+          },
+        ],
+        'search local files',
+        2,
+      );
+
+      expect(result.total).toBe(3);
+      expect(result.items).toHaveLength(2);
+      expect(result.items[0]).toEqual(
+        expect.objectContaining({
+          identifier: 'local-system',
+          matchedFields: expect.arrayContaining(['api', 'description']),
+        }),
+      );
+      expect(result.items[1].identifier).toBe('knowledge-base');
+    });
+
+    it('returns no results for an empty query', () => {
+      const result = searchAvailableToolsForDiscovery(
+        [
+          {
+            description: 'A calculator',
+            identifier: 'calculator',
+            name: 'Calculator',
+            source: 'builtin',
+          },
+        ],
+        '   ',
+      );
+
+      expect(result).toEqual({ items: [], total: 0 });
     });
   });
 });

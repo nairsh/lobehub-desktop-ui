@@ -521,6 +521,7 @@ export default {
   'workflow.toolDisplayName.activateDevice': 'Activated device',
   'workflow.toolDisplayName.activateSkill': 'Activated a skill',
   'workflow.toolDisplayName.activateTools': 'Activated tools',
+  'workflow.toolDisplayName.searchTools': 'Searched tools',
   'workflow.toolDisplayName.addActivityMemory': 'Saved memory',
   'workflow.toolDisplayName.addContextMemory': 'Saved memory',
   'workflow.toolDisplayName.addExperienceMemory': 'Saved memory',

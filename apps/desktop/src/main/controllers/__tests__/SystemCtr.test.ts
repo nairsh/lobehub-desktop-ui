@@ -8,6 +8,12 @@ import { __resetMacPermissionsModuleCache, __setMacPermissionsModule } from '@/u
 
 import SystemController from '../SystemCtr';
 
+const persistCustomAppIconMock = vi.hoisted(() => vi.fn(async () => '/mock/storage/app-icon.png'));
+const removeCustomAppIconMock = vi.hoisted(() => vi.fn(async () => undefined));
+const showOpenDialogMock = vi.hoisted(() =>
+  vi.fn(async () => ({ canceled: false, filePaths: ['/mock/selected-icon.png'] })),
+);
+
 const { ipcHandlers, ipcMainHandleMock, permissionsMock } = vi.hoisted(() => {
   const handlers = new Map<string, (event: any, ...args: any[]) => any>();
   const handle = vi.fn((channel: string, handler: any) => {
@@ -65,6 +71,7 @@ vi.mock('electron', () => ({
   },
   dialog: {
     showMessageBox: vi.fn(async () => ({ response: 0 })),
+    showOpenDialog: showOpenDialogMock,
   },
   ipcMain: {
     handle: ipcMainHandleMock,
@@ -89,6 +96,13 @@ vi.mock('electron-is', () => ({
   macOS: vi.fn(() => true),
 }));
 
+vi.mock('@/utils/appIcon', () => ({
+  APP_ICON_FILE_FILTERS: [{ extensions: ['png'], name: 'Images' }],
+  CUSTOM_APP_ICON_VERSION: 1,
+  persistCustomAppIcon: persistCustomAppIconMock,
+  removeCustomAppIcon: removeCustomAppIconMock,
+}));
+
 // Mock node-mac-permissions
 vi.mock('node-mac-permissions', () => permissionsMock);
 
@@ -106,10 +120,16 @@ const mockBrowserManager = {
   handleAppThemeChange: vi.fn(),
 };
 
+let customAppIconPath: string | undefined;
+
 // Mock storeManager
 const mockStoreManager = {
   get: vi.fn(),
-  set: vi.fn(),
+  set: vi.fn((key: string, value: unknown) => {
+    if (key === 'customAppIconPath') {
+      customAppIconPath = (value as string) || undefined;
+    }
+  }),
 };
 
 // Mock i18n
@@ -119,6 +139,11 @@ const mockI18n = {
 };
 
 const mockApp = {
+  applyCurrentAppIcon: vi.fn(),
+  getCurrentAppIcon: vi.fn(() => ({
+    toDataURL: vi.fn(() => 'data:image/png;base64,current-icon'),
+  })),
+  getCustomAppIconPath: vi.fn(() => customAppIconPath),
   appStoragePath: '/mock/storage',
   browserManager: mockBrowserManager,
   i18n: mockI18n,
@@ -132,10 +157,19 @@ describe('SystemController', () => {
     vi.clearAllMocks();
     ipcHandlers.clear();
     ipcMainHandleMock.mockClear();
+    persistCustomAppIconMock.mockClear();
+    removeCustomAppIconMock.mockClear();
+    showOpenDialogMock.mockClear();
+    customAppIconPath = undefined;
     (IpcHandler.getInstance() as any).registeredChannels?.clear();
     // Reset and inject mock permissions module for testing
     __resetMacPermissionsModuleCache();
     __setMacPermissionsModule(permissionsMock as any);
+    showOpenDialogMock.mockResolvedValue({
+      canceled: false,
+      filePaths: ['/mock/selected-icon.png'],
+    });
+    persistCustomAppIconMock.mockResolvedValue('/mock/storage/app-icon.png');
     controller = new SystemController(mockApp);
   });
 
@@ -394,6 +428,62 @@ describe('SystemController', () => {
       await invokeIpc('system.openExternalLink', 'https://example.com');
 
       expect(shell.openExternal).toHaveBeenCalledWith('https://example.com');
+    });
+  });
+
+  describe('app icon', () => {
+    it('should return the current app icon state', async () => {
+      customAppIconPath = '/mock/storage/app-icon.png';
+
+      const result = await invokeIpc('system.getAppIconState');
+
+      expect(result).toEqual({
+        isCustom: true,
+        previewDataUrl: 'data:image/png;base64,current-icon',
+      });
+    });
+
+    it('should persist and apply a selected app icon', async () => {
+      const result = await invokeIpc('system.selectAppIcon');
+
+      expect(showOpenDialogMock).toHaveBeenCalled();
+      expect(persistCustomAppIconMock).toHaveBeenCalledWith('/mock/selected-icon.png');
+      expect(mockStoreManager.set).toHaveBeenCalledWith(
+        'customAppIconPath',
+        '/mock/storage/app-icon.png',
+      );
+      expect(mockStoreManager.set).toHaveBeenCalledWith('customAppIconVersion', 1);
+      expect(mockApp.applyCurrentAppIcon).toHaveBeenCalled();
+      expect(result).toEqual({
+        isCustom: true,
+        previewDataUrl: 'data:image/png;base64,current-icon',
+      });
+    });
+
+    it('should return undefined when the picker is cancelled', async () => {
+      showOpenDialogMock.mockResolvedValueOnce({ canceled: true, filePaths: [] });
+
+      const result = await invokeIpc('system.selectAppIcon');
+
+      expect(result).toBeUndefined();
+      expect(persistCustomAppIconMock).not.toHaveBeenCalled();
+      expect(mockStoreManager.set).not.toHaveBeenCalledWith(
+        'customAppIconPath',
+        '/mock/storage/app-icon.png',
+      );
+    });
+
+    it('should remove the custom app icon and restore the default', async () => {
+      const result = await invokeIpc('system.resetAppIcon');
+
+      expect(removeCustomAppIconMock).toHaveBeenCalled();
+      expect(mockStoreManager.set).toHaveBeenCalledWith('customAppIconPath', '');
+      expect(mockStoreManager.set).toHaveBeenCalledWith('customAppIconVersion', 1);
+      expect(mockApp.applyCurrentAppIcon).toHaveBeenCalled();
+      expect(result).toEqual({
+        isCustom: false,
+        previewDataUrl: 'data:image/png;base64,current-icon',
+      });
     });
   });
 

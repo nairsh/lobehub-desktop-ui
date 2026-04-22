@@ -3,6 +3,7 @@ import { join } from 'node:path';
 
 import type { ElectronIPCEventHandler } from '@lobechat/electron-server-ipc';
 import { ElectronIPCServer } from '@lobechat/electron-server-ipc';
+import type { NativeImage } from 'electron';
 import { app, nativeTheme, protocol } from 'electron';
 import installExtension, { REACT_DEVELOPER_TOOLS } from 'electron-devtools-installer';
 import { macOS, windows } from 'electron-is';
@@ -24,6 +25,13 @@ import {
   type ToolCategory,
 } from '@/modules/toolDetectors';
 import type { IServiceModule } from '@/services';
+import {
+  CUSTOM_APP_ICON_VERSION,
+  getResolvedAppIcon,
+  getResolvedAppIconPath,
+  normalizeStoredAppIcon,
+  resolveStoredAppIconPath,
+} from '@/utils/appIcon';
 import { createLogger } from '@/utils/logger';
 
 import { BrowserManager } from './browser/BrowserManager';
@@ -76,6 +84,42 @@ export class App {
     }
 
     return storagePath;
+  }
+
+  getCustomAppIconPath() {
+    const customIconPath = this.storeManager.get('customAppIconPath') || undefined;
+
+    return resolveStoredAppIconPath(customIconPath);
+  }
+
+  getCurrentAppIconPath() {
+    return getResolvedAppIconPath(this.getCustomAppIconPath());
+  }
+
+  getCurrentAppIcon(): NativeImage {
+    return getResolvedAppIcon(this.getCustomAppIconPath());
+  }
+
+  async applyCurrentAppIcon() {
+    const customIconPath = this.getCustomAppIconPath();
+
+    if (customIconPath) {
+      const iconVersion = this.storeManager.get('customAppIconVersion');
+
+      if (iconVersion !== CUSTOM_APP_ICON_VERSION) {
+        await normalizeStoredAppIcon(customIconPath);
+        this.storeManager.set('customAppIconVersion', CUSTOM_APP_ICON_VERSION);
+      }
+    }
+
+    const icon = this.getCurrentAppIcon();
+
+    if (macOS() && app.isReady() && app.dock) {
+      app.dock.setIcon(icon);
+    }
+
+    this.browserManager.applyAppIcon(icon);
+    this.trayManager.getMainTray()?.updateIcon(this.getCurrentAppIconPath());
   }
 
   constructor() {
@@ -248,6 +292,8 @@ export class App {
     if (process.platform === 'win32') {
       this.trayManager.initializeTrays();
     }
+
+    await this.applyCurrentAppIcon();
 
     // Initialize updater manager
     await this.updaterManager.initialize();

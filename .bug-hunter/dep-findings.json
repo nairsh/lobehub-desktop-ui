@@ -1,0 +1,19 @@
+{
+  "ecosystems": [],
+  "findings": [],
+  "lockfiles": [],
+  "scan_date": "2026-04-21T09:40:18.980Z",
+  "scan_errors": [
+    {
+      "manager": "none",
+      "lockfile": "none",
+      "reason": "No supported lockfile found (package-lock.json, pnpm-lock.yaml, yarn.lock, bun.lockb, requirements.txt, go.sum, Cargo.lock)"
+    }
+  ],
+  "summary": {
+    "total": 0,
+    "reachable": 0,
+    "potentially_reachable": 0,
+    "not_reachable": 0
+  }
+}

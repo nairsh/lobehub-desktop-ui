@@ -1,3 +1,8 @@
+export interface DesktopAppIconState {
+  isCustom: boolean;
+  previewDataUrl: string;
+}
+
 export interface ElectronAppState {
   arch?: string; // e.g., 'x64', 'arm64'
   isLinux?: boolean;

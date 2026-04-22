@@ -1,6 +1,5 @@
 import { Flexbox } from '@lobehub/ui';
 import { type ComponentType, type FC } from 'react';
-import { useState } from 'react';
 import { Rnd } from 'react-rnd';
 
 import { useEnabledChatModels } from '@/hooks/useEnabledChatModels';
@@ -16,6 +15,7 @@ import {
   MAX_PANEL_HEIGHT,
   MAX_WIDTH,
   MIN_WIDTH,
+  TOOLBAR_HEIGHT,
 } from '../const';
 import { useModelReasoning } from '../hooks/useModelReasoning';
 import { usePanelSize } from '../hooks/usePanelSize';
@@ -52,7 +52,6 @@ export const PanelContent: FC<PanelContentProps> = ({
 }) => {
   const chatEnabledList = useEnabledChatModels();
   const enabledList = enabledListProp ?? chatEnabledList;
-  const [searchKeyword, setSearchKeyword] = useState('');
   const isDevMode = useUserStore((s) => userGeneralSettingsSelectors.config(s).isDevMode);
   const { groupMode, handleGroupModeChange } = usePanelState();
   const { panelHeight, panelWidth, handlePanelWidthChange } = usePanelSize(enabledList.length);
@@ -64,13 +63,13 @@ export const PanelContent: FC<PanelContentProps> = ({
 
   const content = (
     <>
-      <Toolbar
-        groupMode={groupMode}
-        searchKeyword={searchKeyword}
-        showGroupModeSwitch={isDevMode}
-        onGroupModeChange={handleGroupModeChange}
-        onSearchKeywordChange={setSearchKeyword}
-      />
+      {isDevMode && (
+        <Toolbar
+          groupMode={groupMode}
+          showGroupModeSwitch={isDevMode}
+          onGroupModeChange={handleGroupModeChange}
+        />
+      )}
       <List
         ModelItemComponent={ModelItemComponent}
         chatConfig={chatConfig}
@@ -80,8 +79,8 @@ export const PanelContent: FC<PanelContentProps> = ({
         model={modelProp}
         pricingMode={pricingMode}
         provider={providerProp}
-        searchKeyword={searchKeyword}
         showReasoningLabel={showReasoningLabel}
+        toolbarHeight={isDevMode ? TOOLBAR_HEIGHT : 0}
         onModelChange={onModelChangeProp}
         onOpenChange={onOpenChange}
       />

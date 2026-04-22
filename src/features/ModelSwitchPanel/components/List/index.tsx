@@ -32,6 +32,7 @@ interface ListProps {
   provider?: string;
   searchKeyword?: string;
   showReasoningLabel?: boolean;
+  toolbarHeight?: number;
 }
 
 export const List: FC<ListProps> = ({
@@ -47,6 +48,7 @@ export const List: FC<ListProps> = ({
   provider: providerProp,
   searchKeyword = '',
   showReasoningLabel = false,
+  toolbarHeight = TOOLBAR_HEIGHT,
 }) => {
   const { t: tCommon } = useTranslation('common');
   const newLabel = tCommon('new');
@@ -65,7 +67,7 @@ export const List: FC<ListProps> = ({
   const listMaxHeight =
     enabledList.length === 0
       ? ITEM_HEIGHT['no-provider']
-      : MAX_PANEL_HEIGHT - TOOLBAR_HEIGHT - footerHeight;
+      : MAX_PANEL_HEIGHT - toolbarHeight - footerHeight;
 
   const activeKey = menuKey(provider, model);
 

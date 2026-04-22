@@ -1,7 +1,8 @@
-import {
-  type ElectronAppState,
-  type WindowMinimumSizeParams,
-  type WindowSizeParams,
+import type {
+  DesktopAppIconState,
+  ElectronAppState,
+  WindowMinimumSizeParams,
+  WindowSizeParams,
 } from '@lobechat/electron-client-ipc';
 
 import { ensureElectronIpc } from '@/utils/electron/ipc';
@@ -22,6 +23,10 @@ class ElectronSystemService {
   async getAppState(): Promise<ElectronAppState> {
     // Calls the underlying IPC function to get data from the main process
     return this.ipc.system.getAppState();
+  }
+
+  async getAppIconState(): Promise<DesktopAppIconState> {
+    return this.ipc.system.getAppIconState();
   }
 
   async closeWindow(): Promise<void> {
@@ -50,6 +55,14 @@ class ElectronSystemService {
 
   async openExternalLink(url: string): Promise<void> {
     return this.ipc.system.openExternalLink(url);
+  }
+
+  async selectAppIcon(): Promise<DesktopAppIconState | undefined> {
+    return this.ipc.system.selectAppIcon();
+  }
+
+  async resetAppIcon(): Promise<DesktopAppIconState> {
+    return this.ipc.system.resetAppIcon();
   }
 
   async hasLegacyLocalDb(): Promise<boolean> {

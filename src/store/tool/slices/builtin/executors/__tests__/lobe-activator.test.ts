@@ -11,9 +11,12 @@ vi.mock('@/store/tool', () => ({
 
 // Mock toolSelectors.availableToolsForDiscovery
 const mockAvailableToolsForDiscovery = vi.fn();
+const mockSearchAvailableToolsForDiscovery = vi.fn();
 vi.mock('@/store/tool/selectors/tool', () => ({
   toolSelectors: {
     availableToolsForDiscovery: (s: any) => mockAvailableToolsForDiscovery(s),
+    searchAvailableToolsForDiscovery: (...args: any[]) =>
+      mockSearchAvailableToolsForDiscovery(...args),
   },
 }));
 
@@ -119,5 +122,56 @@ describe('lobe-activator executor discovery allowlist', () => {
     const state = result.state as any;
     const activatedIds = state.activatedTools?.map((t: any) => t.identifier) ?? [];
     expect(activatedIds).toContain('community-plugin');
+  });
+
+  it('should search discoverable tools and return concise matches', async () => {
+    const availableTools = [
+      { description: 'Search local files', identifier: 'local-system', name: 'Local System' },
+    ];
+
+    mockGetState.mockReturnValue({
+      builtinTools: [],
+      installedPlugins: [],
+    });
+
+    mockAvailableToolsForDiscovery.mockReturnValue(availableTools);
+    mockSearchAvailableToolsForDiscovery.mockReturnValue({
+      items: [
+        {
+          apiDescriptions: [{ description: 'Search files', name: 'searchLocalFiles' }],
+          description: 'Search local files',
+          identifier: 'local-system',
+          matchedFields: ['description', 'api'],
+          name: 'Local System',
+          source: 'builtin',
+        },
+      ],
+      total: 1,
+    });
+
+    const result = await activatorExecutor.invoke(
+      'searchTools',
+      { limit: 3, query: 'search local files' },
+      { messageId: 'msg-1', operationId: 'op-1' },
+    );
+
+    expect(result.success).toBe(true);
+    expect(mockSearchAvailableToolsForDiscovery).toHaveBeenCalledWith(
+      availableTools,
+      'search local files',
+      3,
+    );
+    expect(result.content).toContain('local-system');
+    expect(result.state).toEqual(
+      expect.objectContaining({
+        items: [
+          expect.objectContaining({
+            identifier: 'local-system',
+            matchedFields: ['description', 'api'],
+          }),
+        ],
+        total: 1,
+      }),
+    );
   });
 });

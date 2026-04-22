@@ -1,5 +1,5 @@
 import type { MainBroadcastEventKey, MainBroadcastParams } from '@lobechat/electron-client-ipc';
-import type { WebContents } from 'electron';
+import type { NativeImage, WebContents } from 'electron';
 
 import { isLinux } from '@/const/env';
 import RemoteServerConfigCtr from '@/controllers/RemoteServerConfigCtr';
@@ -54,6 +54,12 @@ export class BrowserManager {
     logger.debug(`Broadcasting event ${event} to window: ${identifier}`);
     this.browsers.get(identifier)?.broadcast(event, data);
   };
+
+  applyAppIcon(icon: NativeImage) {
+    this.browsers.forEach((browser) => {
+      browser.updateIcon(icon);
+    });
+  }
 
   /**
    * Navigate window to specific sub-path

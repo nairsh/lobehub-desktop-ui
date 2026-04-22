@@ -192,6 +192,7 @@ export const TOOL_API_DISPLAY_NAMES: Record<string, string> = {
   activateSkill: 'workflow.toolDisplayName.activateSkill',
   activateTools: 'workflow.toolDisplayName.activateTools',
   execScript: 'workflow.toolDisplayName.execScript',
+  searchTools: 'workflow.toolDisplayName.searchTools',
 
   // Skill store
   importFromMarket: 'workflow.toolDisplayName.importFromMarket',

@@ -26,6 +26,7 @@ const { mockBrowserWindow, mockNativeTheme, mockIpcMain, mockScreen, MockBrowser
       once: vi.fn(),
       setBackgroundColor: vi.fn(),
       setBounds: vi.fn(),
+      setIcon: vi.fn(),
       setFullScreen: vi.fn(),
       setPosition: vi.fn(),
       setTitleBarOverlay: vi.fn(),
@@ -171,6 +172,7 @@ describe('Browser', () => {
         const cleanPath = path.startsWith('/') ? path : `/${path}`;
         return `http://localhost:3000${cleanPath}`;
       }),
+      getCurrentAppIcon: vi.fn(() => 'mock-app-icon'),
       getController: vi.fn((ctr: any) => {
         // Only the remote server config controller is required in these unit tests
         if (ctr?.name === 'RemoteServerConfigCtr') return mockRemoteServerConfigCtr;
@@ -201,6 +203,12 @@ describe('Browser', () => {
 
     it('should create BrowserWindow on construction', () => {
       expect(MockBrowserWindow).toHaveBeenCalled();
+    });
+
+    it('should pass the current app icon to non-macOS windows', () => {
+      expect(MockBrowserWindow).toHaveBeenCalledWith(
+        expect.objectContaining({ icon: 'mock-app-icon' }),
+      );
     });
   });
 

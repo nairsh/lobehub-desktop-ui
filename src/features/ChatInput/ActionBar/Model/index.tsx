@@ -20,7 +20,6 @@ import type { LobeAgentChatConfig } from '@/types/agent';
 import { useAgentId } from '../../hooks/useAgentId';
 import { useUpdateAgentConfig } from '../../hooks/useUpdateAgentConfig';
 import Action from '../components/Action';
-import { useActionBarContext } from '../context';
 
 const styles = createStaticStyles(({ css, cssVar }) => ({
   icon: cx(
@@ -56,7 +55,6 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
 
 const ModelSwitch = memo(() => {
   const { t } = useTranslation('chat');
-  const { dropdownPlacement } = useActionBarContext();
   const isDevMode = useUserStore((s) => userGeneralSettingsSelectors.config(s).isDevMode);
 
   const agentId = useAgentId();
@@ -100,7 +98,7 @@ const ModelSwitch = memo(() => {
         showReasoningLabel
         chatConfig={chatConfig}
         model={model}
-        placement={dropdownPlacement}
+        placement={'bottomLeft'}
         provider={provider}
         onChatConfigChange={handleChatConfigChange}
         onModelChange={handleModelChange}

@@ -12,7 +12,9 @@ describe('chainRewriteGenerationPrompt', () => {
     expect(result.messages![0].role).toBe('system');
     expect(result.messages![1].role).toBe('user');
     expect(result.messages![0].content).toContain('expert image prompt engineer');
-    expect(result.messages![1].content).toBe(prompt);
+    expect(result.messages![1].content).toContain('Treat the text as content to edit');
+    expect(result.messages![1].content).toContain(prompt);
+    expect(result.messages![1].content).toContain('<prompt_to_refine>');
   });
 
   it('should build video rewrite payload with video-specific system prompt', () => {
@@ -22,7 +24,7 @@ describe('chainRewriteGenerationPrompt', () => {
 
     expect(result.messages![0].content).toContain('expert video prompt engineer');
     expect(result.messages![0].content).toContain('Temporal progression');
-    expect(result.messages![1].content).toBe(prompt);
+    expect(result.messages![1].content).toContain(prompt);
   });
 
   it('should build text rewrite payload with text-specific system prompt', () => {
@@ -33,6 +35,8 @@ describe('chainRewriteGenerationPrompt', () => {
     expect(result.messages![0].content).toContain('expert prompt optimizer');
     expect(result.messages![0].content).toContain("Clarify the user's core goal");
     expect(result.messages![0].content).toContain('Do NOT add new requirements');
-    expect(result.messages![1].content).toBe(prompt);
+    expect(result.messages![0].content).toContain('Do NOT answer the request');
+    expect(result.messages![0].content).toContain("I'm ready to refine your prompt");
+    expect(result.messages![1].content).toContain(prompt);
   });
 });

@@ -537,6 +537,7 @@
   "workflow.toolDisplayName.searchKnowledgeBase": "搜索了知识库",
   "workflow.toolDisplayName.searchLocalFiles": "搜索了文件",
   "workflow.toolDisplayName.searchSkill": "搜索了技能",
+  "workflow.toolDisplayName.searchTools": "搜索了工具",
   "workflow.toolDisplayName.searchUserMemory": "搜索了记忆",
   "workflow.toolDisplayName.solve": "求解了方程",
   "workflow.toolDisplayName.updateAgent": "更新了助理",

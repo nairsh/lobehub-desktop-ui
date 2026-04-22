@@ -22,6 +22,7 @@ import { filterBuiltinSkills } from '@/helpers/skillFilters';
 import { agentSkillService } from '@/services/skill';
 import { getToolStoreState } from '@/store/tool';
 import { toolSelectors } from '@/store/tool/selectors/tool';
+import { KlavisServerStatus } from '@/store/tool/slices/klavisStore';
 import { LobehubSkillStatus } from '@/store/tool/slices/lobehubSkillStore';
 
 const skillsRuntime = new SkillsExecutionRuntime({
@@ -37,6 +38,28 @@ const skillsRuntime = new SkillsExecutionRuntime({
 const service: ActivatorRuntimeService = {
   activateSkill: (args) => skillsRuntime.activateSkill(args),
   getActivatedToolIds: () => [],
+  searchTools: async (args) => {
+    const s = getToolStoreState();
+    const { items, total } = toolSelectors.searchAvailableToolsForDiscovery(
+      toolSelectors.availableToolsForDiscovery(s),
+      args.query,
+      args.limit,
+    );
+
+    return {
+      items: items.map(({ score: _score, ...item }) => ({
+        apiDescriptions: item.apiDescriptions?.slice(0, 3) || [],
+        description: item.description,
+        identifier: item.identifier,
+        matchedFields: item.matchedFields,
+        name: item.name,
+        source: item.source,
+      })),
+      limit: Math.min(Math.max(args.limit ?? 5, 1), 10),
+      query: args.query.trim(),
+      total,
+    };
+  },
   getToolManifests: async (identifiers: string[]): Promise<ToolManifestInfo[]> => {
     const s = getToolStoreState();
 
@@ -78,6 +101,23 @@ const service: ActivatorRuntimeService = {
           identifier: plugin.identifier,
           name: plugin.manifest.meta?.title ?? plugin.identifier,
           systemRole: plugin.manifest.systemRole,
+        });
+        continue;
+      }
+
+      // Search Klavis servers
+      const klavisServer = s.servers?.find(
+        (server) => server.identifier === id && server.status === KlavisServerStatus.CONNECTED,
+      );
+      if (klavisServer?.tools) {
+        results.push({
+          apiDescriptions: klavisServer.tools.map((t) => ({
+            description: t.description || '',
+            name: t.name,
+          })),
+          avatar: klavisServer.icon,
+          identifier: klavisServer.identifier,
+          name: klavisServer.serverName,
         });
         continue;
       }

@@ -537,6 +537,7 @@
   "workflow.toolDisplayName.searchKnowledgeBase": "Searched knowledge base",
   "workflow.toolDisplayName.searchLocalFiles": "Searched files",
   "workflow.toolDisplayName.searchSkill": "Searched skills",
+  "workflow.toolDisplayName.searchTools": "Searched tools",
   "workflow.toolDisplayName.searchUserMemory": "Searched memory",
   "workflow.toolDisplayName.solve": "Solved equation",
   "workflow.toolDisplayName.updateAgent": "Updated an agent",

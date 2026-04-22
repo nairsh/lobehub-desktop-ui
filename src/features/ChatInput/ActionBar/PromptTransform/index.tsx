@@ -29,17 +29,21 @@ const PromptTransform = memo(() => {
     (prompt: string) => {
       if (!editor) return;
 
-      const suggestion = buildRefineSuggestion({
+      const result = buildRefineSuggestion({
         currentPrompt: markdownContent,
         rewrittenPrompt: prompt,
       });
-      if (!suggestion) return;
+      if (!result) return;
+
+      if (result.prefix !== markdownContent.trimEnd()) {
+        editor.setDocument('markdown', result.prefix);
+      }
 
       editor.focus();
       storeApi.setState({
         pendingSuggestion: {
           id: Date.now(),
-          text: suggestion,
+          text: result.suggestion,
         },
       });
     },

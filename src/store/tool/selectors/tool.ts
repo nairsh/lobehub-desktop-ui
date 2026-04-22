@@ -89,10 +89,172 @@ const getRenderDisplayControl =
   };
 
 export interface AvailableToolForDiscovery {
+  apiDescriptions?: Array<{ description: string; name: string }>;
   description: string;
   identifier: string;
   name: string;
+  source: string;
 }
+
+export type ToolDiscoveryMatchField = 'api' | 'description' | 'identifier' | 'name' | 'source';
+
+export interface AvailableToolSearchResult extends AvailableToolForDiscovery {
+  matchedFields: ToolDiscoveryMatchField[];
+  score: number;
+}
+
+const toApiDescriptions = (apis?: Array<{ description?: string; name: string }>) =>
+  (apis || []).map((api) => ({
+    description: api.description || '',
+    name: api.name,
+  }));
+
+const normalizeSearchValue = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize('NFKC')
+    .replaceAll(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim();
+
+const tokenizeSearchValue = (value: string) =>
+  Array.from(new Set(normalizeSearchValue(value).split(/\s+/).filter(Boolean)));
+
+const scoreAvailableTool = (
+  tool: AvailableToolForDiscovery,
+  normalizedQuery: string,
+  tokens: string[],
+): AvailableToolSearchResult | null => {
+  if (!normalizedQuery) return null;
+
+  const identifier = normalizeSearchValue(tool.identifier);
+  const name = normalizeSearchValue(tool.name);
+  const description = normalizeSearchValue(tool.description);
+  const source = normalizeSearchValue(tool.source);
+  const apiNames = normalizeSearchValue(
+    (tool.apiDescriptions || []).map((api) => api.name).join(' '),
+  );
+  const apiDescriptions = normalizeSearchValue(
+    (tool.apiDescriptions || []).map((api) => api.description).join(' '),
+  );
+
+  const matchedFields = new Set<ToolDiscoveryMatchField>();
+  let matchedTokenCount = 0;
+  let score = 0;
+
+  if (identifier === normalizedQuery) {
+    matchedFields.add('identifier');
+    score += 140;
+  }
+
+  if (name === normalizedQuery) {
+    matchedFields.add('name');
+    score += 130;
+  }
+
+  if (identifier.startsWith(normalizedQuery)) {
+    matchedFields.add('identifier');
+    score += 80;
+  } else if (identifier.includes(normalizedQuery)) {
+    matchedFields.add('identifier');
+    score += 50;
+  }
+
+  if (name.startsWith(normalizedQuery)) {
+    matchedFields.add('name');
+    score += 75;
+  } else if (name.includes(normalizedQuery)) {
+    matchedFields.add('name');
+    score += 45;
+  }
+
+  if (description.includes(normalizedQuery)) {
+    matchedFields.add('description');
+    score += 30;
+  }
+
+  if (apiNames.includes(normalizedQuery) || apiDescriptions.includes(normalizedQuery)) {
+    matchedFields.add('api');
+    score += 35;
+  }
+
+  if (source.includes(normalizedQuery)) {
+    matchedFields.add('source');
+    score += 15;
+  }
+
+  for (const token of tokens) {
+    let tokenMatched = false;
+
+    if (identifier.includes(token)) {
+      matchedFields.add('identifier');
+      score += 24;
+      tokenMatched = true;
+    }
+
+    if (name.includes(token)) {
+      matchedFields.add('name');
+      score += 22;
+      tokenMatched = true;
+    }
+
+    if (description.includes(token)) {
+      matchedFields.add('description');
+      score += 10;
+      tokenMatched = true;
+    }
+
+    if (apiNames.includes(token) || apiDescriptions.includes(token)) {
+      matchedFields.add('api');
+      score += 12;
+      tokenMatched = true;
+    }
+
+    if (source.includes(token)) {
+      matchedFields.add('source');
+      score += 6;
+      tokenMatched = true;
+    }
+
+    if (tokenMatched) matchedTokenCount += 1;
+  }
+
+  if (matchedFields.size === 0 || matchedTokenCount === 0) return null;
+
+  if (tokens.length > 1 && matchedTokenCount === tokens.length) score += 25;
+
+  return {
+    ...tool,
+    matchedFields: Array.from(matchedFields),
+    score,
+  };
+};
+
+export const searchAvailableToolsForDiscovery = (
+  tools: AvailableToolForDiscovery[],
+  query: string,
+  limit = 5,
+) => {
+  const normalizedQuery = normalizeSearchValue(query);
+  const tokens = tokenizeSearchValue(query);
+  const clampedLimit = Math.min(Math.max(limit, 1), 10);
+
+  if (!normalizedQuery || tokens.length === 0) {
+    return { items: [] as AvailableToolSearchResult[], total: 0 };
+  }
+
+  const results = tools
+    .map((tool) => scoreAvailableTool(tool, normalizedQuery, tokens))
+    .filter((tool): tool is AvailableToolSearchResult => tool !== null)
+    .sort((left, right) => {
+      if (right.score !== left.score) return right.score - left.score;
+      return left.name.localeCompare(right.name);
+    });
+
+  return {
+    items: results.slice(0, clampedLimit),
+    total: results.length,
+  };
+};
 
 /**
  * Get all tools available for tool discovery (activateTools).
@@ -117,9 +279,11 @@ const availableToolsForDiscovery = (s: ToolStoreState): AvailableToolForDiscover
     .filter((tool) => !builtinSkillIds.has(tool.identifier))
     .filter((tool) => isToolAvailableInCurrentEnv(tool.identifier))
     .map((tool) => ({
+      apiDescriptions: toApiDescriptions(tool.manifest.api),
       description: tool.manifest.meta?.description || '',
       identifier: tool.identifier,
       name: tool.manifest.meta?.title || tool.identifier,
+      source: 'builtin',
     }));
 
   // 2. User-installed plugins — directly from s.installedPlugins
@@ -133,9 +297,11 @@ const availableToolsForDiscovery = (s: ToolStoreState): AvailableToolForDiscover
     .map((plugin) => {
       const meta = plugin.manifest?.meta;
       return {
+        apiDescriptions: toApiDescriptions(plugin.manifest?.api || []),
         description: meta?.description || '',
         identifier: plugin.identifier,
         name: meta?.title || plugin.identifier,
+        source: plugin.type === 'customPlugin' ? 'custom plugin' : 'community plugin',
       };
     });
 
@@ -145,9 +311,11 @@ const availableToolsForDiscovery = (s: ToolStoreState): AvailableToolForDiscover
     .map((server) => {
       const config = getKlavisServerByServerIdentifier(server.identifier);
       return {
+        apiDescriptions: toApiDescriptions(server.tools),
         description: config?.description || '',
         identifier: server.identifier,
         name: config?.label || server.serverName,
+        source: 'klavis mcp',
       };
     });
 
@@ -157,9 +325,11 @@ const availableToolsForDiscovery = (s: ToolStoreState): AvailableToolForDiscover
     .map((server) => {
       const config = getLobehubSkillProviderById(server.identifier);
       return {
+        apiDescriptions: toApiDescriptions(server.tools || []),
         description: config?.description || '',
         identifier: server.identifier,
         name: config?.label || server.name,
+        source: 'lobehub skill',
       };
     });
 
@@ -174,4 +344,5 @@ export const toolSelectors = {
   getRenderDisplayControl,
   isToolHasUI,
   metaList,
+  searchAvailableToolsForDiscovery,
 };

@@ -3,7 +3,7 @@
 import { validateVideoFileSize } from '@lobechat/utils/client';
 import { Flexbox } from '@lobehub/ui';
 import { Upload } from 'antd';
-import { css, cssVar, cx } from 'antd-style';
+import { createStaticStyles, css, cssVar, cx } from 'antd-style';
 import {
   Blocks,
   Brain,
@@ -34,6 +34,28 @@ import { useChatInputStore } from '../../store';
 import Action from '../components/Action';
 import { type ActionDropdownMenuItems } from '../components/ActionDropdown';
 import { useMemoryEnabled } from '../Memory/useMemoryEnabled';
+
+const prefixCls = 'ant';
+
+const styles = createStaticStyles(({ css }) => ({
+  compactDropdownMenu: css`
+    padding-block: 2px !important;
+
+    .${prefixCls}-dropdown-menu, [role='menu'] {
+      padding-block: 2px;
+    }
+
+    .${prefixCls}-dropdown-menu-item-divider, [role='separator'] {
+      margin-block: 2px;
+    }
+
+    [role='menuitem'] {
+      min-height: 30px;
+      padding-block: 2px;
+      padding-inline: 10px;
+    }
+  `,
+}));
 
 // Makes the entire label area clickable (for Antd Upload inside a menu item)
 const hotArea = css`
@@ -197,8 +219,8 @@ const PlusActions = memo(() => {
           showTooltip={false}
           title={t('input.more')}
           dropdown={{
-            menu: { items },
-            minWidth: 240,
+            menu: { className: styles.compactDropdownMenu, items },
+            minWidth: 220,
             placement: 'topLeft',
           }}
           onOpenChange={setOpen}

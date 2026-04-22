@@ -6,6 +6,7 @@ import {
   type ActivateToolsParams,
   ActivatorApiName,
   LobeActivatorIdentifier,
+  type SearchToolsParams,
 } from '../types';
 
 class ActivatorExecutor extends BaseExecutor<typeof ActivatorApiName> {
@@ -29,6 +30,35 @@ class ActivatorExecutor extends BaseExecutor<typeof ActivatorApiName> {
       }
 
       const result = await this.runtime.activateSkill(params);
+
+      if (result.success) {
+        return { content: result.content, state: result.state, success: true };
+      }
+
+      return {
+        content: result.content,
+        error: { message: result.content, type: 'PluginServerError' },
+        success: false,
+      };
+    } catch (e) {
+      const err = e as Error;
+      return {
+        error: { body: e, message: err.message, type: 'PluginServerError' },
+        success: false,
+      };
+    }
+  };
+
+  searchTools = async (
+    params: SearchToolsParams,
+    ctx: BuiltinToolContext,
+  ): Promise<BuiltinToolResult> => {
+    try {
+      if (ctx.signal?.aborted) {
+        return { stop: true, success: false };
+      }
+
+      const result = await this.runtime.searchTools(params);
 
       if (result.success) {
         return { content: result.content, state: result.state, success: true };

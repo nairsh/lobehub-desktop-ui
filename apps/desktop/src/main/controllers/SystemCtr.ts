@@ -2,12 +2,22 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
-import type { ElectronAppState, ThemeMode } from '@lobechat/electron-client-ipc';
+import type {
+  DesktopAppIconState,
+  ElectronAppState,
+  ThemeMode,
+} from '@lobechat/electron-client-ipc';
 import { app, dialog, nativeTheme, shell } from 'electron';
 import { macOS } from 'electron-is';
 import { pathExists, readdir } from 'fs-extra';
 
 import { legacyLocalDbDir } from '@/const/dir';
+import {
+  APP_ICON_FILE_FILTERS,
+  CUSTOM_APP_ICON_VERSION,
+  persistCustomAppIcon,
+  removeCustomAppIcon,
+} from '@/utils/appIcon';
 import { createLogger } from '@/utils/logger';
 import {
   getAccessibilityStatus,
@@ -188,6 +198,50 @@ export default class SystemController extends ControllerModule {
     const repoType = await this.detectRepoType(folderPath);
 
     return { path: folderPath, repoType };
+  }
+
+  @IpcMethod()
+  async getAppIconState(): Promise<DesktopAppIconState> {
+    const currentIcon = this.app.getCurrentAppIcon();
+
+    return {
+      isCustom: Boolean(this.app.getCustomAppIconPath()),
+      previewDataUrl: currentIcon.toDataURL(),
+    };
+  }
+
+  @IpcMethod()
+  async selectAppIcon(): Promise<DesktopAppIconState | undefined> {
+    const mainWindow = this.app.browserManager.getMainWindow()?.browserWindow;
+
+    const result = await dialog.showOpenDialog(mainWindow!, {
+      filters: [...APP_ICON_FILE_FILTERS],
+      properties: ['openFile'],
+      title: 'Choose App Icon',
+    });
+
+    if (result.canceled || result.filePaths.length === 0) {
+      return undefined;
+    }
+
+    const customIconPath = await persistCustomAppIcon(result.filePaths[0]);
+
+    this.app.storeManager.set('customAppIconPath', customIconPath);
+    this.app.storeManager.set('customAppIconVersion', CUSTOM_APP_ICON_VERSION);
+    await this.app.applyCurrentAppIcon();
+
+    return this.getAppIconState();
+  }
+
+  @IpcMethod()
+  async resetAppIcon(): Promise<DesktopAppIconState> {
+    await removeCustomAppIcon();
+
+    this.app.storeManager.set('customAppIconPath', '');
+    this.app.storeManager.set('customAppIconVersion', CUSTOM_APP_ICON_VERSION);
+    await this.app.applyCurrentAppIcon();
+
+    return this.getAppIconState();
   }
 
   @IpcMethod()

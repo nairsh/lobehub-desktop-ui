@@ -22,7 +22,11 @@ import urlJoin from 'url-join';
 import { ProviderItemRender } from '@/components/ModelSelect';
 import type { PricingMode } from '@/features/ModelSwitchPanel/components/ModelDetailPanel';
 import ModelDetailPanel from '@/features/ModelSwitchPanel/components/ModelDetailPanel';
-import { styles as modelSwitchPanelStyles } from '@/features/ModelSwitchPanel/styles';
+import {
+  MENU_ITEM_TRIGGER_STYLE,
+  MENU_ITEM_WRAPPER_STYLE,
+  styles as modelSwitchPanelStyles,
+} from '@/features/ModelSwitchPanel/styles';
 import type { ListItem } from '@/features/ModelSwitchPanel/types';
 import { menuKey } from '@/features/ModelSwitchPanel/utils';
 import type { EnabledProviderWithModels } from '@/types/index';
@@ -122,12 +126,13 @@ const GenerationListItemRenderer = memo<GenerationListItemRendererProps>(
         const key = menuKey(item.provider.id, item.model.id);
         const isActive = key === activeKey;
         return (
-          <Flexbox style={{ marginBlock: 1, marginInline: 4 }}>
+          <Flexbox style={MENU_ITEM_WRAPPER_STYLE}>
             <DropdownMenuSubmenuRoot open={detailOpen} onOpenChange={setDetailOpen}>
               <DropdownMenuSubmenuTrigger
-                style={{ paddingBlock: 8, paddingInline: 8 }}
+                style={MENU_ITEM_TRIGGER_STYLE}
                 className={cx(
                   menuSharedStyles.item,
+                  modelSwitchPanelStyles.menuTrigger,
                   isActive && modelSwitchPanelStyles.menuItemActive,
                 )}
                 onClick={() => {
@@ -165,12 +170,13 @@ const GenerationListItemRenderer = memo<GenerationListItemRendererProps>(
         const key = menuKey(singleProvider.id, item.data.model.id);
         const isActive = key === activeKey;
         return (
-          <Flexbox style={{ marginBlock: 1, marginInline: 4 }}>
+          <Flexbox style={MENU_ITEM_WRAPPER_STYLE}>
             <DropdownMenuSubmenuRoot open={detailOpen} onOpenChange={setDetailOpen}>
               <DropdownMenuSubmenuTrigger
-                style={{ paddingBlock: 8, paddingInline: 8 }}
+                style={MENU_ITEM_TRIGGER_STYLE}
                 className={cx(
                   menuSharedStyles.item,
+                  modelSwitchPanelStyles.menuTrigger,
                   isActive && modelSwitchPanelStyles.menuItemActive,
                 )}
                 onClick={() => {

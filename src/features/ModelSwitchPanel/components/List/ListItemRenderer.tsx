@@ -22,7 +22,7 @@ import { useUserStore } from '@/store/user';
 import { userGeneralSettingsSelectors } from '@/store/user/selectors';
 import type { LobeAgentChatConfig } from '@/types/agent';
 
-import { styles } from '../../styles';
+import { MENU_ITEM_TRIGGER_STYLE, MENU_ITEM_WRAPPER_STYLE, styles } from '../../styles';
 import { type ListItem } from '../../types';
 import { menuKey } from '../../utils';
 import ModelDetailPanel from '../ModelDetailPanel';
@@ -146,11 +146,15 @@ export const ListItemRenderer = memo<ListItemRendererProps>(
 
         if (isDevMode) {
           return (
-            <Flexbox style={{ marginBlock: 1, marginInline: 4 }}>
+            <Flexbox style={MENU_ITEM_WRAPPER_STYLE}>
               <DropdownMenuSubmenuRoot open={detailOpen} onOpenChange={setDetailOpen}>
                 <DropdownMenuSubmenuTrigger
-                  className={cx(menuSharedStyles.item, isActive && styles.menuItemActive)}
-                  style={{ paddingBlock: 8, paddingInline: 8 }}
+                  className={cx(
+                    menuSharedStyles.item,
+                    styles.menuTrigger,
+                    isActive && styles.menuItemActive,
+                  )}
+                  style={MENU_ITEM_TRIGGER_STYLE}
                   onClick={(e) => {
                     e.preventDefault();
                     setDetailOpen(false);
@@ -183,11 +187,15 @@ export const ListItemRenderer = memo<ListItemRendererProps>(
         }
 
         return (
-          <Flexbox style={{ marginBlock: 1, marginInline: 4 }}>
+          <Flexbox style={MENU_ITEM_WRAPPER_STYLE}>
             <DropdownMenuSubmenuRoot open={detailOpen} onOpenChange={setDetailOpen}>
               <DropdownMenuSubmenuTrigger
-                className={cx(menuSharedStyles.item, isActive && styles.menuItemActive)}
-                style={{ paddingBlock: 8, paddingInline: 8 }}
+                className={cx(
+                  menuSharedStyles.item,
+                  styles.menuTrigger,
+                  isActive && styles.menuItemActive,
+                )}
+                style={MENU_ITEM_TRIGGER_STYLE}
                 onClick={(e) => {
                   e.preventDefault();
                   setDetailOpen(false);
@@ -235,11 +243,15 @@ export const ListItemRenderer = memo<ListItemRendererProps>(
         const restricted = isModelRestricted?.(item.data.model.id, singleProvider.id);
 
         return (
-          <Flexbox style={{ marginBlock: 1, marginInline: 4 }}>
+          <Flexbox style={MENU_ITEM_WRAPPER_STYLE}>
             <DropdownMenuSubmenuRoot open={detailOpen} onOpenChange={setDetailOpen}>
               <DropdownMenuSubmenuTrigger
-                className={cx(menuSharedStyles.item, isActive && styles.menuItemActive)}
-                style={{ paddingBlock: 8, paddingInline: 8 }}
+                className={cx(
+                  menuSharedStyles.item,
+                  styles.menuTrigger,
+                  isActive && styles.menuItemActive,
+                )}
+                style={MENU_ITEM_TRIGGER_STYLE}
                 onClick={(e) => {
                   e.preventDefault();
                   setDetailOpen(false);
@@ -275,7 +287,7 @@ export const ListItemRenderer = memo<ListItemRendererProps>(
 
       case 'model-item-multiple': {
         return (
-          <Flexbox key={item.data.displayName} style={{ marginBlock: 1, marginInline: 4 }}>
+          <Flexbox key={item.data.displayName} style={MENU_ITEM_WRAPPER_STYLE}>
             <MultipleProvidersModelItem
               activeKey={activeKey}
               chatConfig={chatConfig}

@@ -9,15 +9,51 @@ describe('buildRefineSuggestion', () => {
         currentPrompt: 'Fix this sentence',
         rewrittenPrompt: 'Fix this sentence:',
       }),
-    ).toBe(':');
+    ).toEqual({ prefix: 'Fix this sentence', suggestion: ':' });
   });
 
-  it('should return the full rewrite when it does not extend the existing prompt', () => {
+  it('should return a common prefix and diff suffix when the rewrite diverges mid-text', () => {
     expect(
       buildRefineSuggestion({
         currentPrompt: 'bad sentence',
-        rewrittenPrompt: 'Please rewrite this sentence clearly.',
+        rewrittenPrompt: 'better sentence with detail',
       }),
-    ).toBe('Please rewrite this sentence clearly.');
+    ).toEqual({ prefix: 'b', suggestion: 'etter sentence with detail' });
+  });
+
+  it('should return full rewrite as suggestion when there is no common prefix', () => {
+    expect(
+      buildRefineSuggestion({
+        currentPrompt: 'old text',
+        rewrittenPrompt: 'Completely new text',
+      }),
+    ).toEqual({ prefix: '', suggestion: 'Completely new text' });
+  });
+
+  it('should return null when the rewrite matches the current prompt', () => {
+    expect(
+      buildRefineSuggestion({
+        currentPrompt: 'same text',
+        rewrittenPrompt: 'same text',
+      }),
+    ).toBeNull();
+  });
+
+  it('should return null when the rewritten prompt is empty', () => {
+    expect(
+      buildRefineSuggestion({
+        currentPrompt: 'something',
+        rewrittenPrompt: '',
+      }),
+    ).toBeNull();
+  });
+
+  it('should return the full rewrite when the current prompt is empty', () => {
+    expect(
+      buildRefineSuggestion({
+        currentPrompt: '',
+        rewrittenPrompt: 'new prompt',
+      }),
+    ).toEqual({ prefix: '', suggestion: 'new prompt' });
   });
 });

@@ -1,0 +1,64 @@
+import { createCanvas, loadImage } from '@napi-rs/canvas';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { createNormalizedAppIconBuffer } from '../appIcon';
+
+vi.mock('electron', () => ({
+  nativeImage: {
+    createFromPath: vi.fn(),
+  },
+}));
+
+vi.mock('@/const/dir', () => ({
+  appStorageDir: '/mock/app-storage',
+  buildDir: '/mock/build',
+}));
+
+vi.mock('@/const/env', () => ({
+  isDev: false,
+}));
+
+const getAlphaAt = (rgba: Uint8ClampedArray, size: number, x: number, y: number) =>
+  rgba[(y * size + x) * 4 + 3];
+
+describe('appIcon', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should normalize a raw square image into an inset rounded app icon', async () => {
+    const sourceCanvas = createCanvas(512, 512);
+    const sourceContext = sourceCanvas.getContext('2d');
+
+    sourceContext.fillStyle = '#FFFFFF';
+    sourceContext.fillRect(0, 0, 512, 512);
+    sourceContext.strokeStyle = '#000000';
+    sourceContext.lineCap = 'round';
+    sourceContext.lineWidth = 28;
+    sourceContext.beginPath();
+    sourceContext.moveTo(168, 132);
+    sourceContext.lineTo(256, 88);
+    sourceContext.lineTo(344, 132);
+    sourceContext.moveTo(256, 88);
+    sourceContext.lineTo(256, 392);
+    sourceContext.moveTo(168, 312);
+    sourceContext.quadraticCurveTo(256, 252, 344, 312);
+    sourceContext.stroke();
+
+    const normalized = await createNormalizedAppIconBuffer(sourceCanvas.toBuffer('image/png'));
+    const image = await loadImage(normalized);
+    const outputCanvas = createCanvas(image.width, image.height);
+    const outputContext = outputCanvas.getContext('2d');
+
+    outputContext.drawImage(image, 0, 0);
+
+    const { data } = outputContext.getImageData(0, 0, image.width, image.height);
+
+    expect(image.width).toBe(1024);
+    expect(image.height).toBe(1024);
+    expect(getAlphaAt(data, image.width, 0, 0)).toBe(0);
+    expect(getAlphaAt(data, image.width, 48, 512)).toBe(0);
+    expect(getAlphaAt(data, image.width, 160, 512)).toBeGreaterThan(0);
+    expect(getAlphaAt(data, image.width, 512, 512)).toBeGreaterThan(0);
+  });
+});

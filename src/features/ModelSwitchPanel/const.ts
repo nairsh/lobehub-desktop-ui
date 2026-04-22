@@ -1,11 +1,11 @@
 export const STORAGE_KEY = 'MODEL_SWITCH_PANEL_WIDTH';
 export const STORAGE_KEY_MODE = 'MODEL_SWITCH_PANEL_MODE';
-export const DEFAULT_WIDTH = 280;
+export const DEFAULT_WIDTH = 300;
 export const MIN_WIDTH = 240;
 export const MAX_WIDTH = 500;
 export const MAX_PANEL_HEIGHT = 400;
 export const TOOLBAR_HEIGHT = 40;
-export const FOOTER_HEIGHT = 48;
+export const FOOTER_HEIGHT = 80;
 
 export const ITEM_HEIGHT = {
   'empty-model': 32,
