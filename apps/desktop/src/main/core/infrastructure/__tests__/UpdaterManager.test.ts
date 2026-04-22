@@ -5,8 +5,7 @@ import type { App as AppCore } from '../../App';
 import { UpdaterManager } from '../UpdaterManager';
 
 // Use vi.hoisted to ensure mocks work with require()
-const { mockGetAllWindows, mockReleaseSingleInstanceLock } = vi.hoisted(() => ({
-  mockGetAllWindows: vi.fn().mockReturnValue([]),
+const { mockReleaseSingleInstanceLock } = vi.hoisted(() => ({
   mockReleaseSingleInstanceLock: vi.fn(),
 }));
 
@@ -43,9 +42,6 @@ vi.mock('electron-updater', () => ({
 
 // Mock electron - uses hoisted functions for require() compatibility
 vi.mock('electron', () => ({
-  BrowserWindow: {
-    getAllWindows: mockGetAllWindows,
-  },
   app: {
     getVersion: vi.fn().mockReturnValue('0.0.0'),
     releaseSingleInstanceLock: mockReleaseSingleInstanceLock,
@@ -325,41 +321,32 @@ describe('UpdaterManager', () => {
   });
 
   describe('installNow', () => {
-    // Note: installNow uses require('electron') which is difficult to mock in vitest.
-    // These tests are skipped because vi.mock doesn't work with dynamic require().
-    // The functionality should be tested in integration tests or E2E tests.
-
-    it.skip('should set app.isQuiting to true', () => {
+    it('should call quitAndInstall with silent and force-run-after flags', () => {
       updaterManager.installNow();
-      expect(mockApp.isQuiting).toBe(true);
-    });
 
-    it.skip('should close all windows', () => {
-      const mockWindow1 = { close: vi.fn(), isDestroyed: vi.fn().mockReturnValue(false) };
-      const mockWindow2 = { close: vi.fn(), isDestroyed: vi.fn().mockReturnValue(false) };
-      mockGetAllWindows.mockReturnValue([mockWindow1, mockWindow2]);
-      updaterManager.installNow();
-      expect(mockWindow1.close).toHaveBeenCalled();
-      expect(mockWindow2.close).toHaveBeenCalled();
-    });
-
-    it.skip('should not close destroyed windows', () => {
-      const mockWindow = { close: vi.fn(), isDestroyed: vi.fn().mockReturnValue(true) };
-      mockGetAllWindows.mockReturnValue([mockWindow]);
-      updaterManager.installNow();
-      expect(mockWindow.close).not.toHaveBeenCalled();
-    });
-
-    it.skip('should release single instance lock', () => {
-      updaterManager.installNow();
-      expect(mockReleaseSingleInstanceLock).toHaveBeenCalled();
-    });
-
-    it.skip('should call quitAndInstall with correct parameters after delay', async () => {
-      updaterManager.installNow();
-      expect(autoUpdater.quitAndInstall).not.toHaveBeenCalled();
-      await vi.advanceTimersByTimeAsync(100);
       expect(autoUpdater.quitAndInstall).toHaveBeenCalledWith(true, true);
+    });
+
+    it('should not call quitAndInstall a second time when already installing', () => {
+      updaterManager.installNow();
+      updaterManager.installNow();
+
+      expect(autoUpdater.quitAndInstall).toHaveBeenCalledTimes(1);
+    });
+
+    it('should allow reinstall after an updater error resets the installing flag', async () => {
+      await updaterManager.initialize();
+
+      updaterManager.installNow();
+      expect(autoUpdater.quitAndInstall).toHaveBeenCalledTimes(1);
+
+      // Simulate an error from the updater (e.g. Squirrel fails)
+      const errorHandler = registeredEvents.get('error');
+      await errorHandler?.(new Error('Install failed'));
+
+      // installing flag should be reset — user can try again
+      updaterManager.installNow();
+      expect(autoUpdater.quitAndInstall).toHaveBeenCalledTimes(2);
     });
   });
 

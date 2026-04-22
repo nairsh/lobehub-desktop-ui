@@ -9,7 +9,7 @@ import { app as electronApp } from 'electron';
 import log from 'electron-log';
 import { autoUpdater } from 'electron-updater';
 
-import { isDev, isWindows } from '@/const/env';
+import { isDev } from '@/const/env';
 import { getDesktopEnv } from '@/env';
 import {
   UPDATE_CHANNEL,
@@ -39,6 +39,7 @@ export class UpdaterManager {
   /** Whether a recheck is needed after the current check completes */
   private pendingRecheck: boolean = false;
 
+  private installing: boolean = false;
   private stage: UpdaterStage = 'idle';
   private latestUpdateInfo: UpdateInfo | null = null;
   private latestProgress: ProgressInfo | null = null;
@@ -246,31 +247,21 @@ export class UpdaterManager {
   };
 
   /**
-   * Install update immediately
+   * Install update immediately.
+   *
+   * On macOS, electron-updater's MacUpdater.quitAndInstall() calls
+   * nativeUpdater.checkForUpdates() (Squirrel.Mac) which downloads the update
+   * from a localhost proxy and then calls app.quit() to restart. Pre-closing
+   * windows or releasing the single-instance lock before this call was causing
+   * Squirrel's async flow to fail silently, leaving the app alive without
+   * applying the update. We now let quitAndInstall own the entire quit lifecycle.
    */
   public installNow = () => {
+    if (this.installing) return;
+    this.installing = true;
+
     logger.info('Installing update now...');
-
-    this.app.isQuiting = true;
-
-    logger.info('Closing all windows before update installation...');
-    const { BrowserWindow, app } = require('electron');
-    if (!isWindows) {
-      const allWindows = BrowserWindow.getAllWindows();
-      allWindows.forEach((window: any) => {
-        if (!window.isDestroyed()) {
-          window.close();
-        }
-      });
-    }
-
-    logger.info('Releasing single instance lock...');
-    app.releaseSingleInstanceLock();
-
-    setTimeout(() => {
-      logger.info('Calling autoUpdater.quitAndInstall...');
-      autoUpdater.quitAndInstall(true, true);
-    }, 100);
+    autoUpdater.quitAndInstall(true, true);
   };
 
   /**
@@ -448,6 +439,7 @@ export class UpdaterManager {
     });
 
     autoUpdater.on('error', async (err) => {
+      this.installing = false;
       const message = err instanceof Error ? err.message : String(err);
 
       if (this.isMissingUpdateManifestError(err)) {
