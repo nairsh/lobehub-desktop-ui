@@ -122,6 +122,8 @@ export default {
     'A new version {{version}} has been found, would you like to download it now?',
   'updater.restartAndInstall': 'Install updates and restart',
   'updater.updateError': 'Update error',
+  'updater.updateErrorWithMessage': 'Update failed: {{message}}',
+  'updater.updateInstalling': 'Installing update...',
   'updater.updateReady': 'A new version is available',
   'updater.updateReadyDesc':
     'The new version {{version}} has been downloaded. Restart the application to complete the installation.',

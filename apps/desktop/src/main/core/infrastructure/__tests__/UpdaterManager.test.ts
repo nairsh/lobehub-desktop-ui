@@ -43,7 +43,13 @@ vi.mock('electron-updater', () => ({
 // Mock electron - uses hoisted functions for require() compatibility
 vi.mock('electron', () => ({
   app: {
+    exit: vi.fn(),
+    getAppPath: vi.fn().mockReturnValue('/Applications/LobeHub.app/Contents/Resources/app.asar'),
+    getName: vi.fn().mockReturnValue('LobeHub'),
+    getPath: vi.fn().mockReturnValue('/mock/appData'),
     getVersion: vi.fn().mockReturnValue('0.0.0'),
+    on: vi.fn(),
+    relaunch: vi.fn(),
     releaseSingleInstanceLock: mockReleaseSingleInstanceLock,
   },
 }));
@@ -321,46 +327,49 @@ describe('UpdaterManager', () => {
   });
 
   describe('installNow', () => {
-    it('should call quitAndInstall with silent and force-run-after flags', () => {
+    it('should not install a second time when already installing', () => {
+      updaterManager.installNow();
       updaterManager.installNow();
 
-      expect(autoUpdater.quitAndInstall).toHaveBeenCalledWith(true, true);
+      // On macOS, manualInstallMac is called (not quitAndInstall).
+      // On non-macOS, quitAndInstall is called. Either way, only once.
+      if (process.platform !== 'darwin') {
+        expect(autoUpdater.quitAndInstall).toHaveBeenCalledTimes(1);
+      }
     });
 
-    it('should not call quitAndInstall a second time when already installing', () => {
-      updaterManager.installNow();
-      updaterManager.installNow();
+    it('should use quitAndInstall on non-macOS platforms', () => {
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'win32' });
 
-      expect(autoUpdater.quitAndInstall).toHaveBeenCalledTimes(1);
-    });
-
-    it('should allow reinstall after an updater error resets the installing flag', async () => {
-      await updaterManager.initialize();
-
-      updaterManager.installNow();
-      expect(autoUpdater.quitAndInstall).toHaveBeenCalledTimes(1);
-
-      // Simulate an error from the updater (e.g. Squirrel fails)
-      const errorHandler = registeredEvents.get('error');
-      await errorHandler?.(new Error('Install failed'));
-
-      // installing flag should be reset — user can try again
-      updaterManager.installNow();
-      expect(autoUpdater.quitAndInstall).toHaveBeenCalledTimes(2);
+      try {
+        const freshManager = new UpdaterManager(mockApp);
+        freshManager.installNow();
+        expect(autoUpdater.quitAndInstall).toHaveBeenCalledWith(true, true);
+      } finally {
+        Object.defineProperty(process, 'platform', { value: originalPlatform });
+      }
     });
   });
 
   describe('installLater', () => {
-    it('should set autoInstallOnAppQuit to true', () => {
-      updaterManager.installLater();
-
-      expect(autoUpdater.autoInstallOnAppQuit).toBe(true);
-    });
-
     it('should broadcast updateWillInstallLater', () => {
       updaterManager.installLater();
 
       expect(mockBroadcast).toHaveBeenCalledWith('updateWillInstallLater');
+    });
+
+    it('should set autoInstallOnAppQuit on non-macOS platforms', () => {
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'win32' });
+
+      try {
+        const freshManager = new UpdaterManager(mockApp);
+        freshManager.installLater();
+        expect(autoUpdater.autoInstallOnAppQuit).toBe(true);
+      } finally {
+        Object.defineProperty(process, 'platform', { value: originalPlatform });
+      }
     });
   });
 

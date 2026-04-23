@@ -1,3 +1,8 @@
+import { execSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+
 import type {
   ProgressInfo,
   UpdateChannel,
@@ -40,6 +45,7 @@ export class UpdaterManager {
   private pendingRecheck: boolean = false;
 
   private installing: boolean = false;
+  private pendingMacInstallOnQuit: boolean = false;
   private stage: UpdaterStage = 'idle';
   private latestUpdateInfo: UpdateInfo | null = null;
   private latestProgress: ProgressInfo | null = null;
@@ -213,7 +219,7 @@ export class UpdaterManager {
       this.setStage('error', { error: message });
       setTimeout(() => {
         if (this.stage === 'error') this.setStage('idle');
-      }, 3000);
+      }, 15_000);
     } finally {
       this.checking = false;
       if (this.pendingRecheck) {
@@ -242,35 +248,155 @@ export class UpdaterManager {
       this.setStage('error', { error: (error as Error).message });
       setTimeout(() => {
         if (this.stage === 'error') this.setStage('idle');
-      }, 3000);
+      }, 15_000);
     }
   };
 
   /**
    * Install update immediately.
    *
-   * On macOS, electron-updater's MacUpdater.quitAndInstall() calls
-   * nativeUpdater.checkForUpdates() (Squirrel.Mac) which downloads the update
-   * from a localhost proxy and then calls app.quit() to restart. Pre-closing
-   * windows or releasing the single-instance lock before this call was causing
-   * Squirrel's async flow to fail silently, leaving the app alive without
-   * applying the update. We now let quitAndInstall own the entire quit lifecycle.
+   * On macOS, Squirrel.Mac (the native updater) requires proper Apple code
+   * signing to verify the update. When the app is ad-hoc signed, Squirrel
+   * silently fails and the app hangs forever. We bypass Squirrel entirely by
+   * extracting the downloaded .zip and replacing the .app bundle directly.
+   *
+   * On other platforms, we delegate to electron-updater's quitAndInstall.
    */
   public installNow = () => {
     if (this.installing) return;
     this.installing = true;
 
     logger.info('Installing update now...');
-    autoUpdater.quitAndInstall(true, true);
+
+    if (process.platform === 'darwin') {
+      this.manualInstallMac();
+    } else {
+      autoUpdater.quitAndInstall(true, true);
+    }
   };
 
   /**
-   * Install update on next launch
+   * Bypass Squirrel.Mac: extract the downloaded zip and replace the .app bundle.
+   */
+  private manualInstallMac = () => {
+    try {
+      const appBundlePath = this.getMacAppBundlePath();
+      const zipPath = this.findDownloadedMacZip();
+
+      if (!appBundlePath || !zipPath) {
+        throw new Error(
+          `Cannot locate paths for manual install (app=${appBundlePath}, zip=${zipPath})`,
+        );
+      }
+
+      logger.info(`Manual macOS install: zip=${zipPath}, app=${appBundlePath}`);
+
+      const tempDir = path.join(os.tmpdir(), `lobehub-update-${Date.now()}`);
+      fs.mkdirSync(tempDir, { recursive: true });
+
+      // ditto handles macOS-specific zip attributes (xattrs, resource forks)
+      execSync(`ditto -xk "${zipPath}" "${tempDir}"`);
+
+      const extractedApp = fs.readdirSync(tempDir).find((f) => f.endsWith('.app'));
+      if (!extractedApp) {
+        throw new Error('No .app bundle found in update zip');
+      }
+
+      const newAppPath = path.join(tempDir, extractedApp);
+      const backupPath = `${appBundlePath}.update-backup`;
+
+      // Swap the app bundle: rename current → backup, copy new → current.
+      // macOS keeps the running process alive by inode, not by path.
+      // Use rm -rf + mv via shell to handle cross-volume moves reliably.
+      if (fs.existsSync(backupPath)) {
+        fs.rmSync(backupPath, { force: true, recursive: true });
+      }
+      fs.renameSync(appBundlePath, backupPath);
+
+      try {
+        // ditto preserves macOS metadata; works across volumes unlike rename
+        execSync(`ditto "${newAppPath}" "${appBundlePath}"`);
+      } catch (copyErr) {
+        logger.error('Failed to copy new app into place, restoring backup:', copyErr);
+        fs.renameSync(backupPath, appBundlePath);
+        throw copyErr;
+      }
+
+      // Clean up backup and temp dir
+      fs.rmSync(backupPath, { force: true, recursive: true });
+      fs.rmSync(tempDir, { force: true, recursive: true });
+
+      logger.info('Manual install succeeded, relaunching...');
+      electronApp.relaunch();
+      electronApp.exit(0);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      logger.error('Manual macOS install failed:', message);
+      this.installing = false;
+      this.setStage('error', { error: `Update install failed: ${message}` });
+    }
+  };
+
+  private getMacAppBundlePath(): string | undefined {
+    // app.getAppPath() returns something like /Applications/LobeHub.app/Contents/Resources/app.asar
+    // Walk up to find the .app bundle
+    let p = electronApp.getAppPath();
+    while (p && p !== '/') {
+      if (p.endsWith('.app')) return p;
+      p = path.dirname(p);
+    }
+    return undefined;
+  }
+
+  private findDownloadedMacZip(): string | undefined {
+    // electron-updater stores downloads in ~/Library/Caches/{name}-updater/pending/
+    const cachesDir = path.join(electronApp.getPath('appData'), '..', 'Caches');
+    const appName = electronApp.getName().toLowerCase().replaceAll(' ', '-');
+
+    // Try known cache dir patterns
+    const candidates = [
+      path.join(cachesDir, `${appName}-${this.currentChannel}-updater`, 'pending'),
+      path.join(cachesDir, `${appName}-updater`, 'pending'),
+    ];
+
+    for (const dir of candidates) {
+      if (!fs.existsSync(dir)) continue;
+      const zip = fs.readdirSync(dir).find((f) => f.endsWith('-mac.zip'));
+      if (zip) return path.join(dir, zip);
+    }
+
+    // Fallback: check for update.zip at the cache root
+    for (const dir of candidates) {
+      const parentDir = path.dirname(dir);
+      const updateZip = path.join(parentDir, 'update.zip');
+      if (fs.existsSync(updateZip)) return updateZip;
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Install update on next launch.
+   *
+   * On macOS with ad-hoc signing, autoInstallOnAppQuit would trigger
+   * Squirrel.Mac on quit (which fails silently). Instead we set a flag
+   * and perform the manual install when the app is quitting.
    */
   public installLater = () => {
     logger.info('Update will be installed on next restart');
 
-    autoUpdater.autoInstallOnAppQuit = true;
+    if (process.platform === 'darwin') {
+      this.pendingMacInstallOnQuit = true;
+      electronApp.on('before-quit', () => {
+        if (this.pendingMacInstallOnQuit) {
+          this.pendingMacInstallOnQuit = false;
+          this.manualInstallMac();
+        }
+      });
+    } else {
+      autoUpdater.autoInstallOnAppQuit = true;
+    }
+
     this.mainWindow.broadcast('updateWillInstallLater');
   };
 
@@ -461,7 +587,7 @@ export class UpdaterManager {
       this.setStage('error', { error: message });
       setTimeout(() => {
         if (this.stage === 'error') this.setStage('idle');
-      }, 3000);
+      }, 15_000);
     });
 
     autoUpdater.on('download-progress', (progressObj) => {

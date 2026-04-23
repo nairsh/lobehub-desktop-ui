@@ -127,7 +127,7 @@ const Version = memo<{ mobile?: boolean }>(({ mobile }) => {
       return null;
     }
 
-    const { stage, progress } = updaterState;
+    const { stage, progress, errorMessage } = updaterState;
 
     switch (stage) {
       case 'checking': {
@@ -157,6 +157,23 @@ const Version = memo<{ mobile?: boolean }>(({ mobile }) => {
           <Button disabled block={mobile}>
             {t('alreadyUpToDate')}
           </Button>
+        );
+      }
+      case 'error': {
+        return (
+          <Flexbox align={mobile ? 'stretch' : 'flex-end'} gap={4}>
+            <Button danger block={mobile} onClick={() => void autoUpdateService.checkUpdate()}>
+              {t('checkForUpdates')}
+            </Button>
+            {errorMessage && (
+              <div
+                style={{ color: 'var(--ant-color-error)', fontSize: 11, maxWidth: 220 }}
+                title={errorMessage}
+              >
+                {errorMessage.length > 60 ? errorMessage.slice(0, 60) + '...' : errorMessage}
+              </div>
+            )}
+          </Flexbox>
         );
       }
       default: {

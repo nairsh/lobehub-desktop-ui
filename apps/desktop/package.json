@@ -1,6 +1,6 @@
 {
-  "name": "lobehub-desktop-dev",
-  "version": "0.0.0",
+  "name": "lobehub-desktop-canary",
+  "version": "2.1.51-canary.5",
   "private": true,
   "description": "LobeHub Desktop Application",
   "homepage": "https://lobehub.com",
@@ -120,5 +120,6 @@
       "react": "19.2.4",
       "react-dom": "19.2.4"
     }
-  }
+  },
+  "productName": "LobeHub"
 }
