@@ -37,7 +37,7 @@ const getDefaultAppIconCandidates = () => {
     );
   }
 
-  return [...new Set(candidates)];
+  return candidates;
 };
 
 export const getDefaultAppIconPath = () =>

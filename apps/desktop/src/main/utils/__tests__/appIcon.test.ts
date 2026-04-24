@@ -4,6 +4,7 @@ import { createCanvas, loadImage } from '@napi-rs/canvas';
 import { nativeImage } from 'electron';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { buildDir } from '@/const/dir';
 import { createNormalizedAppIconBuffer, getDefaultAppIconPath, getResolvedAppIcon } from '../appIcon';
 
 vi.mock('node:fs', () => ({
@@ -74,9 +75,10 @@ describe('appIcon', () => {
   });
 
   it('should choose the first existing default app icon path', () => {
-    vi.mocked(existsSync).mockImplementation((path) => path === '/mock/build/icon.ico');
+    const expectedCandidatePath = `${buildDir}/icon.ico`;
+    vi.mocked(existsSync).mockImplementation((path) => path === expectedCandidatePath);
 
-    expect(getDefaultAppIconPath()).toBe('/mock/build/icon.ico');
+    expect(getDefaultAppIconPath()).toBe(expectedCandidatePath);
   });
 
   it('should return an empty image instead of throwing when all app icons are missing', () => {
