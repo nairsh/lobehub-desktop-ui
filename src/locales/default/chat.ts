@@ -289,6 +289,8 @@ export default {
   'runtimeEnv.cloudConfig.clear': 'Clear',
   'runtimeEnv.cloudConfig.description':
     'Use the standard Open Terminal API to run cloud tools on your own sandbox.',
+  'runtimeEnv.cloudConfig.testConnection': 'Test Connection',
+  'runtimeEnv.cloudConfig.testConnectionSuccess': 'Open Terminal connection verified',
   'runtimeEnv.cloudConfig.notConfigured': 'Configure Open Terminal',
   'runtimeEnv.cloudConfig.save': 'Save',
   'runtimeEnv.cloudConfig.urlLabel': 'Server URL',

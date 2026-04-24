@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { openTerminalService } from '@/services/electron/openTerminal';
+
 import { OpenTerminalCloudSandboxProvider } from './cloudSandbox';
 
 vi.mock('@/libs/trpc/client', () => ({
@@ -21,6 +23,7 @@ describe('OpenTerminalCloudSandboxProvider', () => {
   const fetchMock = vi.fn<typeof fetch>();
 
   beforeEach(() => {
+    fetchMock.mockReset();
     vi.stubGlobal('fetch', fetchMock);
     vi.stubGlobal('URL', {
       createObjectURL: vi.fn(() => 'blob:download'),
@@ -104,5 +107,78 @@ describe('OpenTerminalCloudSandboxProvider', () => {
       success: true,
       url: 'blob:download',
     });
+  });
+
+  it('reloads the saved Open Terminal config on each request', async () => {
+    const loadConfig = vi.mocked(openTerminalService.getConfig);
+    loadConfig.mockResolvedValueOnce({
+      apiKey: 'secret-a',
+      baseUrl: 'https://terminal-a.example.com',
+    });
+    loadConfig.mockResolvedValueOnce({
+      apiKey: 'secret-b',
+      baseUrl: 'https://terminal-b.example.com',
+    });
+
+    fetchMock
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            exit_code: 0,
+            id: 'cmd-a',
+            output: [{ content: 'a\n', stream: 'stdout' }],
+            status: 'done',
+          }),
+          {
+            headers: { 'content-type': 'application/json' },
+            status: 200,
+          },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            exit_code: 0,
+            id: 'cmd-b',
+            output: [{ content: 'b\n', stream: 'stdout' }],
+            status: 'done',
+          }),
+          {
+            headers: { 'content-type': 'application/json' },
+            status: 200,
+          },
+        ),
+      );
+
+    const provider = new OpenTerminalCloudSandboxProvider();
+
+    await provider.callTool(
+      'runCommand',
+      { command: 'echo one' },
+      { topicId: 'topic-1', userId: 'user-1' },
+    );
+    await provider.callTool(
+      'runCommand',
+      { command: 'echo two' },
+      { topicId: 'topic-1', userId: 'user-1' },
+    );
+
+    expect(loadConfig).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://terminal-a.example.com/execute?wait=30',
+      expect.objectContaining({
+        body: JSON.stringify({ command: 'echo one' }),
+        method: 'POST',
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://terminal-b.example.com/execute?wait=30',
+      expect.objectContaining({
+        body: JSON.stringify({ command: 'echo two' }),
+        method: 'POST',
+      }),
+    );
   });
 });

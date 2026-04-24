@@ -1,4 +1,7 @@
-import { type OpenTerminalConfig } from '@lobechat/electron-client-ipc';
+import {
+  type OpenTerminalConfig,
+  type OpenTerminalConnectionTestResult,
+} from '@lobechat/electron-client-ipc';
 
 import { ensureElectronIpc } from '@/utils/electron/ipc';
 
@@ -13,6 +16,12 @@ class OpenTerminalService {
 
   setConfig = async (config: OpenTerminalConfig): Promise<OpenTerminalConfig> => {
     return ensureElectronIpc().openTerminal.setConfig(config);
+  };
+
+  testConnection = async (
+    config?: OpenTerminalConfig,
+  ): Promise<OpenTerminalConnectionTestResult> => {
+    return ensureElectronIpc().openTerminal.testConnection(config);
   };
 }
 

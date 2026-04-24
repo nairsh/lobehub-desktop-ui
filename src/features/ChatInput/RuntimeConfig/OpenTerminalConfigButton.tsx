@@ -56,6 +56,7 @@ const OpenTerminalConfigButton = memo(() => {
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
 
   const loadConfig = useCallback(async () => {
     try {
@@ -124,6 +125,21 @@ const OpenTerminalConfigButton = memo(() => {
     }
   }, [form]);
 
+  const handleTestConnection = useCallback(async () => {
+    try {
+      setIsTesting(true);
+      const values = await form.validateFields();
+      await openTerminalService.testConnection(values);
+      toast.success(t('runtimeEnv.cloudConfig.testConnectionSuccess'));
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      }
+    } finally {
+      setIsTesting(false);
+    }
+  }, [form, t]);
+
   const content = isLoading ? (
     <div className={styles.content}>
       <Skeleton active paragraph={{ rows: 3 }} title={false} />
@@ -146,8 +162,11 @@ const OpenTerminalConfigButton = memo(() => {
         </Form.Item>
       </Form>
       <div className={styles.footer}>
-        <Button disabled={isSaving} onClick={handleClear}>
+        <Button disabled={isSaving || isTesting} onClick={handleClear}>
           {t('runtimeEnv.cloudConfig.clear')}
+        </Button>
+        <Button disabled={isSaving || isTesting} loading={isTesting} onClick={handleTestConnection}>
+          {t('runtimeEnv.cloudConfig.testConnection')}
         </Button>
         <Button loading={isSaving} type={'primary'} onClick={handleSave}>
           {t('runtimeEnv.cloudConfig.save')}

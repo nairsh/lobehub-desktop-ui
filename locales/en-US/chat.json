@@ -255,6 +255,8 @@
   "runtimeEnv.cloudConfig.description": "Use the standard Open Terminal API to run cloud tools on your own sandbox.",
   "runtimeEnv.cloudConfig.notConfigured": "Configure Open Terminal",
   "runtimeEnv.cloudConfig.save": "Save",
+  "runtimeEnv.cloudConfig.testConnection": "Test Connection",
+  "runtimeEnv.cloudConfig.testConnectionSuccess": "Open Terminal connection verified",
   "runtimeEnv.cloudConfig.urlLabel": "Server URL",
   "runtimeEnv.cloudConfig.urlRequired": "Please enter your Open Terminal URL",
   "runtimeEnv.mode.cloud": "Cloud Sandbox",

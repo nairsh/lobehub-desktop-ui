@@ -1,4 +1,7 @@
-import type { OpenTerminalConfig } from '@lobechat/electron-client-ipc';
+import type {
+  OpenTerminalConfig,
+  OpenTerminalConnectionTestResult,
+} from '@lobechat/electron-client-ipc';
 import { safeStorage } from 'electron';
 
 import { createLogger } from '@/utils/logger';
@@ -37,6 +40,45 @@ export default class OpenTerminalConfigCtr extends ControllerModule {
     };
   }
 
+  @IpcMethod()
+  async testConnection(config?: OpenTerminalConfig): Promise<OpenTerminalConnectionTestResult> {
+    try {
+      const targetConfig = await this.getConfigForConnectionTest(config);
+
+      if (!targetConfig.baseUrl) {
+        throw new Error(
+          'Open Terminal is not configured. Add the server URL in cloud runtime settings.',
+        );
+      }
+
+      const response = await fetch(
+        `${targetConfig.baseUrl}/files/list?${new URLSearchParams({ directory: '.' }).toString()}`,
+        {
+          headers: this.createRequestHeaders(targetConfig.apiKey, 'connection-test'),
+          method: 'GET',
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(await this.stringifyTransportError(response));
+      }
+
+      return { success: true };
+    } catch (error) {
+      logger.error('Failed to test Open Terminal connection:', error);
+      throw error;
+    }
+  }
+
+  private async getConfigForConnectionTest(config?: OpenTerminalConfig): Promise<OpenTerminalConfig> {
+    if (!config) return this.getConfig();
+
+    return {
+      apiKey: config.apiKey?.trim() || '',
+      baseUrl: this.normalizeBaseUrl(config.baseUrl),
+    };
+  }
+
   private getApiKey(): string {
     const stored = this.app.storeManager.get('openTerminalEncryptedApiKey', '');
     if (!stored) return '';
@@ -68,6 +110,39 @@ export default class OpenTerminalConfigCtr extends ControllerModule {
     }
 
     return url.toString().replace(/\/+$/, '');
+  }
+
+  private createRequestHeaders(apiKey: string | undefined, sessionId: string) {
+    const headers = new Headers();
+
+    if (apiKey) {
+      headers.set('Authorization', `Bearer ${apiKey}`);
+    }
+
+    headers.set('x-session-id', sessionId);
+
+    return headers;
+  }
+
+  private async stringifyTransportError(response: Response): Promise<string> {
+    const contentType = response.headers.get('content-type') || '';
+
+    try {
+      if (contentType.includes('application/json')) {
+        const data = (await response.json()) as Record<string, unknown>;
+        const detail = data.detail;
+        if (typeof detail === 'string' && detail) return detail;
+
+        const message = data.message;
+        if (typeof message === 'string' && message) return message;
+
+        return JSON.stringify(data);
+      }
+
+      return await response.text();
+    } catch {
+      return response.statusText;
+    }
   }
 
   private setApiKey(apiKey: string) {
