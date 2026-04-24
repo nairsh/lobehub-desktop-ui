@@ -29,6 +29,7 @@ const getDefaultAppIconCandidates = () => {
   const candidates = [join(buildDir, `${iconName}.png`), join(buildDir, `${iconName}.ico`)];
 
   if (process.resourcesPath) {
+    // Packaged builds can place icon assets either directly under resources/ or resources/build/.
     candidates.push(
       join(process.resourcesPath, `${iconName}.png`),
       join(process.resourcesPath, `${iconName}.ico`),
@@ -67,7 +68,7 @@ export const getResolvedAppIcon = (iconPath?: string) => {
   }
 
   for (const path of getDefaultAppIconCandidates()) {
-    if (path === resolvedPath) continue;
+    if (path === resolvedPath || !existsSync(path)) continue;
 
     const fallbackIcon = nativeImage.createFromPath(path);
     if (!fallbackIcon.isEmpty()) return fallbackIcon;
