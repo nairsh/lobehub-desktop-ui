@@ -85,12 +85,16 @@ describe('appIcon', () => {
     vi.mocked(existsSync).mockReturnValue(false);
     const createFromPath = vi.mocked(nativeImage.createFromPath);
     const createEmpty = vi.mocked(nativeImage.createEmpty);
+    const emptyImage = {
+      isEmpty: () => true,
+    } as ReturnType<typeof nativeImage.createFromPath>;
 
     createFromPath.mockReturnValue({
       isEmpty: () => true,
     } as ReturnType<typeof nativeImage.createFromPath>);
+    createEmpty.mockReturnValue(emptyImage);
 
-    expect(() => getResolvedAppIcon()).not.toThrow();
+    expect(getResolvedAppIcon().isEmpty()).toBe(true);
     expect(createEmpty).toHaveBeenCalledTimes(1);
   });
 });

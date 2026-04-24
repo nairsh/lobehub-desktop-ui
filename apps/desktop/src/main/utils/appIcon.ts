@@ -42,6 +42,7 @@ const getDefaultAppIconCandidates = () => {
 
 export const getDefaultAppIconPath = () => {
   const candidates = getDefaultAppIconCandidates();
+  // Keep a deterministic best-effort fallback path even when no candidate exists on disk.
   return candidates.find((path) => existsSync(path)) ?? candidates[0];
 };
 
