@@ -40,9 +40,10 @@ const getDefaultAppIconCandidates = () => {
   return candidates;
 };
 
-export const getDefaultAppIconPath = () =>
-  getDefaultAppIconCandidates().find((path) => existsSync(path)) ??
-  getDefaultAppIconCandidates()[0];
+export const getDefaultAppIconPath = () => {
+  const candidates = getDefaultAppIconCandidates();
+  return candidates.find((path) => existsSync(path)) ?? candidates[0];
+};
 
 export const resolveStoredAppIconPath = (iconPath?: string) => {
   if (!iconPath) return undefined;
@@ -64,12 +65,14 @@ export const getResolvedAppIcon = (iconPath?: string) => {
     return icon;
   }
 
-  const fallbackIcon = getDefaultAppIconCandidates()
-    .filter((path) => path !== resolvedPath)
-    .map((path) => nativeImage.createFromPath(path))
-    .find((candidate) => !candidate.isEmpty());
+  for (const path of getDefaultAppIconCandidates()) {
+    if (path === resolvedPath) continue;
 
-  return fallbackIcon ?? nativeImage.createEmpty();
+    const fallbackIcon = nativeImage.createFromPath(path);
+    if (!fallbackIcon.isEmpty()) return fallbackIcon;
+  }
+
+  return nativeImage.createEmpty();
 };
 
 const drawRoundedSquare = (ctx: SKRSContext2D, x: number, y: number, size: number) => {

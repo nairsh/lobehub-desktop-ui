@@ -74,7 +74,7 @@ describe('appIcon', () => {
     expect(getAlphaAt(data, image.width, 512, 512)).toBeGreaterThan(0);
   });
 
-  it('should choose the first existing default app icon path', () => {
+  it('should return the first existing candidate from icon path search', () => {
     const expectedCandidatePath = `${buildDir}/icon.ico`;
     vi.mocked(existsSync).mockImplementation((path) => path === expectedCandidatePath);
 
