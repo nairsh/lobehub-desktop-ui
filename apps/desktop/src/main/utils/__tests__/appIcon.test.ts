@@ -1,10 +1,21 @@
+import { existsSync } from 'node:fs';
+
 import { createCanvas, loadImage } from '@napi-rs/canvas';
+import { nativeImage } from 'electron';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createNormalizedAppIconBuffer } from '../appIcon';
+import { createNormalizedAppIconBuffer, getDefaultAppIconPath, getResolvedAppIcon } from '../appIcon';
+
+vi.mock('node:fs', () => ({
+  existsSync: vi.fn(),
+}));
 
 vi.mock('electron', () => ({
+  app: {
+    isPackaged: false,
+  },
   nativeImage: {
+    createEmpty: vi.fn(() => ({ isEmpty: () => true })),
     createFromPath: vi.fn(),
   },
 }));
@@ -60,5 +71,24 @@ describe('appIcon', () => {
     expect(getAlphaAt(data, image.width, 48, 512)).toBe(0);
     expect(getAlphaAt(data, image.width, 160, 512)).toBeGreaterThan(0);
     expect(getAlphaAt(data, image.width, 512, 512)).toBeGreaterThan(0);
+  });
+
+  it('should choose the first existing default app icon path', () => {
+    vi.mocked(existsSync).mockImplementation((path) => path === '/mock/build/icon.ico');
+
+    expect(getDefaultAppIconPath()).toBe('/mock/build/icon.ico');
+  });
+
+  it('should return an empty image instead of throwing when all app icons are missing', () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+    const createFromPath = vi.mocked(nativeImage.createFromPath);
+    const createEmpty = vi.mocked(nativeImage.createEmpty);
+
+    createFromPath.mockReturnValue({
+      isEmpty: () => true,
+    } as ReturnType<typeof nativeImage.createFromPath>);
+
+    expect(() => getResolvedAppIcon()).not.toThrow();
+    expect(createEmpty).toHaveBeenCalledTimes(1);
   });
 });
