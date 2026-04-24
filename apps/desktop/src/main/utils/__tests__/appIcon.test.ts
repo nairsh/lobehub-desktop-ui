@@ -1,10 +1,22 @@
-import { createCanvas, loadImage } from '@napi-rs/canvas';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { existsSync } from 'node:fs';
 
-import { createNormalizedAppIconBuffer } from '../appIcon';
+import { createCanvas, loadImage } from '@napi-rs/canvas';
+import { nativeImage } from 'electron';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { buildDir } from '@/const/dir';
+import { createNormalizedAppIconBuffer, getDefaultAppIconPath, getResolvedAppIcon } from '../appIcon';
+
+vi.mock('node:fs', () => ({
+  existsSync: vi.fn(),
+}));
 
 vi.mock('electron', () => ({
+  app: {
+    isPackaged: false,
+  },
   nativeImage: {
+    createEmpty: vi.fn(() => ({ isEmpty: () => true })),
     createFromPath: vi.fn(),
   },
 }));
@@ -22,8 +34,21 @@ const getAlphaAt = (rgba: Uint8ClampedArray, size: number, x: number, y: number)
   rgba[(y * size + x) * 4 + 3];
 
 describe('appIcon', () => {
+  const originalResourcesPath = process.resourcesPath;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.defineProperty(process, 'resourcesPath', {
+      configurable: true,
+      value: '/mock/resources',
+    });
+  });
+
+  afterEach(() => {
+    Object.defineProperty(process, 'resourcesPath', {
+      configurable: true,
+      value: originalResourcesPath,
+    });
   });
 
   it('should normalize a raw square image into an inset rounded app icon', async () => {
@@ -60,5 +85,60 @@ describe('appIcon', () => {
     expect(getAlphaAt(data, image.width, 48, 512)).toBe(0);
     expect(getAlphaAt(data, image.width, 160, 512)).toBeGreaterThan(0);
     expect(getAlphaAt(data, image.width, 512, 512)).toBeGreaterThan(0);
+  });
+
+  it('should return the first existing candidate from icon path search', () => {
+    const expectedCandidatePath = `${buildDir}/icon.ico`;
+    vi.mocked(existsSync).mockImplementation((path) => path === expectedCandidatePath);
+
+    expect(getDefaultAppIconPath()).toBe(expectedCandidatePath);
+  });
+
+  it('should fall back to a resources candidate when build candidates are missing', () => {
+    const expectedCandidatePath = '/mock/resources/build/icon.png';
+    vi.mocked(existsSync).mockImplementation((path) => path === expectedCandidatePath);
+
+    expect(getDefaultAppIconPath()).toBe(expectedCandidatePath);
+  });
+
+  it('should load a fallback icon candidate when the first resolved icon is empty', () => {
+    const expectedPrimaryPath = `${buildDir}/icon.png`;
+    const expectedFallbackPath = '/mock/resources/icon.png';
+    const fallbackIcon = {
+      isEmpty: () => false,
+    } as ReturnType<typeof nativeImage.createFromPath>;
+    vi.mocked(existsSync).mockImplementation(
+      (path) => path === expectedPrimaryPath || path === expectedFallbackPath,
+    );
+
+    vi.mocked(nativeImage.createFromPath).mockImplementation((path) => {
+      if (path === expectedPrimaryPath) {
+        return { isEmpty: () => true } as ReturnType<typeof nativeImage.createFromPath>;
+      }
+
+      if (path === expectedFallbackPath) return fallbackIcon;
+
+      return { isEmpty: () => true } as ReturnType<typeof nativeImage.createFromPath>;
+    });
+
+    expect(getResolvedAppIcon()).toBe(fallbackIcon);
+    expect(vi.mocked(nativeImage.createFromPath).mock.calls[0]?.[0]).toBe(expectedPrimaryPath);
+  });
+
+  it('should return an empty image instead of throwing when all app icons are missing', () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+    const createFromPath = vi.mocked(nativeImage.createFromPath);
+    const createEmpty = vi.mocked(nativeImage.createEmpty);
+    const emptyImage = {
+      isEmpty: () => true,
+    } as ReturnType<typeof nativeImage.createFromPath>;
+
+    createFromPath.mockReturnValue({
+      isEmpty: () => true,
+    } as ReturnType<typeof nativeImage.createFromPath>);
+    createEmpty.mockReturnValue(emptyImage);
+
+    expect(getResolvedAppIcon().isEmpty()).toBe(true);
+    expect(createEmpty).toHaveBeenCalledTimes(1);
   });
 });

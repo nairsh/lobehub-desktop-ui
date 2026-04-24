@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -23,7 +24,28 @@ export const APP_ICON_FILE_FILTERS = [
   },
 ] as const;
 
-export const getDefaultAppIconPath = () => join(buildDir, isDev ? 'icon-dev.png' : 'icon.png');
+const getDefaultAppIconCandidates = () => {
+  const iconName = isDev ? 'icon-dev' : 'icon';
+  const candidates = [join(buildDir, `${iconName}.png`), join(buildDir, `${iconName}.ico`)];
+
+  if (process.resourcesPath) {
+    // Packaged builds can place icon assets either directly under resources/ or resources/build/.
+    candidates.push(
+      join(process.resourcesPath, `${iconName}.png`),
+      join(process.resourcesPath, `${iconName}.ico`),
+      join(process.resourcesPath, 'build', `${iconName}.png`),
+      join(process.resourcesPath, 'build', `${iconName}.ico`),
+    );
+  }
+
+  return candidates;
+};
+
+export const getDefaultAppIconPath = () => {
+  const candidates = getDefaultAppIconCandidates();
+  // Keep a deterministic best-effort fallback path even when no candidate exists on disk.
+  return candidates.find((path) => existsSync(path)) ?? candidates[0];
+};
 
 export const resolveStoredAppIconPath = (iconPath?: string) => {
   if (!iconPath) return undefined;
@@ -41,11 +63,18 @@ export const getResolvedAppIcon = (iconPath?: string) => {
   const resolvedPath = getResolvedAppIconPath(iconPath);
   const icon = nativeImage.createFromPath(resolvedPath);
 
-  if (icon.isEmpty()) {
-    throw new Error(`Failed to load app icon from ${resolvedPath}`);
+  if (!icon.isEmpty()) {
+    return icon;
   }
 
-  return icon;
+  for (const path of getDefaultAppIconCandidates()) {
+    if (path === resolvedPath || !existsSync(path)) continue;
+
+    const fallbackIcon = nativeImage.createFromPath(path);
+    if (!fallbackIcon.isEmpty()) return fallbackIcon;
+  }
+
+  return nativeImage.createEmpty();
 };
 
 const drawRoundedSquare = (ctx: SKRSContext2D, x: number, y: number, size: number) => {
