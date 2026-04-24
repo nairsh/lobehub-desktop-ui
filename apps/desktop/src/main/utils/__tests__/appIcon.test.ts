@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 
 import { createCanvas, loadImage } from '@napi-rs/canvas';
 import { nativeImage } from 'electron';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { buildDir } from '@/const/dir';
 import { createNormalizedAppIconBuffer, getDefaultAppIconPath, getResolvedAppIcon } from '../appIcon';
@@ -34,8 +34,21 @@ const getAlphaAt = (rgba: Uint8ClampedArray, size: number, x: number, y: number)
   rgba[(y * size + x) * 4 + 3];
 
 describe('appIcon', () => {
+  const originalResourcesPath = process.resourcesPath;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.defineProperty(process, 'resourcesPath', {
+      configurable: true,
+      value: '/mock/resources',
+    });
+  });
+
+  afterEach(() => {
+    Object.defineProperty(process, 'resourcesPath', {
+      configurable: true,
+      value: originalResourcesPath,
+    });
   });
 
   it('should normalize a raw square image into an inset rounded app icon', async () => {
@@ -79,6 +92,35 @@ describe('appIcon', () => {
     vi.mocked(existsSync).mockImplementation((path) => path === expectedCandidatePath);
 
     expect(getDefaultAppIconPath()).toBe(expectedCandidatePath);
+  });
+
+  it('should fall back to a resources candidate when build candidates are missing', () => {
+    const expectedCandidatePath = '/mock/resources/build/icon.png';
+    vi.mocked(existsSync).mockImplementation((path) => path === expectedCandidatePath);
+
+    expect(getDefaultAppIconPath()).toBe(expectedCandidatePath);
+  });
+
+  it('should load a fallback icon candidate when the first resolved icon is empty', () => {
+    const expectedFallbackPath = '/mock/resources/icon.png';
+    const fallbackIcon = {
+      isEmpty: () => false,
+    } as ReturnType<typeof nativeImage.createFromPath>;
+    vi.mocked(existsSync).mockImplementation(
+      (path) => path === '/mock/build/icon.png' || path === expectedFallbackPath,
+    );
+
+    vi.mocked(nativeImage.createFromPath).mockImplementation((path) => {
+      if (path === '/mock/build/icon.png') {
+        return { isEmpty: () => true } as ReturnType<typeof nativeImage.createFromPath>;
+      }
+
+      if (path === expectedFallbackPath) return fallbackIcon;
+
+      return { isEmpty: () => true } as ReturnType<typeof nativeImage.createFromPath>;
+    });
+
+    expect(getResolvedAppIcon()).toBe(fallbackIcon);
   });
 
   it('should return an empty image instead of throwing when all app icons are missing', () => {
