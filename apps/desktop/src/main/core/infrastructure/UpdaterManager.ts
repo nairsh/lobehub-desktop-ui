@@ -351,13 +351,27 @@ export class UpdaterManager {
   private findDownloadedMacZip(): string | undefined {
     // electron-updater stores downloads in ~/Library/Caches/{name}-updater/pending/
     const cachesDir = path.join(electronApp.getPath('appData'), '..', 'Caches');
-    const appName = electronApp.getName().toLowerCase().replaceAll(' ', '-');
+
+    // app.getName() returns productName ("LobeHub") but electron-updater names its cache dir
+    // using the package.json "name" field (e.g. "lobehub-desktop-canary"). Try both.
+    const productName = electronApp.getName().toLowerCase().replaceAll(' ', '-');
+    const packageNames = new Set([productName]);
+    try {
+      const pkgPath = path.join(electronApp.getAppPath(), 'package.json');
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as { name?: string };
+      if (pkg.name) packageNames.add(pkg.name.toLowerCase());
+    } catch {
+      // ignore — fall back to productName only
+    }
 
     // Try known cache dir patterns
-    const candidates = [
-      path.join(cachesDir, `${appName}-${this.currentChannel}-updater`, 'pending'),
-      path.join(cachesDir, `${appName}-updater`, 'pending'),
-    ];
+    const candidates: string[] = [];
+    for (const name of packageNames) {
+      candidates.push(
+        path.join(cachesDir, `${name}-${this.currentChannel}-updater`, 'pending'),
+        path.join(cachesDir, `${name}-updater`, 'pending'),
+      );
+    }
 
     for (const dir of candidates) {
       if (!fs.existsSync(dir)) continue;

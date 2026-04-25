@@ -215,6 +215,26 @@ const config = {
       // App will use fallback .icns icon on all macOS versions
       console.info(`⏭️  Skipping Assets.car (not found or copy failed)`);
     }
+
+    // electron-builder skips writing app-update.yml when using --dir or --publish never.
+    // Write it explicitly so the in-app updater can initialise regardless of build mode.
+    const appUpdateYmlPath = path.join(resourcesPath, 'app-update.yml');
+    try {
+      await fs.access(appUpdateYmlPath);
+      // File already written by electron-builder — nothing to do.
+    } catch {
+      const publishConfig = getPublishConfig()[0];
+      let yamlLines = [`provider: ${publishConfig.provider}`];
+      if (publishConfig.provider === 'github') {
+        yamlLines.push(`owner: ${publishConfig.owner}`, `repo: ${publishConfig.repo}`);
+      } else {
+        yamlLines.push(`url: ${publishConfig.url}`);
+      }
+      const channelPath = isStable ? 'stable' : isNightly ? 'nightly' : channel || 'stable';
+      yamlLines.push(`updaterCacheDirName: ${packageJSON.name}-updater`, `channel: ${channelPath}`);
+      await fs.writeFile(appUpdateYmlPath, yamlLines.join('\n') + '\n', 'utf8');
+      console.info(`✅ Wrote app-update.yml (${publishConfig.provider})`);
+    }
   },
   appId: 'com.lobehub.lobehub-desktop',
   appImage: {
