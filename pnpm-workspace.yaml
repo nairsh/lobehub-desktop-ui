@@ -7,6 +7,10 @@ packages:
 onlyBuiltDependencies:
   - '@vercel/speed-insights'
   - '@lobehub/editor'
+  - electron
+  - electron-winstaller
+  - esbuild
+  - node-mac-permissions
 
 overrides:
   jose: ^6.1.3

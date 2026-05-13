@@ -6,3 +6,13 @@ packages:
   - '../../packages/device-gateway-client'
   - '../../packages/local-file-shell'
   - '.'
+allowBuilds:
+  electron: set this to true or false
+  electron-winstaller: set this to true or false
+  esbuild: set this to true or false
+  node-mac-permissions: set this to true or false
+onlyBuiltDependencies:
+  - electron
+  - electron-winstaller
+  - esbuild
+  - node-mac-permissions

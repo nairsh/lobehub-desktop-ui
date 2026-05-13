@@ -17,10 +17,10 @@ import { prefetchRoute } from '@/utils/router';
  * All other nav items are managed by Body via sidebarItems, except those in ICON_KEYS
  * which are rendered as compact icons at the bottom of the header.
  */
-const PRIMARY_KEYS: string[] = ['newChat', 'pages'];
+const PRIMARY_KEYS: string[] = ['home', 'search', 'newChat', 'pages'];
 
 /** Keys rendered as compact icon-only buttons in the header (deprioritized). */
-const ICON_KEYS: string[] = ['search', 'home'];
+const ICON_KEYS: string[] = [];
 
 /** Union of all keys handled by the header — used by Body to skip them. */
 export const HEADER_NAV_KEYS = new Set<string>([...PRIMARY_KEYS, ...ICON_KEYS]);
@@ -51,6 +51,7 @@ const Nav = memo(() => {
     const extra = item.isNew ? newBadge : undefined;
     const navItem = (
       <NavItem
+        primary
         active={tab === item.key}
         extra={extra}
         hidden={item.hidden}

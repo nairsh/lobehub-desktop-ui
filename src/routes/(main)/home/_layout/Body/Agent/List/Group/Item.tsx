@@ -63,7 +63,7 @@ const GroupItem = memo<SidebarGroup>(({ items, id, name }) => {
       title={
         <Flexbox horizontal align="center" gap={6} style={{ overflow: 'hidden' }}>
           {groupIcon}
-          <Text ellipsis fontSize={12} style={{ flex: 1 }} type={'secondary'} weight={500}>
+          <Text ellipsis fontSize={12} style={{ flex: 1 }} weight={500}>
             {name}
           </Text>
         </Flexbox>

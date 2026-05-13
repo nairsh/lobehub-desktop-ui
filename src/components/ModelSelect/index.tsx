@@ -219,7 +219,7 @@ export const ModelInfoTags = memo<ModelInfoTagsProps>(
         className={TAG_CLASSNAME}
         direction={directionReverse ? 'horizontal-reverse' : 'horizontal'}
         gap={2}
-        style={{ marginLeft: 'auto', ...style }}
+        style={{ marginLeft: 'auto', marginRight: 8, ...style }}
         width={'fit-content'}
       >
         <FeatureTags
@@ -295,7 +295,7 @@ export const ModelItemRender = memo<ModelItemRenderProps>(
           gap={8}
           style={{ flexShrink: 1, minWidth: 0, overflow: 'hidden' }}
         >
-          <ModelIcon model={id} size={20} type={'mono'} />
+          <ModelIcon model={id} size={20} type={'color'} />
           <Text
             className={styles.name}
             style={mobile ? { maxWidth: '60vw' } : undefined}

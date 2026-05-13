@@ -78,6 +78,9 @@ const Body = memo(() => {
     return map;
   }, [topNavItems, bottomMenuItems]);
 
+  // Community and Resources are now rendered inside the Agent section
+  const KEYS_IN_AGENT_SECTION = new Set<string>([GroupKey.Community, GroupKey.Resource]);
+
   // Items that must always be visible regardless of hiddenSections
   const isVisible = useCallback(
     (k: string) => k === GroupKey.Agent || !hiddenSections.includes(k),
@@ -85,7 +88,10 @@ const Body = memo(() => {
   );
 
   const visibleKeys = useMemo(
-    () => sidebarItems.filter((k) => isVisible(k) && !HEADER_NAV_KEYS.has(k)),
+    () =>
+      sidebarItems.filter(
+        (k) => isVisible(k) && !HEADER_NAV_KEYS.has(k) && !KEYS_IN_AGENT_SECTION.has(k),
+      ),
     [sidebarItems, isVisible],
   );
 
@@ -131,7 +137,7 @@ const Body = memo(() => {
       if (accGroup.length > 0) {
         elements.push(
           <Accordion
-            defaultExpandedKeys={[GroupKey.Recents, GroupKey.Project, GroupKey.Agent]}
+            defaultExpandedKeys={[GroupKey.Recents, GroupKey.Project]}
             gap={8}
             key={`acc-${elements.length}`}
           >

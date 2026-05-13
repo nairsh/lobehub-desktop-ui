@@ -1,7 +1,9 @@
 import { createStaticStyles } from 'antd-style';
 
 export const MENU_ITEM_WRAPPER_STYLE = { marginBlock: 2 } as const;
-export const MENU_ITEM_TRIGGER_STYLE = { paddingBlock: 4, paddingInline: 8 } as const;
+export const MENU_ITEM_TRIGGER_STYLE = { paddingBlock: 4, paddingInline: 4 } as const;
+
+const ITEM_MARGIN_INLINE = 6;
 
 export const styles = createStaticStyles(({ css, cssVar }) => ({
   container: css`
@@ -21,7 +23,7 @@ export const styles = createStaticStyles(({ css, cssVar }) => ({
     [role='menuitem'] {
       min-height: 0;
       margin-block: ${MENU_ITEM_WRAPPER_STYLE.marginBlock}px;
-      margin-inline: 4px;
+      margin-inline: ${ITEM_MARGIN_INLINE}px;
       padding-block: ${MENU_ITEM_TRIGGER_STYLE.paddingBlock}px;
       padding-inline: ${MENU_ITEM_TRIGGER_STYLE.paddingInline}px;
       border-radius: ${cssVar.borderRadiusSM};
@@ -39,7 +41,7 @@ export const styles = createStaticStyles(({ css, cssVar }) => ({
 
     width: 100%;
     padding-block: 4px;
-    padding-inline: 4px;
+    padding-inline: 0;
   `,
   menuItem: css`
     cursor: pointer;
@@ -51,6 +53,7 @@ export const styles = createStaticStyles(({ css, cssVar }) => ({
 
     min-height: 0;
     margin-block: ${MENU_ITEM_WRAPPER_STYLE.marginBlock}px;
+    margin-inline: ${ITEM_MARGIN_INLINE}px;
     padding-block: ${MENU_ITEM_TRIGGER_STYLE.paddingBlock}px;
     padding-inline: ${MENU_ITEM_TRIGGER_STYLE.paddingInline}px;
     border-radius: ${cssVar.borderRadiusSM};
@@ -61,9 +64,11 @@ export const styles = createStaticStyles(({ css, cssVar }) => ({
   menuTrigger: css`
     overflow: hidden;
 
+    /* width: auto lets flex stretch apply correctly with margin-inline */
     box-sizing: border-box;
-    width: 100%;
+    width: auto !important;
     min-height: 0 !important;
+    margin-inline: ${ITEM_MARGIN_INLINE}px;
     padding-block: ${MENU_ITEM_TRIGGER_STYLE.paddingBlock}px !important;
     padding-inline: ${MENU_ITEM_TRIGGER_STYLE.paddingInline}px !important;
   `,

@@ -112,7 +112,7 @@ const ModelSwitch = memo(() => {
           paddingInline={8}
         >
           <div className={styles.icon}>
-            <ModelIcon model={model} size={18} type={'mono'} />
+            <ModelIcon model={model} size={18} type={'color'} />
           </div>
           <Text
             ellipsis

@@ -31,7 +31,7 @@ const Usage = memo<UsageProps>(({ model, usage, performance, provider }) => {
       justify={'space-between'}
     >
       <Center horizontal gap={4} style={{ fontSize: 12 }}>
-        <ModelIcon model={model as string} type={'mono'} />
+        <ModelIcon model={model as string} type={'color'} />
         {model}
       </Center>
 

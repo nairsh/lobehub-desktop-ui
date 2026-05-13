@@ -65,6 +65,10 @@ export interface NavItemProps extends Omit<BlockProps, 'children' | 'title'> {
   icon?: IconProps['icon'];
   iconSize?: number;
   loading?: boolean;
+  /**
+   * Primary nav items (e.g., New Chat, Pages) - styled darker and bolder
+   */
+  primary?: boolean;
   slots?: NavItemSlots;
   title: ReactNode;
 }
@@ -83,11 +87,16 @@ const NavItem = memo<NavItemProps>(
     disabled,
     loading,
     extra,
+    primary,
     slots,
     ...rest
   }) => {
     const iconColor = active ? cssVar.colorPrimary : cssVar.colorTextDescription;
-    const textColor = active ? cssVar.colorPrimary : cssVar.colorTextSecondary;
+    const textColor = active
+      ? cssVar.colorPrimary
+      : primary
+        ? cssVar.colorText
+        : cssVar.colorTextSecondary;
     const variant = active ? 'filled' : 'borderless';
 
     const { titlePrefix, iconPostfix } = slots || {};
@@ -133,11 +142,21 @@ const NavItem = memo<NavItemProps>(
         )}
 
         {iconPostfix}
-        <Flexbox horizontal align={'center'} flex={1} gap={8} style={{ overflow: 'hidden' }}>
+        <Flexbox
+          horizontal
+          align={'center'}
+          flex={1}
+          gap={8}
+          style={{
+            maskImage: 'linear-gradient(to left, transparent 0, black 20px)',
+            overflow: 'hidden',
+            paddingLeft: icon ? 0 : 8,
+          }}
+        >
           {titlePrefix}
           <Text
             color={textColor}
-            style={{ flex: 1, fontSize: 13, fontWeight: 400 }}
+            style={{ flex: 1, fontSize: 13, fontWeight: primary ? 500 : 400 }}
             ellipsis={{
               tooltipWhenOverflow: true,
             }}

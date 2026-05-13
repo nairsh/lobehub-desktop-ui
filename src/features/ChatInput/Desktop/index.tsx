@@ -124,10 +124,10 @@ const DesktopChatInput = memo<DesktopChatInputProps>(
       >
         <ChatInput
           data-testid="chat-input"
-          defaultHeight={chatInputHeight || 32}
+          defaultHeight={chatInputHeight || 28}
           fullscreen={expand}
           maxHeight={320}
-          minHeight={36}
+          minHeight={28}
           resize={true}
           slashMenuRef={slashMenuRef}
           footer={

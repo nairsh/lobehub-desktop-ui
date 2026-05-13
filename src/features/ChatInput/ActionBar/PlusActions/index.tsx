@@ -40,6 +40,7 @@ const prefixCls = 'ant';
 const styles = createStaticStyles(({ css }) => ({
   compactDropdownMenu: css`
     padding-block: 2px !important;
+    padding-inline: 0 !important;
 
     .${prefixCls}-dropdown-menu, [role='menu'] {
       padding-block: 2px;
@@ -50,9 +51,11 @@ const styles = createStaticStyles(({ css }) => ({
     }
 
     [role='menuitem'] {
+      width: auto !important;
       min-height: 30px;
+      margin-inline: 4px;
       padding-block: 2px;
-      padding-inline: 10px;
+      padding-inline: 6px;
     }
   `,
 }));
