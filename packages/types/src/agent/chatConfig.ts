@@ -28,6 +28,7 @@ export interface LobeAgentChatConfig extends AgentMemoryChatConfig {
   /**
    * Disable context caching
    */
+  deepseekV4ReasoningEffort?: 'none' | 'high' | 'max';
   disableContextCaching?: boolean;
 
   effort?: 'low' | 'medium' | 'high' | 'max';
@@ -73,11 +74,13 @@ export interface LobeAgentChatConfig extends AgentMemoryChatConfig {
   gpt5_2ProReasoningEffort?: 'medium' | 'high' | 'xhigh';
   gpt5_2ReasoningEffort?: 'none' | 'low' | 'medium' | 'high' | 'xhigh';
   gpt5ReasoningEffort?: 'minimal' | 'low' | 'medium' | 'high';
+  grok4_3ReasoningEffort?: 'none' | 'low' | 'medium' | 'high';
   grok4_20ReasoningEffort?: 'low' | 'medium' | 'high' | 'xhigh';
   /**
    * Number of historical messages
    */
   historyCount?: number;
+  hy3ReasoningEffort?: 'no_think' | 'low' | 'high';
   /**
    * Image aspect ratio for image generation models
    */
@@ -95,6 +98,10 @@ export interface LobeAgentChatConfig extends AgentMemoryChatConfig {
    */
   imageResolution2?: '512px' | '1K' | '2K' | '4K';
   inputTemplate?: string;
+  /**
+   * Effort level for Claude Opus 4.7
+   */
+  opus47Effort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max';
   reasoningBudgetToken?: number;
   /**
    * Reasoning budget token for models with 32k max (GLM-5/GLM-4.7)
@@ -170,6 +177,7 @@ export const AgentChatConfigSchema = z
     autoCreateTopicThreshold: z.number().default(2),
     codexMaxReasoningEffort: z.enum(['low', 'medium', 'high', 'xhigh']).optional(),
     compressionModelId: z.string().optional(),
+    deepseekV4ReasoningEffort: z.enum(['none', 'high', 'max']).optional(),
     disableContextCaching: z.boolean().optional(),
     effort: z.enum(['low', 'medium', 'high', 'max']).optional(),
     enableAdaptiveThinking: z.boolean().optional(),
@@ -186,12 +194,15 @@ export const AgentChatConfigSchema = z
     gpt5_1ReasoningEffort: z.enum(['none', 'low', 'medium', 'high']).optional(),
     gpt5_2ProReasoningEffort: z.enum(['medium', 'high', 'xhigh']).optional(),
     gpt5_2ReasoningEffort: z.enum(['none', 'low', 'medium', 'high', 'xhigh']).optional(),
+    grok4_3ReasoningEffort: z.enum(['none', 'low', 'medium', 'high']).optional(),
     grok4_20ReasoningEffort: z.enum(['low', 'medium', 'high', 'xhigh']).optional(),
     historyCount: z.number().optional(),
+    hy3ReasoningEffort: z.enum(['no_think', 'low', 'high']).optional(),
     imageAspectRatio: z.string().optional(),
     imageAspectRatio2: z.string().optional(),
     imageResolution: z.enum(['1K', '2K', '4K']).optional(),
     imageResolution2: z.enum(['512px', '1K', '2K', '4K']).optional(),
+    opus47Effort: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).optional(),
     runtimeEnv: RuntimeEnvConfigSchema.optional(),
     reasoningBudgetToken: z.number().optional(),
     reasoningBudgetToken32k: z.number().optional(),

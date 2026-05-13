@@ -64,43 +64,7 @@ const StarterList = memo(() => {
     s.setInputActiveMode,
   ]);
 
-  const items: StarterItem[] = useMemo(
-    () => [
-      {
-        icon: BotIcon,
-        key: 'agent',
-        titleKey: 'starter.createAgent',
-      },
-      {
-        icon: GroupBotSquareIcon,
-        key: 'group',
-        titleKey: 'starter.createGroup',
-      },
-      {
-        icon: PenLineIcon,
-        key: 'write',
-        titleKey: 'starter.write',
-      },
-      {
-        icon: ImageIcon,
-        key: 'image',
-        titleKey: 'starter.imageGeneration',
-      },
-      {
-        hot: true,
-        icon: VideoIcon,
-        key: 'video',
-        titleKey: 'starter.videoGeneration',
-      },
-      // {
-      //   disabled: true,
-      //   icon: MicroscopeIcon,
-      //   key: 'research',
-      //   titleKey: 'starter.deepResearch',
-      // },
-    ],
-    [],
-  );
+  const items: StarterItem[] = useMemo(() => [], []);
 
   const handleClick = useCallback(
     (key: StarterMode) => {

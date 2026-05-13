@@ -16,6 +16,7 @@ export interface ModelParamsContext {
  * Extended parameters for model runtime
  */
 export interface ModelExtendParams {
+  deepseekV4ReasoningEffort?: string;
   effort?: string;
   enabledContextCaching?: boolean;
   imageAspectRatio?: string;
@@ -48,6 +49,20 @@ const THINKING_LEVEL_PARAM_TO_CONFIG_KEY = {
 } as const satisfies Partial<Record<ExtendParamsType, keyof LobeAgentChatConfig>>;
 
 /**
+ * Preserves legacy `thinking` preferences for users created before `enableReasoning`.
+ * Without this fallback, an old `thinking: 'enabled'` or `thinking: 'disabled'`
+ * setting would be treated as unset by models that now expose the `enableReasoning` switch.
+ */
+const resolveEnableReasoningValue = (chatConfig: LobeAgentChatConfig): boolean | undefined => {
+  if (Object.hasOwn(chatConfig, 'enableReasoning')) return chatConfig.enableReasoning;
+
+  if (chatConfig.thinking === 'enabled') return true;
+  if (chatConfig.thinking === 'disabled') return false;
+
+  return undefined;
+};
+
+/**
  * Resolves extended parameters for model runtime based on model capabilities and chat config
  *
  * This function checks what extended parameters the model supports and applies
@@ -76,7 +91,13 @@ export const resolveModelExtendParams = (ctx: ModelParamsContext): ModelExtendPa
 
   // Reasoning configuration
   if (modelExtendParams.includes('enableReasoning')) {
-    if (chatConfig.enableReasoning) {
+    const enableReasoning = resolveEnableReasoningValue(chatConfig);
+
+    if (enableReasoning) {
+      const thinking: NonNullable<ModelExtendParams['thinking']> = {
+        type: 'enabled',
+      };
+
       // Determine which budget field to use based on model support
       let budgetTokens: number | undefined;
       if (modelExtendParams.includes('reasoningBudgetToken32k')) {
@@ -86,10 +107,9 @@ export const resolveModelExtendParams = (ctx: ModelParamsContext): ModelExtendPa
       } else {
         budgetTokens = chatConfig.reasoningBudgetToken || 1024;
       }
-      extendParams.thinking = {
-        budget_tokens: budgetTokens,
-        type: 'enabled',
-      };
+
+      thinking.budget_tokens = budgetTokens;
+      extendParams.thinking = thinking;
     } else {
       extendParams.thinking = {
         budget_tokens: 0,
@@ -163,12 +183,43 @@ export const resolveModelExtendParams = (ctx: ModelParamsContext): ModelExtendPa
     extendParams.reasoning_effort = chatConfig.grok4_20ReasoningEffort;
   }
 
+  if (modelExtendParams.includes('grok4_3ReasoningEffort') && chatConfig.grok4_3ReasoningEffort) {
+    extendParams.reasoning_effort = chatConfig.grok4_3ReasoningEffort;
+  }
+
+  if (modelExtendParams.includes('hy3ReasoningEffort') && chatConfig.hy3ReasoningEffort) {
+    extendParams.reasoning_effort = chatConfig.hy3ReasoningEffort;
+  }
+
   if (modelExtendParams.includes('codexMaxReasoningEffort') && chatConfig.codexMaxReasoningEffort) {
     extendParams.reasoning_effort = chatConfig.codexMaxReasoningEffort;
   }
 
+  // DeepSeek reasoning effort is reconciled last to avoid invalid combinations.
+  if (modelExtendParams.includes('deepseekV4ReasoningEffort')) {
+    const deepseekV4ReasoningEffort = chatConfig.deepseekV4ReasoningEffort;
+
+    if (typeof deepseekV4ReasoningEffort === 'string') {
+      if (deepseekV4ReasoningEffort === 'none') {
+        delete extendParams.reasoning_effort;
+        extendParams.thinking = {
+          type: 'disabled',
+        };
+      } else {
+        extendParams.reasoning_effort = deepseekV4ReasoningEffort;
+        extendParams.thinking = {
+          type: 'enabled',
+        };
+      }
+    }
+  }
+
   if (modelExtendParams.includes('effort') && chatConfig.effort) {
     extendParams.effort = chatConfig.effort;
+  }
+
+  if (modelExtendParams.includes('opus47Effort') && chatConfig.opus47Effort) {
+    extendParams.effort = chatConfig.opus47Effort;
   }
 
   // Text verbosity

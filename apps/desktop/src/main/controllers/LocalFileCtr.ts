@@ -35,6 +35,7 @@ import {
 } from '@lobechat/electron-client-ipc';
 import {
   editLocalFile,
+  expandTilde,
   listLocalFiles,
   moveLocalFiles,
   readLocalFile,
@@ -418,6 +419,7 @@ export default class LocalFileCtr extends ControllerModule {
    */
   @IpcMethod()
   async handleLocalFilesSearch(params: LocalSearchFilesParams): Promise<FileResult[]> {
+    const effectiveDirectory = expandTilde(params.directory ?? params.scope);
     logger.debug('Received file search request:', {
       directory: params.directory,
       keywords: params.keywords,
@@ -436,7 +438,7 @@ export default class LocalFileCtr extends ControllerModule {
       liveUpdate: params.liveUpdate,
       modifiedAfter: params.modifiedAfter ? new Date(params.modifiedAfter) : undefined,
       modifiedBefore: params.modifiedBefore ? new Date(params.modifiedBefore) : undefined,
-      onlyIn: params.directory, // Map directory param to onlyIn option
+      onlyIn: effectiveDirectory,
       sortBy: params.sortBy,
       sortDirection: params.sortDirection,
     };

@@ -19,7 +19,7 @@ const Home: FC = () => {
       <Flexbox
         height={'100%'}
         justify={'center'}
-        style={{ overflowY: 'auto', padding: '6vh 0 12vh' }}
+        style={{ overflowY: 'auto', padding: '18vh 0 12vh' }}
         width={'100%'}
       >
         <WideScreenContainer wrapperStyle={{ minHeight: '100%' }}>

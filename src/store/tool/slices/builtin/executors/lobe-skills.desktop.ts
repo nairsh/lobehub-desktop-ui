@@ -62,7 +62,12 @@ const localSkillService: DesktopSkillRuntimeService = {
     },
   ) => {
     const cwd = await desktopSkillRuntimeService.resolveExecutionDirectory(options.activatedSkills);
-    const result = await localFileService.runCommand({ command, cwd, timeout: undefined });
+    const result = await localFileService.runCommand({
+      command,
+      cwd,
+      description: options.description,
+      timeout: undefined,
+    });
 
     return {
       exitCode: result.exit_code ?? 1,

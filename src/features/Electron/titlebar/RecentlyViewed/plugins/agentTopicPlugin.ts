@@ -3,10 +3,12 @@ import { MessageSquare } from 'lucide-react';
 import { useChatStore } from '@/store/chat';
 
 import { type AgentTopicParams, type PageReference, type ResolvedPageData } from '../types';
-import { type PluginContext, type RecentlyViewedPlugin } from './types';
+import { buildAgentNewTopicAction } from './newTabHelpers';
+import { type NewTabAction, type PluginContext, type RecentlyViewedPlugin } from './types';
 import { createPageReference } from './types';
 
 const AGENT_PATH_REGEX = /^\/agent\/([^/?]+)$/;
+const AGENT_TOPIC_PATH_REGEX = /^\/agent\/([^/?]+)\/(tpc_[^/?]+)$/;
 
 export const agentTopicPlugin: RecentlyViewedPlugin<'agent-topic'> = {
   checkExists(reference: PageReference<'agent-topic'>, ctx: PluginContext): boolean {
@@ -16,6 +18,13 @@ export const agentTopicPlugin: RecentlyViewedPlugin<'agent-topic'> = {
 
     // Both agent and topic must exist
     return agentMeta !== undefined && Object.keys(agentMeta).length > 0 && topic !== undefined;
+  },
+
+  createNewTabAction(
+    reference: PageReference<'agent-topic'>,
+    ctx: PluginContext,
+  ): NewTabAction | null {
+    return buildAgentNewTopicAction(reference.params.agentId, ctx);
   },
 
   generateId(reference: PageReference<'agent-topic'>): string {
@@ -34,8 +43,10 @@ export const agentTopicPlugin: RecentlyViewedPlugin<'agent-topic'> = {
 
   // Higher priority than agent plugin to match topic URLs first
   matchUrl(pathname: string, searchParams: URLSearchParams): boolean {
-    // Match /agent/:id with topic param
-    return AGENT_PATH_REGEX.test(pathname) && searchParams.has('topic');
+    return (
+      AGENT_TOPIC_PATH_REGEX.test(pathname) ||
+      (AGENT_PATH_REGEX.test(pathname) && searchParams.has('topic'))
+    );
   },
 
   onActivate(reference: PageReference<'agent-topic'>) {
@@ -43,6 +54,16 @@ export const agentTopicPlugin: RecentlyViewedPlugin<'agent-topic'> = {
   },
 
   parseUrl(pathname: string, searchParams: URLSearchParams): PageReference<'agent-topic'> | null {
+    const pathMatch = pathname.match(AGENT_TOPIC_PATH_REGEX);
+
+    if (pathMatch) {
+      const [, agentId, topicId] = pathMatch;
+      const params: AgentTopicParams = { agentId, topicId };
+      const id = this.generateId({ params } as PageReference<'agent-topic'>);
+
+      return createPageReference('agent-topic', params, id);
+    }
+
     const match = pathname.match(AGENT_PATH_REGEX);
     if (!match) return null;
 

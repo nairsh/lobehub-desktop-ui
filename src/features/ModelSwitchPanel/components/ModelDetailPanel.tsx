@@ -105,6 +105,7 @@ const UNIT_GROUP_MAP: Record<PricingUnitName, PricingGroup> = {
   textInput_cacheRead: 'text',
   textInput_cacheWrite: 'text',
   textOutput: 'text',
+  videoInput: 'video',
   videoGeneration: 'video',
 };
 
@@ -136,6 +137,7 @@ const UNIT_SORT_ORDER: Record<PricingUnitName, number> = {
   audioInput: 0,
   audioOutput: 1,
   audioInput_cacheRead: 2,
+  videoInput: 0,
   videoGeneration: 0,
 };
 

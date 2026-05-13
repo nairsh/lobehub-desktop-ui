@@ -12,7 +12,6 @@ import {
   Globe,
   LibraryBig,
   PlusIcon,
-  TypeIcon,
 } from 'lucide-react';
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -25,12 +24,9 @@ import { useAgentStore } from '@/store/agent';
 import { agentByIdSelectors, chatConfigByIdSelectors } from '@/store/agent/selectors';
 import { useFileStore } from '@/store/file';
 import { featureFlagsSelectors, useServerConfigStore } from '@/store/serverConfig';
-import { useUserStore } from '@/store/user';
-import { labPreferSelectors } from '@/store/user/selectors';
 
 import { useAgentId } from '../../hooks/useAgentId';
 import { useUpdateAgentConfig } from '../../hooks/useUpdateAgentConfig';
-import { useChatInputStore } from '../../store';
 import Action from '../components/Action';
 import { type ActionDropdownMenuItems } from '../components/ActionDropdown';
 import { useMemoryEnabled } from '../Memory/useMemoryEnabled';
@@ -39,23 +35,31 @@ const prefixCls = 'ant';
 
 const styles = createStaticStyles(({ css }) => ({
   compactDropdownMenu: css`
-    padding-block: 2px !important;
+    padding-block: 4px !important;
     padding-inline: 0 !important;
 
     .${prefixCls}-dropdown-menu, [role='menu'] {
-      padding-block: 2px;
-    }
-
-    .${prefixCls}-dropdown-menu-item-divider, [role='separator'] {
-      margin-block: 2px;
+      padding-block: 4px;
     }
 
     [role='menuitem'] {
       width: auto !important;
-      min-height: 30px;
+      min-height: 36px;
       margin-inline: 4px;
-      padding-block: 2px;
-      padding-inline: 6px;
+      padding-block: 6px;
+      padding-inline: 14px;
+      font-size: 12px;
+      color: ${cssVar.colorText} !important;
+    }
+
+    [role='menuitem'] svg {
+      width: 13px !important;
+      height: 13px !important;
+      color: ${cssVar.colorText} !important;
+    }
+
+    [role='menuitem'] .${prefixCls}-upload {
+      color: ${cssVar.colorText};
     }
   `,
 }));
@@ -73,7 +77,6 @@ const hotArea = css`
 const PlusActions = memo(() => {
   const { t } = useTranslation('chat');
   const { t: tSetting } = useTranslation('setting');
-  const { t: tEditor } = useTranslation('editor');
   const [open, setOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
 
@@ -82,9 +85,6 @@ const PlusActions = memo(() => {
   const { updateAgentChatConfig } = useUpdateAgentConfig();
 
   const { enableKnowledgeBase } = useServerConfigStore(featureFlagsSelectors);
-
-  const [showTypoBar, setShowTypoBar] = useChatInputStore((s) => [s.showTypoBar, s.setShowTypoBar]);
-  const enableRichRender = useUserStore(labPreferSelectors.enableInputMarkdown);
 
   const [searchMode, rawSearchMode, model, provider, enabledKnowledgeBases] = useAgentStore((s) => [
     chatConfigByIdSelectors.getSearchModeById(agentId)(s),
@@ -98,10 +98,8 @@ const PlusActions = memo(() => {
   const isMemoryEnabled = useMemoryEnabled(agentId);
   const supportToolUse = useModelSupportToolUse(model, provider);
 
-  // Only show indicators when explicitly toggled on by user
   const showSearchIndicator = rawSearchMode === 'auto';
   const showMemoryIndicator = isMemoryEnabled;
-  const showTypoIndicator = enableRichRender && !!showTypoBar;
   const showLibraryIndicator = enableKnowledgeBase && enabledKnowledgeBases.length > 0;
 
   const items: ActionDropdownMenuItems = [
@@ -156,7 +154,6 @@ const PlusActions = memo(() => {
         </Upload>
       ),
     },
-    { key: 'divider-1', type: 'divider' },
     {
       icon: showSearchIndicator ? <Globe size={16} style={{ color: cssVar.colorInfo }} /> : Globe,
       key: 'search',
@@ -184,7 +181,6 @@ const PlusActions = memo(() => {
     },
     ...(enableKnowledgeBase
       ? [
-          { key: 'divider-library', type: 'divider' as const },
           {
             icon: LibraryBig,
             key: 'library',
@@ -193,21 +189,6 @@ const PlusActions = memo(() => {
               setOpen(false);
               setLibraryOpen(true);
             },
-          },
-        ]
-      : []),
-    ...(enableRichRender
-      ? [
-          { key: 'divider-2', type: 'divider' as const },
-          {
-            icon: showTypoBar ? (
-              <TypeIcon size={16} style={{ color: cssVar.colorInfo }} />
-            ) : (
-              TypeIcon
-            ),
-            key: 'typo',
-            label: tEditor(showTypoBar ? 'actions.typobar.off' : 'actions.typobar.on'),
-            onClick: () => setShowTypoBar(!showTypoBar),
           },
         ]
       : []),
@@ -223,7 +204,7 @@ const PlusActions = memo(() => {
           title={t('input.more')}
           dropdown={{
             menu: { className: styles.compactDropdownMenu, items },
-            minWidth: 220,
+            minWidth: 180,
             placement: 'topLeft',
           }}
           onOpenChange={setOpen}
@@ -257,15 +238,6 @@ const PlusActions = memo(() => {
             showTooltip={false}
             title={t('knowledgeBase.title')}
             onClick={() => setLibraryOpen(true)}
-          />
-        )}
-        {showTypoIndicator && (
-          <Action
-            color={cssVar.colorInfo}
-            icon={TypeIcon}
-            showTooltip={false}
-            title={tEditor('actions.typobar.off')}
-            onClick={() => setShowTypoBar(false)}
           />
         )}
       </Flexbox>
