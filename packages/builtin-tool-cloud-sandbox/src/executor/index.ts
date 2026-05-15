@@ -8,6 +8,7 @@ import { userProfileSelectors } from '@/store/user/slices/auth/selectors';
 import { CloudSandboxExecutionRuntime } from '../ExecutionRuntime';
 import { CloudSandboxIdentifier } from '../manifest';
 import type {
+  DisplayFileParams,
   EditLocalFileParams,
   ExecuteCodeParams,
   ExportFileParams,
@@ -17,6 +18,7 @@ import type {
   ISandboxService,
   KillCommandParams,
   ListLocalFilesParams,
+  ListProcessesParams,
   MoveLocalFilesParams,
   ReadLocalFileParams,
   RenameLocalFileParams,
@@ -24,6 +26,7 @@ import type {
   SandboxCallToolResult,
   SandboxExportFileResult,
   SearchLocalFilesParams,
+  SendProcessInputParams,
   WriteLocalFileParams,
 } from '../types';
 import { CloudSandboxApiName } from '../types';
@@ -216,6 +219,35 @@ class CloudSandboxExecutor extends BaseExecutor<typeof CloudSandboxApiName> {
   ): Promise<BuiltinToolResult> => {
     const runtime = this.getRuntime(ctx);
     const result = await runtime.exportFile(params);
+    return this.toBuiltinResult(result);
+  };
+
+  // ==================== Display & Process Management ====================
+
+  displayFile = async (
+    params: DisplayFileParams,
+    ctx: BuiltinToolContext,
+  ): Promise<BuiltinToolResult> => {
+    const runtime = this.getRuntime(ctx);
+    const result = await runtime.displayFile(params);
+    return this.toBuiltinResult(result);
+  };
+
+  listProcesses = async (
+    params: ListProcessesParams,
+    ctx: BuiltinToolContext,
+  ): Promise<BuiltinToolResult> => {
+    const runtime = this.getRuntime(ctx);
+    const result = await runtime.listProcesses(params);
+    return this.toBuiltinResult(result);
+  };
+
+  sendProcessInput = async (
+    params: SendProcessInputParams,
+    ctx: BuiltinToolContext,
+  ): Promise<BuiltinToolResult> => {
+    const runtime = this.getRuntime(ctx);
+    const result = await runtime.sendProcessInput(params);
     return this.toBuiltinResult(result);
   };
 

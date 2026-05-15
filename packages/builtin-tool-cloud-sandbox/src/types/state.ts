@@ -1,16 +1,19 @@
 // Re-export shared state types from @lobechat/tool-runtime
 export type {
+  DisplayFileState,
   EditFileState as EditLocalFileState,
   GetCommandOutputState,
   GlobFilesState,
   GrepContentState,
   KillCommandState,
   ListFilesState as ListLocalFilesState,
+  ListProcessesState,
   MoveFilesState as MoveLocalFilesState,
   ReadFileState as ReadLocalFileState,
   RenameFileState as RenameLocalFileState,
   RunCommandState,
   SearchFilesState as SearchLocalFilesState,
+  SendProcessInputState,
   WriteFileState as WriteLocalFileState,
 } from '@lobechat/tool-runtime';
 

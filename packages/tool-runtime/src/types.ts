@@ -88,6 +88,17 @@ export interface KillCommandParams {
   commandId: string;
 }
 
+export interface ListProcessesParams {}
+
+export interface SendProcessInputParams {
+  commandId: string;
+  input: string;
+}
+
+export interface DisplayFileParams {
+  path: string;
+}
+
 export interface GrepContentParams {
   directory: string;
   filePattern?: string;
@@ -196,6 +207,26 @@ export interface GetCommandOutputState {
 export interface KillCommandState {
   commandId: string;
   error?: string;
+  success: boolean;
+}
+
+export interface ListProcessesState {
+  processes: Array<{
+    command: string;
+    id: string;
+    running: boolean;
+  }>;
+  success: boolean;
+}
+
+export interface SendProcessInputState {
+  commandId: string;
+  success: boolean;
+}
+
+export interface DisplayFileState {
+  exists: boolean;
+  path: string;
   success: boolean;
 }
 

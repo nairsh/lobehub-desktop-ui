@@ -484,6 +484,55 @@ export class OpenTerminalCloudSandboxProvider implements CloudSandboxProvider {
           };
         }
 
+        case 'displayFile': {
+          await this.requestJson<{ exists?: boolean; path?: string }>(
+            config,
+            context,
+            `/files/display?${new URLSearchParams({ path: params.path }).toString()}`,
+          );
+
+          return {
+            result: {
+              exists: true,
+              path: params.path,
+            },
+            success: true,
+          };
+        }
+
+        case 'listProcesses': {
+          const result = await this.requestJson<
+            Array<{ command?: string; id?: string; status?: string }>
+          >(config, context, '/execute');
+
+          const processes = (Array.isArray(result) ? result : []).map((entry) => ({
+            command: entry.command ?? '',
+            id: entry.id ?? '',
+            running: entry.status === 'running',
+          }));
+
+          return {
+            result: {
+              processes,
+            },
+            success: true,
+          };
+        }
+
+        case 'sendProcessInput': {
+          await this.requestJson(config, context, `/execute/${params.commandId}/input`, {
+            body: JSON.stringify({ input: params.input }),
+            method: 'POST',
+          });
+
+          return {
+            result: {
+              commandId: params.commandId,
+            },
+            success: true,
+          };
+        }
+
         default: {
           throw new Error(`Unsupported Open Terminal tool: ${toolName}`);
         }

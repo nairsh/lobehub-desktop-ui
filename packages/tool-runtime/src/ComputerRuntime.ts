@@ -15,6 +15,8 @@ import {
 import type { BuiltinServerRuntimeOutput } from '@lobechat/types';
 
 import type {
+  DisplayFileParams,
+  DisplayFileState,
   EditFileParams,
   EditFileState,
   GetCommandOutputParams,
@@ -27,6 +29,8 @@ import type {
   KillCommandState,
   ListFilesParams,
   ListFilesState,
+  ListProcessesParams,
+  ListProcessesState,
   MoveFilesParams,
   MoveFilesState,
   ReadFileParams,
@@ -37,6 +41,8 @@ import type {
   RunCommandState,
   SearchFilesParams,
   SearchFilesState,
+  SendProcessInputParams,
+  SendProcessInputState,
   ServiceResult,
   WriteFileParams,
   WriteFileState,
@@ -449,6 +455,91 @@ export abstract class ComputerRuntime {
       };
 
       const content = formatGlobResults({ files, totalFiles: totalCount });
+
+      return { content, state, success: true };
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  // ==================== Display & Process Management ====================
+
+  async displayFile(args: DisplayFileParams): Promise<BuiltinServerRuntimeOutput> {
+    try {
+      const result = await this.callService('displayFile', args);
+
+      if (!result.success) {
+        return this.errorOutput(result, {
+          exists: false,
+          path: args.path,
+          success: false,
+        });
+      }
+
+      const state: DisplayFileState = {
+        exists: result.result?.exists ?? true,
+        path: args.path,
+        success: true,
+      };
+
+      const content = `File displayed: ${args.path}`;
+
+      return { content, state, success: true };
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  async listProcesses(args: ListProcessesParams): Promise<BuiltinServerRuntimeOutput> {
+    try {
+      const result = await this.callService('listProcesses', args);
+
+      if (!result.success) {
+        return this.errorOutput(result, {
+          processes: [],
+          success: false,
+        });
+      }
+
+      const processes = result.result?.processes || [];
+      const state: ListProcessesState = {
+        processes,
+        success: true,
+      };
+
+      const content =
+        processes.length > 0
+          ? processes
+              .map(
+                (p: { command: string; id: string; running: boolean }) =>
+                  `[${p.running ? 'running' : 'done'}] ${p.id}: ${p.command}`,
+              )
+              .join('\n')
+          : 'No running processes.';
+
+      return { content, state, success: true };
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  async sendProcessInput(args: SendProcessInputParams): Promise<BuiltinServerRuntimeOutput> {
+    try {
+      const result = await this.callService('sendProcessInput', args);
+
+      if (!result.success) {
+        return this.errorOutput(result, {
+          commandId: args.commandId,
+          success: false,
+        });
+      }
+
+      const state: SendProcessInputState = {
+        commandId: args.commandId,
+        success: true,
+      };
+
+      const content = `Input sent to process ${args.commandId}`;
 
       return { content, state, success: true };
     } catch (error) {

@@ -308,6 +308,51 @@ export const CloudSandboxManifest: BuiltinToolManifest = {
     },
     {
       description:
+        "Display a file in the user's file viewer. Use this when the user wants to view or look at a file.",
+      name: CloudSandboxApiName.displayFile,
+      parameters: {
+        properties: {
+          path: {
+            description: 'Absolute path to the file to display',
+            type: 'string',
+          },
+        },
+        required: ['path'],
+        type: 'object',
+      },
+    },
+    {
+      description:
+        'List all running background shell commands. Returns command IDs and their current status.',
+      name: CloudSandboxApiName.listProcesses,
+      parameters: {
+        properties: {},
+        required: [],
+        type: 'object',
+      },
+    },
+    {
+      description:
+        'Send input text to a running background shell command. Include newline characters as needed.',
+      name: CloudSandboxApiName.sendProcessInput,
+      parameters: {
+        properties: {
+          commandId: {
+            description: 'The ID of the background command to send input to',
+            type: 'string',
+          },
+          input: {
+            description:
+              "The text to send to the process's stdin. Include newline characters (\\n) as needed.",
+            type: 'string',
+          },
+        },
+        required: ['commandId', 'input'],
+        type: 'object',
+      },
+    },
+    {
+      description:
         'Export a file from the sandbox to cloud storage. The file will be uploaded to a pre-signed URL and can be downloaded by the user.',
       name: CloudSandboxApiName.exportFile,
       parameters: {

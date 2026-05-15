@@ -75,6 +75,13 @@ export interface KillCommandParams {
   commandId: string;
 }
 
+export interface ListProcessesParams {}
+
+export interface SendProcessInputParams {
+  commandId: string;
+  input: string;
+}
+
 // ==================== Search & Find Params ====================
 
 export interface GrepContentParams {
@@ -82,4 +89,10 @@ export interface GrepContentParams {
   filePattern?: string;
   pattern: string;
   recursive?: boolean;
+}
+
+// ==================== Display Params ====================
+
+export interface DisplayFileParams {
+  path: string;
 }
