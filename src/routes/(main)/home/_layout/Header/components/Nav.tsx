@@ -17,7 +17,7 @@ import { prefetchRoute } from '@/utils/router';
  * All other nav items are managed by Body via sidebarItems, except those in ICON_KEYS
  * which are rendered as compact icons at the bottom of the header.
  */
-const PRIMARY_KEYS: string[] = ['home', 'search', 'newChat', 'pages'];
+const PRIMARY_KEYS: string[] = ['home', 'search', 'newChat', 'pages', 'project'];
 
 /** Keys rendered as compact icon-only buttons in the header (deprioritized). */
 const ICON_KEYS: string[] = [];

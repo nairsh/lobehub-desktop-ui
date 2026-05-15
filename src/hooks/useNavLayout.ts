@@ -53,6 +53,12 @@ export const useNavLayout = (): NavLayout => {
           url: '/page',
         },
         {
+          icon: getRouteById('project')!.icon,
+          key: SidebarTabKey.Project,
+          title: t('tab.project'),
+          url: '/project',
+        },
+        {
           icon: SearchIcon,
           key: 'search',
           onClick: () => toggleCommandMenu(true),
@@ -71,12 +77,6 @@ export const useNavLayout = (): NavLayout => {
   const bottomMenuItems = useMemo(
     () =>
       [
-        {
-          icon: getRouteById('project')!.icon,
-          key: SidebarTabKey.Project,
-          title: t('tab.project'),
-          url: '/project',
-        },
         {
           hidden: !showMarket,
           icon: getRouteById('community')!.icon,
