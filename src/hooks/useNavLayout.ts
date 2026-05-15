@@ -72,6 +72,12 @@ export const useNavLayout = (): NavLayout => {
     () =>
       [
         {
+          icon: getRouteById('project')!.icon,
+          key: SidebarTabKey.Project,
+          title: t('tab.project'),
+          url: '/project',
+        },
+        {
           hidden: !showMarket,
           icon: getRouteById('community')!.icon,
           key: SidebarTabKey.Community,

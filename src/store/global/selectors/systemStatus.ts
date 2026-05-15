@@ -27,6 +27,7 @@ const hiddenSidebarSections = (s: GlobalState): string[] =>
 export const DEFAULT_SIDEBAR_ITEMS: string[] = [
   'recents',
   'agent',
+  'project',
   'community',
   'resource',
   'memory',

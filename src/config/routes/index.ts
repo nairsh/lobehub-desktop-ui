@@ -2,6 +2,7 @@ import { type LucideIcon } from 'lucide-react';
 import {
   BrainCircuit,
   FilePenIcon,
+  FolderOpenIcon,
   Image,
   LibraryBigIcon,
   Settings,
@@ -64,6 +65,15 @@ export const NAVIGATION_ROUTES: NavigationRoute[] = [
     keywordsKey: 'cmdk.keywords.painting',
     path: '/image',
     pathPrefix: '/image',
+  },
+  {
+    cmdkKey: 'cmdk.project',
+    electronKey: 'navigation.project',
+    icon: FolderOpenIcon,
+    id: 'project',
+    keywords: ['project', 'workspace', 'conversations'],
+    path: '/project',
+    pathPrefix: '/project',
   },
   {
     cmdkKey: 'cmdk.resource',
