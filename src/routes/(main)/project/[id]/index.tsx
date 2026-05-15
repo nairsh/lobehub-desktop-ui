@@ -1,23 +1,40 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
 import NotFound from '@/components/404';
 import NProgress from '@/components/NProgress';
 import ProjectWorkspace from '@/features/ProjectWorkspace';
-import { useKnowledgeBaseItem } from '@/routes/(main)/resource/features/hooks/useKnowledgeItem';
+import { projectSelectors, useProjectStore } from '@/store/project';
 
 const ProjectPage = memo(() => {
   const { id } = useParams<{ id: string }>();
-  const { data, isLoading } = useKnowledgeBaseItem(id || '');
+
+  const setActiveProject = useProjectStore((s) => s.setActiveProject);
+  const project = useProjectStore(id ? projectSelectors.projectById(id) : () => null);
+  const refreshProjects = useProjectStore((s) => s.refreshProjects);
+
+  // Sync active project with URL param
+  useEffect(() => {
+    if (id) setActiveProject(id);
+    return () => setActiveProject(null);
+  }, [id, setActiveProject]);
+
+  // Hydrate project list if store is empty
+  useEffect(() => {
+    if (!project && id) {
+      refreshProjects();
+    }
+  }, [project, id, refreshProjects]);
 
   if (!id) return <NotFound />;
-  if (!isLoading && !data) return <NotFound />;
 
   return (
     <>
       <NProgress />
+      {/* ProjectWorkspace uses the project id as its knowledgeBaseId until
+          projects get their own dedicated knowledge base on creation */}
       <ProjectWorkspace knowledgeBaseId={id} />
     </>
   );

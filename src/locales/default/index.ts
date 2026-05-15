@@ -30,6 +30,7 @@ import oauth from './oauth';
 import onboarding from './onboarding';
 import plugin from './plugin';
 import portal from './portal';
+import project from './project';
 import providers from './providers';
 import ragEval from './ragEval';
 import setting from './setting';
@@ -78,6 +79,7 @@ const resources = {
   onboarding,
   plugin,
   portal,
+  project,
   providers,
   ragEval,
   setting,

@@ -11,6 +11,7 @@ import { mutate, useClientDataSWR } from '@/libs/swr';
 import { chatGroupService } from '@/services/chatGroup';
 import { sessionService } from '@/services/session';
 import { getChatGroupStoreState } from '@/store/agentGroup';
+import { getProjectStoreState } from '@/store/project';
 import { type SessionStore } from '@/store/session';
 import { type StoreSetter } from '@/store/types';
 import { getUserStoreState, useUserStore } from '@/store/user';
@@ -74,7 +75,12 @@ export class SessionActionImpl {
 
     const newSession: LobeAgentSession = merge(defaultAgent, agent);
 
-    const id = await sessionService.createSession(LobeSessionType.Agent, newSession);
+    const { activeProjectId } = getProjectStoreState();
+    const id = await sessionService.createSession(
+      LobeSessionType.Agent,
+      newSession,
+      activeProjectId,
+    );
     await refreshSessions();
 
     // Track new agent creation analytics

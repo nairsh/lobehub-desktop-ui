@@ -27,11 +27,12 @@ export class SessionService {
   createSession = async (
     type: LobeSessionType,
     data: Partial<LobeAgentSession>,
+    projectId?: string | null,
   ): Promise<string> => {
     const { config, group, meta, ...session } = data;
     return lambdaClient.session.createSession.mutate({
       config: { ...config, ...meta } as any,
-      session: { ...session, groupId: group },
+      session: { ...session, groupId: group, projectId: projectId ?? undefined },
       type,
     });
   };
