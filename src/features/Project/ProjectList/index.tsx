@@ -14,7 +14,7 @@ const ProjectList = memo(() => {
   const { t } = useTranslation('project');
   const { open: openModal } = useProjectModal();
 
-  const projectList = useProjectStore(projectSelectors.projectList);
+  const projectList = useProjectStore(projectSelectors.sortedProjectList);
   const refreshProjects = useProjectStore((s) => s.refreshProjects);
 
   useEffect(() => {

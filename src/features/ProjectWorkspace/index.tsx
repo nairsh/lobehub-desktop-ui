@@ -1,69 +1,305 @@
 'use client';
 
-import { Flexbox, Text } from '@lobehub/ui';
-import { memo, useLayoutEffect, useState } from 'react';
+import { SESSION_CHAT_URL } from '@lobechat/const';
+import { ActionIcon, Block, DropdownMenu, Flexbox, Icon, Text } from '@lobehub/ui';
+import {
+  BookmarkIcon,
+  EditIcon,
+  MessageSquareIcon,
+  MoreHorizontalIcon,
+  TrashIcon,
+} from 'lucide-react';
+import { memo, useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link, useNavigate } from 'react-router-dom';
 
+import { type ActionKeys, ChatInputProvider, DesktopChatInput } from '@/features/ChatInput';
+import { useProjectModal } from '@/features/Project/ProjectModal';
 import { useResourceManagerStore } from '@/routes/(main)/resource/features/store';
-import { knowledgeBaseSelectors, useKnowledgeBaseStore } from '@/store/library';
+import { topicService } from '@/services/topic';
+import { useAgentStore } from '@/store/agent';
+import { builtinAgentSelectors } from '@/store/agent/selectors';
+import { useChatStore } from '@/store/chat';
+import { fileChatSelectors, useFileStore } from '@/store/file';
+import { projectSelectors, useProjectStore } from '@/store/project';
+import { type ChatTopic } from '@/types/topic';
 
-import ProjectHeader from './ProjectHeader';
 import { styles } from './style';
 import WorkspacePanel from './WorkspacePanel';
 
 interface ProjectWorkspaceProps {
   knowledgeBaseId: string;
-  projectId: string;
 }
 
-/**
- * Project workspace - split view combining a chat surface with a
- * collapsible project panel (files + custom instructions).
- *
- * This is an MVP: the chat surface is a placeholder shell; the panel
- * reuses knowledge-base state so files managed here are the same files
- * the full ResourceManager sees.
- */
-const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId, projectId }) => {
-  const { t } = useTranslation('knowledgeBase');
-  const [panelOpen, setPanelOpen] = useState(true);
+const leftActions: ActionKeys[] = ['plusActions'];
+const rightActions: ActionKeys[] = ['model'];
+
+const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId }) => {
+  const { t } = useTranslation('project');
+  const navigate = useNavigate();
+  const { open: openProjectModal } = useProjectModal();
 
   const setLibraryId = useResourceManagerStore((s) => s.setLibraryId);
-  const name = useKnowledgeBaseStore(
-    knowledgeBaseSelectors.getKnowledgeBaseNameById(knowledgeBaseId),
-  );
+  const project = useProjectStore(projectSelectors.projectById(knowledgeBaseId));
+  const isPinned = useProjectStore(projectSelectors.isPinned(knowledgeBaseId));
+  const refreshProjects = useProjectStore((s) => s.refreshProjects);
+  const deleteProject = useProjectStore((s) => s.deleteProject);
+  const togglePin = useProjectStore((s) => s.togglePinProject);
+  const addTopicToProject = useProjectStore((s) => s.addTopicToProject);
+  const storedTopicIds = useProjectStore(projectSelectors.projectTopicIds(knowledgeBaseId));
+  const inboxAgentId = useAgentStore(builtinAgentSelectors.inboxAgentId);
+  const sendMessage = useChatStore((s) => s.sendMessage);
+  const switchTopic = useChatStore((s) => s.switchTopic);
+  const clearChatUploadFileList = useFileStore((s) => s.clearChatUploadFileList);
+  const clearChatContextSelections = useFileStore((s) => s.clearChatContextSelections);
 
-  // Keep the resource-manager store in sync with the project route so that
-  // navigating to "manage files" or the library view shows the right KB.
+  const [topics, setTopics] = useState<ChatTopic[]>([]);
+
+  // Load topic details whenever the stored topic ID list changes
+  useEffect(() => {
+    if (storedTopicIds.length === 0 || !inboxAgentId) {
+      setTopics([]);
+      return;
+    }
+    topicService
+      .getTopics({ agentId: inboxAgentId, isInbox: true, pageSize: 100 })
+      .then(({ items }) => {
+        const filtered = items.filter((t) => storedTopicIds.includes(t.id));
+        // Preserve the order stored in storedTopicIds (newest first)
+        filtered.sort((a, b) => storedTopicIds.indexOf(a.id) - storedTopicIds.indexOf(b.id));
+        setTopics(filtered);
+      })
+      .catch(() => {});
+  }, [storedTopicIds, inboxAgentId]);
+
+  useEffect(() => {
+    if (!project) refreshProjects();
+  }, [project, refreshProjects]);
+
   useLayoutEffect(() => {
     setLibraryId(knowledgeBaseId);
     return () => setLibraryId(undefined);
   }, [knowledgeBaseId, setLibraryId]);
 
+  const handleSend = useCallback(
+    async ({ getEditorData }: { getEditorData?: () => unknown }) => {
+      const { inputMessage, mainInputEditor } = useChatStore.getState();
+      const editorData = getEditorData?.() ?? mainInputEditor?.getJSONState();
+      const fileList = fileChatSelectors.chatUploadFileList(useFileStore.getState());
+      const contextList = fileChatSelectors.chatContextSelections(useFileStore.getState());
+
+      if (!inputMessage && fileList.length === 0 && contextList.length === 0) return;
+      if (!inboxAgentId) return;
+
+      // Capture existing operation IDs so we can detect the new one created by this send
+      const existingOpIds = new Set(Object.keys(useChatStore.getState().operations));
+
+      try {
+        sendMessage({
+          context: { agentId: inboxAgentId },
+          contexts: contextList,
+          editorData,
+          files: fileList,
+          message: inputMessage,
+        });
+        navigate(SESSION_CHAT_URL(inboxAgentId, false));
+      } finally {
+        clearChatUploadFileList();
+        clearChatContextSelections();
+        mainInputEditor?.clearContent();
+      }
+
+      // Subscribe to chat store to capture the topicId once the server creates the topic.
+      // The subscription outlives the component because we call useChatStore.subscribe directly.
+      const projectId = knowledgeBaseId;
+      const unsubscribe = useChatStore.subscribe(
+        (state) => state.operations,
+        (ops) => {
+          const newEntry = Object.entries(ops).find(
+            ([id, op]) =>
+              !existingOpIds.has(id) && op.type === 'sendMessage' && op.metadata?.createdTopicId,
+          );
+          if (newEntry) {
+            const topicId = newEntry[1].metadata.createdTopicId as string;
+            unsubscribe();
+            useProjectStore.getState().addTopicToProject(projectId, topicId);
+          }
+        },
+      );
+    },
+    [
+      inboxAgentId,
+      knowledgeBaseId,
+      sendMessage,
+      navigate,
+      clearChatUploadFileList,
+      clearChatContextSelections,
+      addTopicToProject,
+    ],
+  );
+
+  const handleOpenTopic = useCallback(
+    (topicId: string) => {
+      if (!inboxAgentId) return;
+      navigate(SESSION_CHAT_URL(inboxAgentId, false));
+      // switchTopic is async but we fire-and-forget
+      useChatStore.getState().switchTopic(topicId);
+    },
+    [inboxAgentId, navigate, switchTopic],
+  );
+
+  const handleRename = useCallback(() => {
+    openProjectModal({
+      initialValues: { description: project?.description, name: project?.name },
+      projectId: knowledgeBaseId,
+    });
+  }, [openProjectModal, project, knowledgeBaseId]);
+
+  const handleDelete = useCallback(async () => {
+    await deleteProject(knowledgeBaseId);
+    navigate('/project');
+  }, [deleteProject, knowledgeBaseId, navigate]);
+
+  const menuItems = [
+    {
+      icon: <Icon icon={EditIcon} />,
+      key: 'rename',
+      label: t('editProject'),
+      onClick: handleRename,
+    },
+    {
+      icon: <Icon icon={BookmarkIcon} />,
+      key: 'pin',
+      label: isPinned
+        ? t('unpinProject', { defaultValue: 'Unpin project' })
+        : t('pinProject', { defaultValue: 'Pin project' }),
+      onClick: () => togglePin(knowledgeBaseId),
+    },
+    { type: 'divider' as const },
+    {
+      danger: true,
+      icon: <Icon icon={TrashIcon} />,
+      key: 'delete',
+      label: t('deleteProject'),
+      onClick: handleDelete,
+    },
+  ];
+
   return (
     <Flexbox horizontal className={styles.container} height={'100%'} width={'100%'}>
+      {/* ── Left: scrollable content column ── */}
       <Flexbox className={styles.chatPane} flex={1}>
-        <ProjectHeader
-          id={knowledgeBaseId}
-          panelOpen={panelOpen}
-          onTogglePanel={() => setPanelOpen((v) => !v)}
-        />
-        <Flexbox className={styles.emptyChat}>
-          <Text className={styles.emptyChatTitle}>
-            {name || t('tab.project', { defaultValue: 'Project' })}
-          </Text>
-          <Text type={'secondary'}>
-            {t('workspace.welcome', {
-              defaultValue:
-                'Chat here with the knowledge and files in this project. Use the panel on the right to manage files and set custom instructions.',
-            })}
-          </Text>
+        {/* Back link */}
+        <Flexbox className={styles.backRow}>
+          <Link className={styles.backLink} to="/project">
+            ← {t('allProjects', { defaultValue: 'All projects' })}
+          </Link>
         </Flexbox>
-        <Flexbox className={styles.fakeInput}>
-          {t('workspace.inputPlaceholder', { defaultValue: 'Message this project…' })}
+
+        {/* Title row */}
+        <Flexbox horizontal align={'center'} className={styles.titleRow}>
+          <Text className={styles.projectTitle} style={{ flex: 1 }}>
+            {project?.name ?? '—'}
+          </Text>
+          <Flexbox horizontal align={'center'} gap={6}>
+            <DropdownMenu items={menuItems} nativeButton={false}>
+              <ActionIcon
+                icon={MoreHorizontalIcon}
+                size={'middle'}
+                title={t('options', { defaultValue: 'Options' })}
+              />
+            </DropdownMenu>
+            <ActionIcon
+              active={isPinned}
+              icon={BookmarkIcon}
+              size={'middle'}
+              title={
+                isPinned
+                  ? t('unpinProject', { defaultValue: 'Unpin project' })
+                  : t('pinProject', { defaultValue: 'Pin project' })
+              }
+              onClick={() => togglePin(knowledgeBaseId)}
+            />
+          </Flexbox>
+        </Flexbox>
+
+        {/* Description */}
+        {project?.description && (
+          <Flexbox className={styles.descriptionRow}>
+            <Text className={styles.projectDescription}>{project.description}</Text>
+          </Flexbox>
+        )}
+
+        {/* Chat input */}
+        <Flexbox className={styles.inputSection}>
+          <ChatInputProvider
+            agentId={inboxAgentId}
+            allowExpand={false}
+            leftActions={leftActions}
+            rightActions={rightActions}
+            slashPlacement="bottom"
+            chatInputEditorRef={(instance) => {
+              if (!instance) return;
+              useChatStore.setState({ mainInputEditor: instance });
+            }}
+            sendButtonProps={{
+              disabled: !inboxAgentId,
+              generating: false,
+              onStop: () => {},
+              shape: 'round',
+            }}
+            onSend={handleSend}
+            onMarkdownContentChange={(content) => {
+              useChatStore.setState({ inputMessage: content });
+            }}
+          >
+            <DesktopChatInput
+              actionSize={{ blockSize: 32, size: 18 }}
+              borderRadius={12}
+              dropdownPlacement="bottomLeft"
+              inputContainerProps={{ minHeight: 56, resize: false }}
+              showRuntimeConfig={false}
+            />
+          </ChatInputProvider>
+        </Flexbox>
+
+        {/* Conversations section */}
+        <Flexbox className={styles.conversationsSection}>
+          {topics.length === 0 ? (
+            <Flexbox className={styles.conversationsEmpty}>
+              <Text style={{ fontSize: 13 }} type={'secondary'}>
+                {t('noConversations', {
+                  defaultValue: 'No conversations yet. Start a chat above to begin.',
+                })}
+              </Text>
+            </Flexbox>
+          ) : (
+            <Flexbox gap={2}>
+              {topics.map((topic) => (
+                <Block
+                  clickable
+                  horizontal
+                  align={'center'}
+                  gap={8}
+                  height={36}
+                  key={topic.id}
+                  paddingInline={10}
+                  variant={'borderless'}
+                  onClick={() => handleOpenTopic(topic.id)}
+                >
+                  <Icon flex={'none'} icon={MessageSquareIcon} opacity={0.5} size={'small'} />
+                  <Text ellipsis style={{ flex: 1, fontSize: 13 }}>
+                    {topic.title || t('untitledConversation', { defaultValue: 'New conversation' })}
+                  </Text>
+                </Block>
+              ))}
+            </Flexbox>
+          )}
         </Flexbox>
       </Flexbox>
-      {panelOpen && <WorkspacePanel knowledgeBaseId={knowledgeBaseId} projectId={projectId} />}
+
+      {/* ── Right: panel ── */}
+      <WorkspacePanel knowledgeBaseId={knowledgeBaseId} project={project} />
     </Flexbox>
   );
 });

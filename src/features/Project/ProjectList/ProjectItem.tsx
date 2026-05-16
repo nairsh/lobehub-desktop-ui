@@ -2,7 +2,8 @@
 
 import { Block, Icon, Text } from '@lobehub/ui';
 import { Dropdown } from 'antd';
-import { EditIcon, FolderIcon, TrashIcon } from 'lucide-react';
+import { createStaticStyles, cssVar } from 'antd-style';
+import { BookmarkIcon, EditIcon, FolderIcon, TrashIcon } from 'lucide-react';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -11,6 +12,13 @@ import { projectSelectors, useProjectStore } from '@/store/project';
 import type { ProjectItem as ProjectItemType } from '@/types/project';
 
 import { useProjectModal } from '../ProjectModal';
+
+const styles = createStaticStyles(({ css }) => ({
+  pinIcon: css`
+    color: ${cssVar.colorPrimary};
+    opacity: 0.8;
+  `,
+}));
 
 interface ProjectItemProps {
   project: ProjectItemType;
@@ -22,8 +30,10 @@ const ProjectItem = memo<ProjectItemProps>(({ project }) => {
   const { open: openModal } = useProjectModal();
 
   const activeProjectId = useProjectStore(projectSelectors.activeProjectId);
+  const isPinned = useProjectStore(projectSelectors.isPinned(project.id));
   const setActiveProject = useProjectStore((s) => s.setActiveProject);
   const deleteProject = useProjectStore((s) => s.deleteProject);
+  const togglePin = useProjectStore((s) => s.togglePinProject);
 
   const isActive = activeProjectId === project.id;
 
@@ -48,6 +58,14 @@ const ProjectItem = memo<ProjectItemProps>(({ project }) => {
       trigger={['contextMenu']}
       menu={{
         items: [
+          {
+            icon: <Icon icon={BookmarkIcon} />,
+            key: 'pin',
+            label: isPinned
+              ? t('unpinProject', { defaultValue: 'Unpin project' })
+              : t('pinProject', { defaultValue: 'Pin project' }),
+            onClick: () => togglePin(project.id),
+          },
           {
             icon: <Icon icon={EditIcon} />,
             key: 'edit',
@@ -80,6 +98,9 @@ const ProjectItem = memo<ProjectItemProps>(({ project }) => {
         <Text ellipsis style={{ flex: 1 }}>
           {project.name}
         </Text>
+        {isPinned && (
+          <Icon className={styles.pinIcon} flex={'none'} icon={BookmarkIcon} size={12} />
+        )}
       </Block>
     </Dropdown>
   );

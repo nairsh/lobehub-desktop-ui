@@ -35,7 +35,7 @@ const ProjectPage = memo(() => {
   return (
     <>
       <NProgress />
-      <ProjectWorkspace knowledgeBaseId={project.defaultKnowledgeBaseId} projectId={id} />
+      <ProjectWorkspace knowledgeBaseId={project.defaultKnowledgeBaseId} />
     </>
   );
 });
