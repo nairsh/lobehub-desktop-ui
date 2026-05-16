@@ -20,6 +20,7 @@ export interface MessageMapKeyInput {
    * Scope type for the message map
    * @default 'main' (auto-detected based on threadId)
    */
+  projectId?: string | null;
   scope?: MessageMapScope;
   /**
    * Sub Agent ID for group orchestration scenarios

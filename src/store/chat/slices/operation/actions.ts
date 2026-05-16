@@ -5,6 +5,7 @@ import { produce } from 'immer';
 import { type ChatStore } from '@/store/chat/store';
 import { type MessageMapKeyInput } from '@/store/chat/utils/messageMapKey';
 import { messageMapKey } from '@/store/chat/utils/messageMapKey';
+import { getProjectStoreState } from '@/store/project';
 import { type StoreSetter } from '@/store/types';
 import { setNamespace } from '@/utils/storeDebug';
 
@@ -54,7 +55,7 @@ export class OperationActionsImpl {
         );
         throw new Error(`Operation not found: ${context.operationId}`);
       }
-      const { agentId, topicId, threadId, scope, isNew, groupId } = operation.context;
+      const { agentId, topicId, threadId, scope, isNew, groupId, projectId } = operation.context;
       log(
         '[internal_getConversationContext] get from operation %s: agentId=%s, topicId=%s, threadId=%s, scope=%s, groupId=%s',
         context.operationId,
@@ -64,12 +65,13 @@ export class OperationActionsImpl {
         scope,
         groupId,
       );
-      return { agentId: agentId!, topicId, threadId, scope, isNew, groupId };
+      return { agentId: agentId!, topicId, threadId, scope, isNew, groupId, projectId };
     }
 
     // Fallback to global state
     const agentId = this.#get().activeAgentId;
     const groupId = this.#get().activeGroupId;
+    const projectId = getProjectStoreState().activeProjectId;
     const topicId = this.#get().activeTopicId;
     const threadId = this.#get().activeThreadId;
     log('[internal_getConversationContext] use global state: ', {
@@ -77,8 +79,9 @@ export class OperationActionsImpl {
       topicId,
       threadId,
       groupId,
+      projectId,
     });
-    return { agentId, topicId, threadId, groupId };
+    return { agentId, topicId, threadId, groupId, projectId };
   };
 
   startOperation = (params: {

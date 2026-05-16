@@ -9,6 +9,7 @@ export interface ProjectItem {
   avatar?: string;
   createdAt: string;
   description?: string;
+  defaultKnowledgeBaseId?: string;
   id: string;
   name: string;
   settings?: ProjectSettings;

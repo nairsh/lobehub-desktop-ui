@@ -144,6 +144,8 @@ export interface ConversationContext {
    * @default 'main' (auto-detected based on threadId)
    */
   scope?: MessageMapScope;
+  /** Project ID for project-scoped context and RAG */
+  projectId?: string | null;
   /**
    * @deprecated Use agentId for agent sessions. This field is kept for backward compatibility.
    */

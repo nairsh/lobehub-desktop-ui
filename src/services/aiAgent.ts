@@ -28,6 +28,7 @@ export interface ExecAgentTaskParams {
   agentId?: string;
   appContext?: {
     groupId?: string | null;
+    projectId?: string | null;
     scope?: string | null;
     sessionId?: string;
     threadId?: string | null;

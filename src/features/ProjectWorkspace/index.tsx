@@ -13,6 +13,7 @@ import WorkspacePanel from './WorkspacePanel';
 
 interface ProjectWorkspaceProps {
   knowledgeBaseId: string;
+  projectId: string;
 }
 
 /**
@@ -23,7 +24,7 @@ interface ProjectWorkspaceProps {
  * reuses knowledge-base state so files managed here are the same files
  * the full ResourceManager sees.
  */
-const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId }) => {
+const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId, projectId }) => {
   const { t } = useTranslation('knowledgeBase');
   const [panelOpen, setPanelOpen] = useState(true);
 
@@ -62,7 +63,7 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId }) => {
           {t('workspace.inputPlaceholder', { defaultValue: 'Message this project…' })}
         </Flexbox>
       </Flexbox>
-      {panelOpen && <WorkspacePanel knowledgeBaseId={knowledgeBaseId} />}
+      {panelOpen && <WorkspacePanel knowledgeBaseId={knowledgeBaseId} projectId={projectId} />}
     </Flexbox>
   );
 });

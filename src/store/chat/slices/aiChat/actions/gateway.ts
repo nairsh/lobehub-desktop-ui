@@ -277,6 +277,7 @@ export class GatewayActionImpl {
       agentId: context.agentId,
       appContext: {
         groupId: context.groupId,
+        projectId: context.projectId,
         scope: context.scope,
         threadId: context.threadId,
         topicId: context.topicId,

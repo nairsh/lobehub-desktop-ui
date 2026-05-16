@@ -29,13 +29,13 @@ const ProjectPage = memo(() => {
   }, [project, id, refreshProjects]);
 
   if (!id) return <NotFound />;
+  if (!project) return <NProgress />;
+  if (!project.defaultKnowledgeBaseId) return <NotFound />;
 
   return (
     <>
       <NProgress />
-      {/* ProjectWorkspace uses the project id as its knowledgeBaseId until
-          projects get their own dedicated knowledge base on creation */}
-      <ProjectWorkspace knowledgeBaseId={id} />
+      <ProjectWorkspace knowledgeBaseId={project.defaultKnowledgeBaseId} projectId={id} />
     </>
   );
 });
