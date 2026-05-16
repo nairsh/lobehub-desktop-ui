@@ -1,7 +1,6 @@
 import type {
   DataSyncConfig,
   NetworkProxySettings,
-  OpenTerminalConfig,
   UpdateChannel,
 } from '@lobechat/electron-client-ipc';
 
@@ -22,8 +21,6 @@ export interface ElectronMainStore {
   gatewayUrl: string;
   locale: string;
   networkProxy: NetworkProxySettings;
-  openTerminalBaseUrl: OpenTerminalConfig['baseUrl'];
-  openTerminalEncryptedApiKey: string;
   shortcuts: Record<string, string>;
   storagePath: string;
   themeMode: 'dark' | 'light' | 'system';
