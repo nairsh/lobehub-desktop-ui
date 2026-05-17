@@ -2,6 +2,9 @@
 
 import { SESSION_CHAT_URL } from '@lobechat/const';
 import { ActionIcon, Block, DropdownMenu, Flexbox, Icon, Text } from '@lobehub/ui';
+import { Divider } from 'antd';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import {
   BookmarkIcon,
   EditIcon,
@@ -26,6 +29,8 @@ import { type ChatTopic } from '@/types/topic';
 
 import { styles } from './style';
 import WorkspacePanel from './WorkspacePanel';
+
+dayjs.extend(relativeTime);
 
 interface ProjectWorkspaceProps {
   knowledgeBaseId: string;
@@ -186,8 +191,8 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId }) => {
   ];
 
   return (
-    <Flexbox horizontal className={styles.container} height={'100%'} width={'100%'}>
-      {/* ── Left: scrollable content column ── */}
+    <Flexbox className={styles.container} height={'100%'} width={'100%'}>
+      {/* ── Scrollable content column ── */}
       <Flexbox className={styles.chatPane} flex={1}>
         {/* Back link */}
         <Flexbox className={styles.backRow}>
@@ -230,76 +235,98 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId }) => {
           </Flexbox>
         )}
 
-        {/* Chat input */}
-        <Flexbox className={styles.inputSection}>
-          <ChatInputProvider
-            agentId={inboxAgentId}
-            allowExpand={false}
-            leftActions={leftActions}
-            rightActions={rightActions}
-            slashPlacement="bottom"
-            chatInputEditorRef={(instance) => {
-              if (!instance) return;
-              useChatStore.setState({ mainInputEditor: instance });
-            }}
-            sendButtonProps={{
-              disabled: !inboxAgentId,
-              generating: false,
-              onStop: () => {},
-              shape: 'round',
-            }}
-            onSend={handleSend}
-            onMarkdownContentChange={(content) => {
-              useChatStore.setState({ inputMessage: content });
-            }}
-          >
-            <DesktopChatInput
-              actionSize={{ blockSize: 32, size: 18 }}
-              borderRadius={12}
-              dropdownPlacement="bottomLeft"
-              inputContainerProps={{ minHeight: 56, resize: false }}
-              showRuntimeConfig={false}
-            />
-          </ChatInputProvider>
-        </Flexbox>
+        {/* Chat input + inline panel */}
+        <Flexbox horizontal align={'flex-start'} className={styles.inputRow}>
+          {/* Left column: chat input + conversations */}
+          <Flexbox flex={1}>
+            <Flexbox className={styles.inputSection}>
+              <ChatInputProvider
+                agentId={inboxAgentId}
+                allowExpand={false}
+                leftActions={leftActions}
+                rightActions={rightActions}
+                slashPlacement="bottom"
+                chatInputEditorRef={(instance) => {
+                  if (!instance) return;
+                  useChatStore.setState({ mainInputEditor: instance });
+                }}
+                sendButtonProps={{
+                  disabled: !inboxAgentId,
+                  generating: false,
+                  onStop: () => {},
+                  shape: 'round',
+                }}
+                onSend={handleSend}
+                onMarkdownContentChange={(content) => {
+                  useChatStore.setState({ inputMessage: content });
+                }}
+              >
+                <DesktopChatInput
+                  actionSize={{ blockSize: 32, size: 18 }}
+                  borderRadius={12}
+                  dropdownPlacement="bottomLeft"
+                  inputContainerProps={{ minHeight: 56, resize: false }}
+                  showRuntimeConfig={false}
+                />
+              </ChatInputProvider>
+            </Flexbox>
 
-        {/* Conversations section */}
-        <Flexbox className={styles.conversationsSection}>
-          {topics.length === 0 ? (
-            <Flexbox className={styles.conversationsEmpty}>
-              <Text style={{ fontSize: 13 }} type={'secondary'}>
-                {t('noConversations', {
-                  defaultValue: 'No conversations yet. Start a chat above to begin.',
-                })}
-              </Text>
-            </Flexbox>
-          ) : (
-            <Flexbox gap={2}>
-              {topics.map((topic) => (
-                <Block
-                  clickable
-                  horizontal
-                  align={'center'}
-                  gap={8}
-                  height={36}
-                  key={topic.id}
-                  paddingInline={10}
-                  variant={'borderless'}
-                  onClick={() => handleOpenTopic(topic.id)}
-                >
-                  <Icon flex={'none'} icon={MessageSquareIcon} opacity={0.5} size={'small'} />
-                  <Text ellipsis style={{ flex: 1, fontSize: 13 }}>
-                    {topic.title || t('untitledConversation', { defaultValue: 'New conversation' })}
+            {/* Chats divider + conversations */}
+            <Flexbox className={styles.conversationsSection}>
+              <Divider
+                orientation={'left'}
+                orientationMargin={0}
+                style={{ marginBlock: '16px 8px' }}
+              >
+                <Text style={{ fontSize: 12 }} type={'secondary'}>
+                  {t('chats', { defaultValue: 'Chats' })}
+                </Text>
+              </Divider>
+              {topics.length === 0 ? (
+                <Flexbox className={styles.conversationsEmpty}>
+                  <Text style={{ fontSize: 13 }} type={'secondary'}>
+                    {t('noConversations', {
+                      defaultValue: 'No conversations yet. Start a chat above to begin.',
+                    })}
                   </Text>
-                </Block>
-              ))}
+                </Flexbox>
+              ) : (
+                <Flexbox gap={2}>
+                  {topics.map((topic) => (
+                    <Block
+                      clickable
+                      horizontal
+                      align={'center'}
+                      gap={8}
+                      height={36}
+                      key={topic.id}
+                      paddingInline={10}
+                      variant={'borderless'}
+                      onClick={() => handleOpenTopic(topic.id)}
+                    >
+                      <Icon flex={'none'} icon={MessageSquareIcon} opacity={0.5} size={'small'} />
+                      <Text ellipsis style={{ flex: 1, fontSize: 13 }}>
+                        {topic.title ||
+                          t('untitledConversation', { defaultValue: 'New conversation' })}
+                      </Text>
+                      {topic.updatedAt && (
+                        <Text flex={'none'} style={{ fontSize: 11 }} type={'secondary'}>
+                          {dayjs().diff(dayjs(topic.updatedAt), 'd') < 7
+                            ? dayjs(topic.updatedAt).fromNow()
+                            : dayjs(topic.updatedAt).format('MMM D')}
+                        </Text>
+                      )}
+                    </Block>
+                  ))}
+                </Flexbox>
+              )}
             </Flexbox>
-          )}
+          </Flexbox>
+
+          {/* Right: inline panel */}
+          <WorkspacePanel knowledgeBaseId={knowledgeBaseId} project={project} />
         </Flexbox>
       </Flexbox>
-
-      {/* ── Right: panel ── */}
-      <WorkspacePanel knowledgeBaseId={knowledgeBaseId} project={project} />
     </Flexbox>
   );
 });

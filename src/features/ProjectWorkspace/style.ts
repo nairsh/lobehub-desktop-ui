@@ -17,7 +17,7 @@ export const styles = createStaticStyles(({ css, cssVar }) => ({
     }
   `,
   backRow: css`
-    padding-block: 20px 0;
+    padding-block: 64px 0;
     padding-inline: 60px;
   `,
   chatPane: css`
@@ -39,37 +39,38 @@ export const styles = createStaticStyles(({ css, cssVar }) => ({
     text-align: center;
   `,
   conversationsSection: css`
-    padding-block-start: 8px;
-    padding-inline: 60px;
+    padding-inline: 120px 16px;
   `,
   descriptionRow: css`
     padding-block: 6px 0;
     padding-inline: 60px;
   `,
-  /* Chat input — inset from content edges */
-  inputSection: css`
-    margin-block: 36px 0;
-    padding-inline: 120px;
+  /* Horizontal row wrapping chat input + inline panel */
+  inputRow: css`
+    margin-block-start: 36px;
   `,
-  /* ── Right panel (gray bg, card sections inside) ── */
+  /* Chat input — inset from left edge */
+  inputSection: css`
+    padding-inline: 120px 16px;
+  `,
+  /* ── Inline panel (sits to the right of the chat input) ── */
   panel: css`
     overflow: hidden;
     flex-shrink: 0;
 
-    width: 400px;
-    height: 100%;
-    border-inline-start: 1px solid ${cssVar.colorBorderSecondary};
+    width: 420px;
+    padding-inline-end: 120px;
 
     background: ${cssVar.colorBgLayout};
   `,
   panelBody: css`
     overflow: hidden auto;
     display: flex;
-    flex: 1;
     flex-direction: column;
     gap: 12px;
 
-    padding: 16px;
+    padding-block: 4px;
+    padding-inline: 0;
   `,
   /* White card with border inside the gray panel */
   panelCard: css`
