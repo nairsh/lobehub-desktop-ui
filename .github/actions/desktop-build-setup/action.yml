@@ -13,6 +13,7 @@ runs:
       uses: ./.github/actions/setup-env
       with:
         node-version: ${{ inputs.node-version }}
+        package-manager-cache: 'pnpm'
 
     - name: Install dependencies
       shell: bash
