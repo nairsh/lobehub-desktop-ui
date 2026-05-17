@@ -113,23 +113,18 @@ const PlusActions = memo(() => {
   const showLibraryIndicator = enableKnowledgeBase && enabledKnowledgeBases.length > 0;
   const showModeIndicator = !!activeMode;
 
-  const setActiveMode = async (mode: AgentMode | undefined) => {
+  const setActiveMode = async (mode: AgentMode | null) => {
     await updateAgentChatConfig({ activeMode: mode });
   };
 
   const modeChildren: ActionDropdownMenuItems = [
-    // "No mode" option to clear active mode
+    // "No mode" option to clear active mode (null clears it through the store merge)
     {
-      icon:
-        activeMode === undefined ? (
-          <Layers size={16} style={{ color: cssVar.colorInfo }} />
-        ) : (
-          Layers
-        ),
+      icon: !activeMode ? <Layers size={16} style={{ color: cssVar.colorInfo }} /> : Layers,
       key: 'mode-none',
       label: t('mode.none'),
       onClick: async () => {
-        await setActiveMode(undefined);
+        await setActiveMode(null);
       },
     },
     { type: 'divider' },
@@ -295,7 +290,7 @@ const PlusActions = memo(() => {
             showTooltip={false}
             title={t(`mode.${activeMode}` as any)}
             onClick={async () => {
-              await setActiveMode(undefined);
+              await setActiveMode(null);
             }}
           />
         )}

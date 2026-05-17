@@ -32,7 +32,8 @@ export interface LobeAgentChatConfig extends AgentMemoryChatConfig {
     | 'bot-builder'
     | 'cloud-sandbox'
     | 'group-builder'
-    | 'self-iteration';
+    | 'self-iteration'
+    | null;
   autoCreateTopicThreshold: number;
   codexMaxReasoningEffort?: 'low' | 'medium' | 'high' | 'xhigh';
 
@@ -245,6 +246,7 @@ export const AgentChatConfigSchema = z
     useModelBuiltinSearch: z.boolean().optional(),
     activeMode: z
       .enum(['cloud-sandbox', 'agent-builder', 'group-builder', 'bot-builder', 'self-iteration'])
+      .nullable()
       .optional(),
   })
   .merge(MemoryChatConfigSchema);
