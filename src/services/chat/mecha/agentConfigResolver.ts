@@ -15,6 +15,7 @@ import { getAgentStoreState } from '@/store/agent';
 import { agentSelectors, chatConfigByIdSelectors } from '@/store/agent/selectors';
 import { getChatGroupStoreState } from '@/store/agentGroup';
 import { agentGroupByIdSelectors, agentGroupSelectors } from '@/store/agentGroup/selectors';
+import { getActiveProjectSystemPrompt } from '@/store/project/projectContext';
 import { useUserStore } from '@/store/user';
 import { userGeneralSettingsSelectors } from '@/store/user/selectors';
 import { isDev } from '@/utils/env';
@@ -272,7 +273,16 @@ export const resolveAgentConfig = (ctx: AgentConfigResolverContext): ResolvedAge
       };
     }
 
-    // Not in page scope - return standard config
+    // Not in page scope - append project instructions and return standard config
+    const projectPrompt = getActiveProjectSystemPrompt();
+    if (projectPrompt) {
+      const base = finalAgentConfig.systemRole;
+      finalAgentConfig = {
+        ...finalAgentConfig,
+        systemRole: base ? `${base}\n\n${projectPrompt}` : projectPrompt,
+      };
+    }
+
     return {
       agentConfig: finalAgentConfig,
       chatConfig: finalChatConfig,
@@ -343,6 +353,14 @@ export const resolveAgentConfig = (ctx: AgentConfigResolverContext): ResolvedAge
 
   // Merge runtime systemRole into agent config
   let resolvedSystemRole = runtimeConfig?.systemRole ?? agentConfig.systemRole;
+
+  // Append active project instructions when user is in a project workspace
+  const projectSystemPrompt = getActiveProjectSystemPrompt();
+  if (projectSystemPrompt) {
+    resolvedSystemRole = resolvedSystemRole
+      ? `${resolvedSystemRole}\n\n${projectSystemPrompt}`
+      : projectSystemPrompt;
+  }
 
   // Merge plugins: runtime plugins take priority, fallback to base plugins
   let finalPlugins =

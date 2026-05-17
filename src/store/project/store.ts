@@ -34,3 +34,5 @@ export const useProjectStore = createWithEqualityFn<ProjectStore>()(
   ),
   shallow,
 );
+
+export const getProjectStoreState = () => useProjectStore.getState();

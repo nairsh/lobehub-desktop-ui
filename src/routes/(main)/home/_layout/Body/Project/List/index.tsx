@@ -1,11 +1,11 @@
 'use client';
 
+import { PROJECT_URL } from '@lobechat/const';
 import { Flexbox } from '@lobehub/ui';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { PROJECT_URL } from '@/const/url';
 import EmptyNavItem from '@/features/NavPanel/components/EmptyNavItem';
 import SkeletonList from '@/features/NavPanel/components/SkeletonList';
 import { useKnowledgeBaseStore } from '@/store/library';

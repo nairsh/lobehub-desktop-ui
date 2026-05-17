@@ -15,14 +15,21 @@ import {
 import { getExternalDependencies } from './native-deps.config.mjs';
 
 /**
- * Rewrite `/` to `/apps/desktop/index.html` so the electron-vite dev server
- * serves the desktop HTML entry when root is the monorepo root.
+ * Rewrite all SPA navigation requests to `/apps/desktop/index.html` so
+ * electron-vite dev server serves the desktop HTML entry for any route
+ * (e.g. /project, /chat/:id) when root is the monorepo root.
+ * Assets and Vite-internal paths are passed through unchanged.
  */
 function electronDesktopHtmlPlugin(): PluginOption {
   return {
     configureServer(server: ViteDevServer) {
       server.middlewares.use((req, _res, next) => {
-        if (req.url === '/' || req.url === '/index.html') {
+        const url = req.url ?? '/';
+        const pathname = url.split('?')[0];
+        // Pass through Vite internals, node_modules, and static assets (have an extension)
+        const isViteInternal = pathname.startsWith('/@') || pathname.startsWith('/node_modules/');
+        const isAsset = /\.\w+$/.test(pathname);
+        if (!isViteInternal && !isAsset) {
           req.url = '/apps/desktop/index.html';
         }
         next();

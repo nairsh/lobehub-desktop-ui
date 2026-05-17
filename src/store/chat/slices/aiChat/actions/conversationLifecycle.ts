@@ -34,6 +34,7 @@ import {
 import { getFileStoreState } from '@/store/file/store';
 import { useGlobalStore } from '@/store/global';
 import { systemStatusSelectors } from '@/store/global/selectors';
+import { setActiveProjectSystemPrompt } from '@/store/project/projectContext';
 import { type StoreSetter } from '@/store/types';
 import { useUserMemoryStore } from '@/store/userMemory';
 
@@ -57,6 +58,11 @@ export interface SendMessageWithContextParams extends SendMessageParams {
    * Contains sessionId, topicId, and threadId
    */
   context: ConversationContext;
+  /**
+   * Optional system prompt from the active project.
+   * Appended to the agent's system role for the duration of this LLM call.
+   */
+  projectSystemPrompt?: string;
 }
 
 /**
@@ -108,6 +114,7 @@ export class ConversationLifecycleActionImpl {
     messages: inputMessages,
     parentId: inputParentId,
     pageSelections,
+    projectSystemPrompt,
   }: SendMessageWithContextParams): Promise<SendMessageResult | undefined> => {
     let editorData = inputEditorData;
     const { internal_execAgentRuntime, mainInputEditor } = this.#get();
@@ -636,16 +643,21 @@ export class ConversationLifecycleActionImpl {
             }
           : undefined;
 
-        await internal_execAgentRuntime({
-          context: execContext,
-          initialContext: agentRuntimeInitialContext,
-          messages: displayMessages,
-          parentMessageId: data.assistantMessageId,
-          parentMessageType: 'assistant',
-          parentOperationId: operationId,
-          inPortalThread: !!data.createdThreadId,
-          skipCreateFirstMessage: true,
-        });
+        setActiveProjectSystemPrompt(projectSystemPrompt || undefined);
+        try {
+          await internal_execAgentRuntime({
+            context: execContext,
+            initialContext: agentRuntimeInitialContext,
+            messages: displayMessages,
+            parentMessageId: data.assistantMessageId,
+            parentMessageType: 'assistant',
+            parentOperationId: operationId,
+            inPortalThread: !!data.createdThreadId,
+            skipCreateFirstMessage: true,
+          });
+        } finally {
+          setActiveProjectSystemPrompt(undefined);
+        }
 
         const userFiles = dbMessageSelectors
           .dbUserFiles(this.#get())

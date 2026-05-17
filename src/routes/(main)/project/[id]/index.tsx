@@ -30,12 +30,11 @@ const ProjectPage = memo(() => {
 
   if (!id) return <NotFound />;
   if (!project) return <NProgress />;
-  if (!project.defaultKnowledgeBaseId) return <NotFound />;
 
   return (
     <>
       <NProgress />
-      <ProjectWorkspace knowledgeBaseId={project.defaultKnowledgeBaseId} />
+      <ProjectWorkspace knowledgeBaseId={project.defaultKnowledgeBaseId ?? project.id} />
     </>
   );
 });

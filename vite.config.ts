@@ -21,6 +21,19 @@ Object.assign(process.env, loadEnv(mode, process.cwd(), ''));
 const isDev = process.env.NODE_ENV !== 'production';
 const platform = isMobile ? 'mobile' : 'web';
 
+// Use APP_URL from .env.local if available, otherwise default to localhost:3010
+const getProxyTarget = () => {
+  const appUrl = process.env.APP_URL;
+  if (appUrl) {
+    // If APP_URL is set (e.g., https://lobe.thefetagroup.com), use it directly
+    return appUrl;
+  }
+  // Otherwise use localhost with PORT or default 3010
+  return `http://localhost:${process.env.PORT || 3010}`;
+};
+
+const proxyTarget = getProxyTarget();
+
 export default defineConfig({
   base: isDev ? '/' : process.env.VITE_CDN_BASE || '/_spa/',
   build: {
@@ -48,7 +61,18 @@ export default defineConfig({
           cyan: (s: string) => `\x1B[36m${s}\x1B[0m`,
         };
         const { info } = server.config.logger;
+
         return () => {
+          // Middleware to handle auth route fallback properly
+          server.middlewares.use((req, res, next) => {
+            const authRoutes = ['/signin', '/signup', '/auth'];
+            if (req.url && authRoutes.some((route) => req.url?.startsWith(route))) {
+              // For auth routes, pass through to proxy instead of SPA fallback
+              return next();
+            }
+            next();
+          });
+
           server.printUrls = () => {
             const urls = server.resolvedUrls;
             if (!urls?.local?.[0]) return;
@@ -109,10 +133,51 @@ export default defineConfig({
     port: 9876,
     host: true,
     proxy: {
-      '/api': `http://localhost:${process.env.PORT || 3010}`,
-      '/oidc': `http://localhost:${process.env.PORT || 3010}`,
-      '/trpc': `http://localhost:${process.env.PORT || 3010}`,
-      '/webapi': `http://localhost:${process.env.PORT || 3010}`,
+      '/api': {
+        target: proxyTarget,
+        changeOrigin: true,
+        rejectUnauthorized: false,
+      },
+      '/auth': {
+        target: proxyTarget,
+        changeOrigin: true,
+        rejectUnauthorized: false,
+      },
+      '/signin': {
+        target: proxyTarget,
+        changeOrigin: true,
+        rejectUnauthorized: false,
+      },
+      '/signup': {
+        target: proxyTarget,
+        changeOrigin: true,
+        rejectUnauthorized: false,
+      },
+      '/oidc': {
+        target: proxyTarget,
+        changeOrigin: true,
+        rejectUnauthorized: false,
+      },
+      '/trpc': {
+        target: proxyTarget,
+        changeOrigin: true,
+        rejectUnauthorized: false,
+      },
+      '/webapi': {
+        target: proxyTarget,
+        changeOrigin: true,
+        rejectUnauthorized: false,
+      },
+      '^/(signin|signup|auth)': {
+        target: proxyTarget,
+        changeOrigin: true,
+        rejectUnauthorized: false,
+        pathRewrite: (path) => {
+          // Preserve query string
+          const [pathname, search] = path.split('?');
+          return search ? `${pathname}?${search}` : pathname;
+        },
+      },
     },
     warmup: {
       clientFiles: [
