@@ -2,9 +2,9 @@ name: Desktop Build
 
 on:
   push:
-    branches:
-      - '**'
-  workflow_dispatch:
+    tags:
+      - 'v*'
+  workflow_dispatch: {}
 
 concurrency:
   group: desktop-build-${{ github.ref }}
