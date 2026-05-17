@@ -18,21 +18,36 @@ export interface AgentMemoryChatConfig {
 }
 
 export interface LobeAgentChatConfig extends AgentMemoryChatConfig {
+  /**
+   * Active UI mode that injects additional context + tools for the current session.
+   * Set by the user via the + dropdown → Modes submenu. Modes are NOT AI-activated.
+   * - 'cloud-sandbox': Cloud execution environment with executeCode, exportFile tools
+   * - 'agent-builder': Agent creation/editing with agent management tools
+   * - 'group-builder': Multi-agent group editing with group management tools
+   * - 'bot-builder': Bot configuration with message/bot tools
+   * - 'self-iteration': Self-improvement with self-iteration tools
+   */
+  activeMode?:
+    | 'agent-builder'
+    | 'bot-builder'
+    | 'cloud-sandbox'
+    | 'group-builder'
+    | 'self-iteration';
   autoCreateTopicThreshold: number;
   codexMaxReasoningEffort?: 'low' | 'medium' | 'high' | 'xhigh';
+
   /**
    * Model ID to use for generating compression summaries
    */
   compressionModelId?: string;
-
   /**
    * Disable context caching
    */
   deepseekV4ReasoningEffort?: 'none' | 'high' | 'max';
+
   disableContextCaching?: boolean;
 
   effort?: 'low' | 'medium' | 'high' | 'max';
-
   /**
    * Whether to enable adaptive thinking (Claude Opus 4.6)
    */
@@ -112,12 +127,13 @@ export interface LobeAgentChatConfig extends AgentMemoryChatConfig {
    */
   reasoningBudgetToken80k?: number;
   reasoningEffort?: 'low' | 'medium' | 'high';
+
   /**
    * Runtime environment configuration (desktop only)
    */
   runtimeEnv?: RuntimeEnvConfig;
-
   searchFCModel?: WorkingModel;
+
   searchMode?: SearchMode;
 
   /**
@@ -132,7 +148,6 @@ export interface LobeAgentChatConfig extends AgentMemoryChatConfig {
    * Output text verbosity control
    */
   textVerbosity?: 'low' | 'medium' | 'high';
-
   thinking?: 'disabled' | 'auto' | 'enabled';
   thinkingBudget?: number;
   thinkingLevel?: 'minimal' | 'low' | 'medium' | 'high';
@@ -140,6 +155,7 @@ export interface LobeAgentChatConfig extends AgentMemoryChatConfig {
   thinkingLevel3?: 'low' | 'medium' | 'high';
   thinkingLevel4?: 'minimal' | 'high';
   thinkingLevel5?: 'minimal' | 'low' | 'medium' | 'high';
+
   /**
    * Maximum length for tool execution result content (in characters)
    * This prevents context overflow when sending tool results back to LLM
@@ -227,5 +243,8 @@ export const AgentChatConfigSchema = z
     toolResultMaxLength: z.number().default(25000),
     urlContext: z.boolean().optional(),
     useModelBuiltinSearch: z.boolean().optional(),
+    activeMode: z
+      .enum(['cloud-sandbox', 'agent-builder', 'group-builder', 'bot-builder', 'self-iteration'])
+      .optional(),
   })
   .merge(MemoryChatConfigSchema);

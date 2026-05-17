@@ -76,7 +76,13 @@ const getSkillActivateModeById =
   (s: AgentStoreState): 'auto' | 'manual' =>
     getChatConfigById(agentId)(s).skillActivateMode ?? 'auto';
 
+const getActiveModeById =
+  (agentId: string) =>
+  (s: AgentStoreState): LobeAgentChatConfig['activeMode'] =>
+    getChatConfigById(agentId)(s).activeMode;
+
 export const chatConfigByIdSelectors = {
+  getActiveModeById,
   getChatConfigById,
   getEnableHistoryCountById,
   getHistoryCountById,

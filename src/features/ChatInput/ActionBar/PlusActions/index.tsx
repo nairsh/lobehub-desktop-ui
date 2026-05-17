@@ -4,15 +4,7 @@ import { validateVideoFileSize } from '@lobechat/utils/client';
 import { Flexbox } from '@lobehub/ui';
 import { Upload } from 'antd';
 import { createStaticStyles, css, cssVar, cx } from 'antd-style';
-import {
-  Blocks,
-  Brain,
-  FileUp,
-  FolderUp,
-  Globe,
-  LibraryBig,
-  PlusIcon,
-} from 'lucide-react';
+import { Blocks, Brain, FileUp, FolderUp, Globe, Layers, LibraryBig, PlusIcon } from 'lucide-react';
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -31,6 +23,13 @@ import Action from '../components/Action';
 import { type ActionDropdownMenuItems } from '../components/ActionDropdown';
 import { useMemoryEnabled } from '../Memory/useMemoryEnabled';
 
+type AgentMode =
+  | 'agent-builder'
+  | 'bot-builder'
+  | 'cloud-sandbox'
+  | 'group-builder'
+  | 'self-iteration';
+
 const prefixCls = 'ant';
 
 const styles = createStaticStyles(({ css }) => ({
@@ -48,6 +47,7 @@ const styles = createStaticStyles(({ css }) => ({
       margin-inline: 4px;
       padding-block: 6px;
       padding-inline: 14px;
+
       font-size: 12px;
       color: ${cssVar.colorText} !important;
     }
@@ -74,6 +74,14 @@ const hotArea = css`
   }
 `;
 
+const MODES: AgentMode[] = [
+  'cloud-sandbox',
+  'agent-builder',
+  'group-builder',
+  'bot-builder',
+  'self-iteration',
+];
+
 const PlusActions = memo(() => {
   const { t } = useTranslation('chat');
   const { t: tSetting } = useTranslation('setting');
@@ -86,21 +94,54 @@ const PlusActions = memo(() => {
 
   const { enableKnowledgeBase } = useServerConfigStore(featureFlagsSelectors);
 
-  const [searchMode, rawSearchMode, model, provider, enabledKnowledgeBases] = useAgentStore((s) => [
-    chatConfigByIdSelectors.getSearchModeById(agentId)(s),
-    chatConfigByIdSelectors.getChatConfigById(agentId)(s)?.searchMode,
-    agentByIdSelectors.getAgentModelById(agentId)(s),
-    agentByIdSelectors.getAgentModelProviderById(agentId)(s),
-    agentByIdSelectors
-      .getAgentKnowledgeBasesById(agentId)(s)
-      .filter((kb) => kb.enabled),
-  ]);
+  const [searchMode, rawSearchMode, model, provider, enabledKnowledgeBases, activeMode] =
+    useAgentStore((s) => [
+      chatConfigByIdSelectors.getSearchModeById(agentId)(s),
+      chatConfigByIdSelectors.getChatConfigById(agentId)(s)?.searchMode,
+      agentByIdSelectors.getAgentModelById(agentId)(s),
+      agentByIdSelectors.getAgentModelProviderById(agentId)(s),
+      agentByIdSelectors
+        .getAgentKnowledgeBasesById(agentId)(s)
+        .filter((kb) => kb.enabled),
+      chatConfigByIdSelectors.getActiveModeById(agentId)(s),
+    ]);
   const isMemoryEnabled = useMemoryEnabled(agentId);
   const supportToolUse = useModelSupportToolUse(model, provider);
 
   const showSearchIndicator = rawSearchMode === 'auto';
   const showMemoryIndicator = isMemoryEnabled;
   const showLibraryIndicator = enableKnowledgeBase && enabledKnowledgeBases.length > 0;
+  const showModeIndicator = !!activeMode;
+
+  const setActiveMode = async (mode: AgentMode | undefined) => {
+    await updateAgentChatConfig({ activeMode: mode });
+  };
+
+  const modeChildren: ActionDropdownMenuItems = [
+    // "No mode" option to clear active mode
+    {
+      icon:
+        activeMode === undefined ? (
+          <Layers size={16} style={{ color: cssVar.colorInfo }} />
+        ) : (
+          Layers
+        ),
+      key: 'mode-none',
+      label: t('mode.none'),
+      onClick: async () => {
+        await setActiveMode(undefined);
+      },
+    },
+    { type: 'divider' },
+    ...MODES.map((mode) => ({
+      icon: activeMode === mode ? <Layers size={16} style={{ color: cssVar.colorInfo }} /> : Layers,
+      key: `mode-${mode}`,
+      label: t(`mode.${mode}` as any),
+      onClick: async () => {
+        await setActiveMode(mode);
+      },
+    })),
+  ];
 
   const items: ActionDropdownMenuItems = [
     {
@@ -171,6 +212,13 @@ const PlusActions = memo(() => {
       },
     },
     {
+      // Modes submenu — hover opens a side flyout with available modes
+      children: modeChildren,
+      icon: showModeIndicator ? <Layers size={16} style={{ color: cssVar.colorInfo }} /> : Layers,
+      key: 'modes',
+      label: t('mode.title'),
+    },
+    {
       disabled: !supportToolUse,
       icon: Blocks,
       key: 'tools',
@@ -238,6 +286,17 @@ const PlusActions = memo(() => {
             showTooltip={false}
             title={t('knowledgeBase.title')}
             onClick={() => setLibraryOpen(true)}
+          />
+        )}
+        {showModeIndicator && (
+          <Action
+            color={cssVar.colorInfo}
+            icon={Layers}
+            showTooltip={false}
+            title={t(`mode.${activeMode}` as any)}
+            onClick={async () => {
+              await setActiveMode(undefined);
+            }}
           />
         )}
       </Flexbox>
