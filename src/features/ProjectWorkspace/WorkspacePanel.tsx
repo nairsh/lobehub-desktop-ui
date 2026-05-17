@@ -1,11 +1,13 @@
 'use client';
 
 import { ActionIcon, Button, createModal, Flexbox, Text, useModalContext } from '@lobehub/ui';
+import type { UploadFile } from 'antd';
 import { Input, Upload } from 'antd';
 import { PaperclipIcon, PlusIcon, UploadIcon } from 'lucide-react';
 import { memo, Suspense, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useFileStore } from '@/store/file';
 import { useProjectStore } from '@/store/project';
 import type { ProjectItem } from '@/types/project';
 
@@ -51,13 +53,35 @@ InstructionsModalContent.displayName = 'InstructionsModalContent';
 
 // ── Files modal ────────────────────────────────────────────────────────────
 
-const FilesModalContent = memo(() => {
+const FilesModalContent = memo<{ knowledgeBaseId: string }>(({ knowledgeBaseId }) => {
   const { t } = useTranslation('project');
   const { close } = useModalContext();
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [loading, setLoading] = useState(false);
+  const uploadWithProgress = useFileStore((s) => s.uploadWithProgress);
+
+  const handleUpload = async () => {
+    setLoading(true);
+    try {
+      await Promise.all(
+        fileList.map((f) => uploadWithProgress({ file: f.originFileObj as File, knowledgeBaseId })),
+      );
+      close();
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Flexbox gap={16} paddingInline={8} style={{ paddingBottom: 8 }}>
-      <Upload.Dragger multiple showUploadList accept="*/*" beforeUpload={() => false}>
+      <Upload.Dragger
+        multiple
+        showUploadList
+        accept="*/*"
+        beforeUpload={() => false}
+        fileList={fileList}
+        onChange={({ fileList: next }) => setFileList(next)}
+      >
         <Flexbox align={'center'} gap={8} style={{ padding: '16px 0' }}>
           <UploadIcon opacity={0.4} size={28} />
           <Text style={{ fontSize: 14 }}>
@@ -68,8 +92,18 @@ const FilesModalContent = memo(() => {
           </Text>
         </Flexbox>
       </Upload.Dragger>
-      <Flexbox direction={'horizontal-reverse'}>
-        <Button onClick={close}>{t('cancel', { defaultValue: 'Close', ns: 'common' })}</Button>
+      <Flexbox direction={'horizontal-reverse'} gap={8}>
+        <Button
+          disabled={fileList.length === 0}
+          loading={loading}
+          type={'primary'}
+          onClick={handleUpload}
+        >
+          {t('upload', { defaultValue: 'Upload', ns: 'common' })}
+        </Button>
+        <Button disabled={loading} onClick={close}>
+          {t('cancel', { defaultValue: 'Cancel', ns: 'common' })}
+        </Button>
       </Flexbox>
     </Flexbox>
   );
@@ -112,14 +146,14 @@ const WorkspacePanel = memo<WorkspacePanelProps>(({ knowledgeBaseId, project }) 
     createModal({
       children: (
         <Suspense fallback={<div style={{ minHeight: 120 }} />}>
-          <FilesModalContent />
+          <FilesModalContent knowledgeBaseId={knowledgeBaseId} />
         </Suspense>
       ),
       footer: null,
       title: t('files', { defaultValue: 'Files' }),
       width: 480,
     });
-  }, [t]);
+  }, [knowledgeBaseId, t]);
 
   return (
     <Flexbox className={styles.panel} height={'100%'}>
