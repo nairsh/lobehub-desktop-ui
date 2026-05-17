@@ -9,6 +9,7 @@ import { message } from '@/components/AntdStaticMethods';
 import { DEFAULT_AGENT_LOBE_SESSION, INBOX_SESSION_ID } from '@/const/session';
 import { mutate, useClientDataSWR } from '@/libs/swr';
 import { chatGroupService } from '@/services/chatGroup';
+import { chatSessionService, type CreateChatParams } from '@/services/chatSession';
 import { sessionService } from '@/services/session';
 import { getChatGroupStoreState } from '@/store/agentGroup';
 import { getProjectStoreState } from '@/store/project';
@@ -50,6 +51,43 @@ export class SessionActionImpl {
     this.#set = set;
     this.#get = get;
   }
+
+  /**
+   * Create a new normal chat session without a dedicated agent record.
+   * This is the Phase 1 replacement for the deprecated createSession path.
+   * Automatically includes the active project ID if one is set.
+   */
+  createChat = async (
+    params: CreateChatParams = {},
+    isSwitchSession: boolean = true,
+  ): Promise<string> => {
+    const { switchSession, refreshSessions } = this.#get();
+    const { activeProjectId } = getProjectStoreState();
+
+    const { sessionId } = await chatSessionService.createChat({
+      ...params,
+      projectId: params.projectId ?? activeProjectId ?? undefined,
+    });
+    await refreshSessions();
+
+    const analytics = getSingletonAnalyticsOptional();
+    if (analytics) {
+      const userStore = getUserStoreState();
+      const userId = userProfileSelectors.userId(userStore);
+
+      analytics.track({
+        name: 'new_chat_created',
+        properties: {
+          session_id: sessionId,
+          user_id: userId || 'anonymous',
+        },
+      });
+    }
+
+    if (isSwitchSession) switchSession(sessionId);
+
+    return sessionId;
+  };
 
   clearSessions = async (): Promise<void> => {
     await sessionService.removeAllSessions();
