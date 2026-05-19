@@ -1,26 +1,9 @@
+import {
+  type SandboxCallToolResult as CallToolResult,
+  type SandboxExportFileResult as ExportAndUploadFileResult,
+} from '@lobechat/builtin-tool-cloud-sandbox';
+
 import { lambdaClient } from '@/libs/trpc/client';
-
-export interface CallToolResult {
-  error?: {
-    message: string;
-    name?: string;
-  };
-  result: any;
-  sessionExpiredAndRecreated?: boolean;
-  success: boolean;
-}
-
-export interface ExportAndUploadFileResult {
-  error?: {
-    message: string;
-  };
-  fileId?: string;
-  filename: string;
-  mimeType?: string;
-  size?: number;
-  success: boolean;
-  url?: string;
-}
 
 interface CloudSandboxContext {
   topicId: string;
@@ -38,6 +21,7 @@ class TrpcCloudSandboxProvider {
       toolName,
       topicId: context.topicId,
     });
+
     return result as CallToolResult;
   }
 
@@ -51,6 +35,7 @@ class TrpcCloudSandboxProvider {
       path,
       topicId,
     });
+
     return result as ExportAndUploadFileResult;
   }
 }

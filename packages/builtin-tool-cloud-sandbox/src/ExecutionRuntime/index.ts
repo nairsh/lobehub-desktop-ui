@@ -85,11 +85,13 @@ export class CloudSandboxExecutionRuntime extends ComputerRuntime {
       const result = await this.sandboxService.exportAndUploadFile(args.path, filename);
 
       const state: ExportFileState = {
+        artifact: result.artifact,
         downloadUrl: result.success && result.url ? result.url : '',
         fileId: result.fileId,
         filename: result.filename,
         mimeType: result.mimeType,
         path: args.path,
+        previewable: result.previewable,
         size: result.size,
         success: result.success,
       };

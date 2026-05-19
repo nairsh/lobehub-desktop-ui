@@ -20,6 +20,12 @@ export type {
 // ==================== Cloud-Specific State ====================
 
 export interface ExportFileState {
+  artifact?: {
+    content: string;
+    language?: string;
+    title: string;
+    type: string;
+  };
   /** The download URL for the exported file (permanent /f/:id URL) */
   downloadUrl: string;
   /** The file ID in database (returned from server) */
@@ -30,6 +36,8 @@ export interface ExportFileState {
   mimeType?: string;
   /** The original path in sandbox */
   path: string;
+  /** Whether the exported file can be previewed inline in the file viewer */
+  previewable?: boolean;
   /** The file size in bytes */
   size?: number;
   /** Whether the export was successful */

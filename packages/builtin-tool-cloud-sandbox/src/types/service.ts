@@ -14,10 +14,17 @@ export interface SandboxCallToolResult {
  * Result of exporting and uploading a file from sandbox
  */
 export interface SandboxExportFileResult {
+  artifact?: {
+    content: string;
+    language?: string;
+    title: string;
+    type: string;
+  };
   error?: { message: string };
   fileId?: string;
   filename: string;
   mimeType?: string;
+  previewable?: boolean;
   size?: number;
   success: boolean;
   url?: string;
