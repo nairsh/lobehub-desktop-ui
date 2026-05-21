@@ -6,6 +6,7 @@ import type { StateCreator } from 'zustand/vanilla';
 import { isDev } from '@/utils/env';
 
 import { createDevtools } from '../middleware/createDevtools';
+import { expose } from '../middleware/expose';
 import { flattenActions } from '../utils/flattenActions';
 import type { ProjectStoreState } from './initialState';
 import { initialProjectState } from './initialState';
@@ -36,3 +37,5 @@ export const useProjectStore = createWithEqualityFn<ProjectStore>()(
 );
 
 export const getProjectStoreState = () => useProjectStore.getState();
+
+expose('project', useProjectStore);

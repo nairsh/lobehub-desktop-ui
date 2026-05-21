@@ -34,24 +34,25 @@ dayjs.extend(relativeTime);
 
 interface ProjectWorkspaceProps {
   knowledgeBaseId: string;
+  projectId: string;
 }
 
 const leftActions: ActionKeys[] = ['plusActions'];
 const rightActions: ActionKeys[] = ['model'];
 
-const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId }) => {
+const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId, projectId }) => {
   const { t } = useTranslation('project');
   const navigate = useNavigate();
   const { open: openProjectModal } = useProjectModal();
 
   const setLibraryId = useResourceManagerStore((s) => s.setLibraryId);
-  const project = useProjectStore(projectSelectors.projectById(knowledgeBaseId));
-  const isPinned = useProjectStore(projectSelectors.isPinned(knowledgeBaseId));
+  const project = useProjectStore(projectSelectors.projectById(projectId));
+  const isPinned = useProjectStore(projectSelectors.isPinned(projectId));
   const refreshProjects = useProjectStore((s) => s.refreshProjects);
   const deleteProject = useProjectStore((s) => s.deleteProject);
   const togglePin = useProjectStore((s) => s.togglePinProject);
   const addTopicToProject = useProjectStore((s) => s.addTopicToProject);
-  const storedTopicIds = useProjectStore(projectSelectors.projectTopicIds(knowledgeBaseId));
+  const storedTopicIds = useProjectStore(projectSelectors.projectTopicIds(projectId));
   const inboxAgentId = useAgentStore(builtinAgentSelectors.inboxAgentId);
   const sendMessage = useChatStore((s) => s.sendMessage);
   const switchTopic = useChatStore((s) => s.switchTopic);
@@ -116,7 +117,6 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId }) => {
 
       // Subscribe to chat store to capture the topicId once the server creates the topic.
       // The subscription outlives the component because we call useChatStore.subscribe directly.
-      const projectId = knowledgeBaseId;
       const unsubscribe = useChatStore.subscribe(
         (state) => state.operations,
         (ops) => {
@@ -134,7 +134,7 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId }) => {
     },
     [
       inboxAgentId,
-      knowledgeBaseId,
+      projectId,
       sendMessage,
       navigate,
       clearChatUploadFileList,
@@ -156,14 +156,14 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId }) => {
   const handleRename = useCallback(() => {
     openProjectModal({
       initialValues: { description: project?.description, name: project?.name },
-      projectId: knowledgeBaseId,
+      projectId,
     });
-  }, [openProjectModal, project, knowledgeBaseId]);
+  }, [openProjectModal, project, projectId]);
 
   const handleDelete = useCallback(async () => {
-    await deleteProject(knowledgeBaseId);
+    await deleteProject(projectId);
     navigate('/project');
-  }, [deleteProject, knowledgeBaseId, navigate]);
+  }, [deleteProject, projectId, navigate]);
 
   const menuItems = [
     {
@@ -178,7 +178,7 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId }) => {
       label: isPinned
         ? t('unpinProject', { defaultValue: 'Unpin project' })
         : t('pinProject', { defaultValue: 'Pin project' }),
-      onClick: () => togglePin(knowledgeBaseId),
+      onClick: () => togglePin(projectId),
     },
     { type: 'divider' as const },
     {
@@ -223,7 +223,7 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId }) => {
                   ? t('unpinProject', { defaultValue: 'Unpin project' })
                   : t('pinProject', { defaultValue: 'Pin project' })
               }
-              onClick={() => togglePin(knowledgeBaseId)}
+              onClick={() => togglePin(projectId)}
             />
           </Flexbox>
         </Flexbox>
@@ -324,7 +324,11 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId }) => {
           </Flexbox>
 
           {/* Right: inline panel */}
-          <WorkspacePanel knowledgeBaseId={knowledgeBaseId} project={project} />
+          <WorkspacePanel
+            knowledgeBaseId={knowledgeBaseId}
+            project={project}
+            projectId={projectId}
+          />
         </Flexbox>
       </Flexbox>
     </Flexbox>

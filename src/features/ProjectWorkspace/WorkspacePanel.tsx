@@ -115,9 +115,10 @@ FilesModalContent.displayName = 'FilesModalContent';
 interface WorkspacePanelProps {
   knowledgeBaseId: string;
   project: ProjectItem | null;
+  projectId: string;
 }
 
-const WorkspacePanel = memo<WorkspacePanelProps>(({ knowledgeBaseId, project }) => {
+const WorkspacePanel = memo<WorkspacePanelProps>(({ knowledgeBaseId, project, projectId }) => {
   const { t } = useTranslation('project');
   const updateProject = useProjectStore((s) => s.updateProject);
   const currentInstructions = project?.settings?.defaultSystemPrompt ?? '';
@@ -129,7 +130,7 @@ const WorkspacePanel = memo<WorkspacePanelProps>(({ knowledgeBaseId, project }) 
           <InstructionsModalContent
             initialValue={currentInstructions}
             onSave={async (value) => {
-              await updateProject(knowledgeBaseId, {
+              await updateProject(projectId, {
                 settings: { ...project?.settings, defaultSystemPrompt: value },
               });
             }}
@@ -140,7 +141,7 @@ const WorkspacePanel = memo<WorkspacePanelProps>(({ knowledgeBaseId, project }) 
       title: t('instructions', { defaultValue: 'Instructions' }),
       width: 480,
     });
-  }, [currentInstructions, knowledgeBaseId, project?.settings, t, updateProject]);
+  }, [currentInstructions, projectId, project?.settings, t, updateProject]);
 
   const openFiles = useCallback(() => {
     createModal({
