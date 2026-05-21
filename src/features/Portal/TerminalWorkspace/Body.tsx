@@ -165,8 +165,8 @@ const TerminalWorkspaceBody = memo(() => {
       .then((result) => {
         if (cancelled) return;
         setInfo(result);
-        setCurrentPath(result.topicWorkspacePath);
-        return loadFiles(result.topicWorkspacePath);
+        setCurrentPath(result.rootPath);
+        return loadFiles(result.rootPath);
       })
       .catch((error) => {
         if (!cancelled) setError(getErrorMessage(error));
@@ -301,6 +301,15 @@ const TerminalWorkspaceBody = memo(() => {
             children: (
               <Flexbox gap={10} height="100%">
                 <Flexbox horizontal align="center" gap={6}>
+                  <Button size="small" onClick={() => info && loadFiles(info.rootPath)}>
+                    {t('terminalWorkspace.rootDirectory')}
+                  </Button>
+                  <Button size="small" onClick={() => info && loadFiles(info.sharedWorkspacePath)}>
+                    {t('terminalWorkspace.sharedDirectory')}
+                  </Button>
+                  <Button size="small" onClick={() => info && loadFiles(info.topicWorkspacePath)}>
+                    {t('terminalWorkspace.topicDirectory')}
+                  </Button>
                   <ActionIcon
                     disabled={!currentPath || currentPath === '/'}
                     icon={ArrowUpIcon}
