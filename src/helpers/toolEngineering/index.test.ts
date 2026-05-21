@@ -1,3 +1,4 @@
+import { CloudSandboxManifest } from '@lobechat/builtin-tool-cloud-sandbox';
 import { MemoryManifest } from '@lobechat/builtin-tool-memory';
 import { type ToolManifest } from '@lobechat/types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -65,6 +66,11 @@ vi.mock('@/store/tool', () => ({
         manifest: MemoryManifest as unknown as ToolManifest,
         type: 'builtin' as const,
       },
+      {
+        identifier: CloudSandboxManifest.identifier,
+        manifest: CloudSandboxManifest as unknown as ToolManifest,
+        type: 'builtin' as const,
+      },
     ],
   }),
 }));
@@ -90,6 +96,7 @@ vi.mock('../isCanUseFC', () => ({
 }));
 
 let mockCurrentAgentPlugins: string[] = [];
+let mockIsCloudSandboxEnabled = false;
 let mockIsMemoryToolEnabled = false;
 
 vi.mock('@/store/agent', () => ({
@@ -103,7 +110,7 @@ vi.mock('@/store/agent/selectors', () => ({
   },
   agentChatConfigSelectors: {
     currentChatConfig: () => ({}),
-    isCloudSandboxEnabled: () => false,
+    isCloudSandboxEnabled: () => mockIsCloudSandboxEnabled,
     isLocalSystemEnabled: () => false,
     isMemoryToolEnabled: () => mockIsMemoryToolEnabled,
   },
@@ -133,6 +140,7 @@ describe('toolEngineering', () => {
   afterEach(() => {
     mockGetInstalledPluginById = () => () => undefined;
     mockInstalledPluginManifestList = () => [];
+    mockIsCloudSandboxEnabled = false;
     mockIsMemoryToolEnabled = false;
     mockUseApplicationBuiltinSearchTool = true;
     mockCurrentAgentPlugins = [];
@@ -247,6 +255,22 @@ describe('toolEngineering', () => {
       });
 
       expect(enabledResult.enabledToolIds).toContain(MemoryManifest.identifier);
+    });
+
+    it('should expose cloud sandbox as a runtime-managed default when cloud mode is enabled', () => {
+      mockIsCloudSandboxEnabled = true;
+
+      const toolsEngine = createAgentToolsEngine({ model: 'gpt-4', provider: 'openai' });
+      const result = toolsEngine.generateToolsDetailed({
+        model: 'gpt-4',
+        provider: 'openai',
+        toolIds: [],
+      });
+
+      expect(result.enabledToolIds).toContain(CloudSandboxManifest.identifier);
+      expect(result.tools?.some((tool) => tool.function.name.includes('lobe-cloud-sandbox'))).toBe(
+        true,
+      );
     });
   });
 

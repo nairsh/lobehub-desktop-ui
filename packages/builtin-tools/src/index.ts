@@ -34,6 +34,7 @@ import { type LobeBuiltinTool } from '@lobechat/types';
 export const defaultToolIds = [
   LocalSystemManifest.identifier,
   WebBrowsingManifest.identifier,
+  CloudSandboxManifest.identifier,
   MemoryManifest.identifier,
   KnowledgeBaseManifest.identifier,
   TopicReferenceManifest.identifier,
