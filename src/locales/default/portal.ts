@@ -28,6 +28,8 @@ export default {
   'terminalWorkspace.resetTopic': 'Reset topic workspace',
   'terminalWorkspace.run': 'Run',
   'terminalWorkspace.sendInput': 'Send input',
+  'terminalWorkspace.serverMissingApis':
+    'This server is missing the Open Terminal workspace APIs. Redeploy the latest canary backend and try again.',
   'terminalWorkspace.startShell': 'Start shell',
   'terminalWorkspace.stdinPlaceholder': 'Send stdin to the running process...',
   'terminalWorkspace.stop': 'Stop command',

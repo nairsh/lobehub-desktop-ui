@@ -1,6 +1,34 @@
 import { toolsClient } from '@/libs/trpc/client';
 
 const terminalClient = (toolsClient as any).terminal;
+export const OPEN_TERMINAL_API_MISSING = 'OPEN_TERMINAL_API_MISSING';
+
+export class OpenTerminalApiMissingError extends Error {
+  code = OPEN_TERMINAL_API_MISSING;
+
+  constructor() {
+    super('Open Terminal workspace APIs are unavailable on this server.');
+    this.name = 'OpenTerminalApiMissingError';
+  }
+}
+
+const normalizeTerminalError = (error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error);
+
+  if (message.includes('No procedure found on path "terminal.')) {
+    return new OpenTerminalApiMissingError();
+  }
+
+  return error instanceof Error ? error : new Error(message);
+};
+
+const withTerminalErrorHandling = async <T>(callback: () => Promise<T>): Promise<T> => {
+  try {
+    return await callback();
+  } catch (error) {
+    throw normalizeTerminalError(error);
+  }
+};
 
 export interface TerminalFileEntry {
   isDirectory: boolean;
@@ -46,13 +74,14 @@ class OpenTerminalWorkspaceService {
     tail?: number;
     topicId: string;
     wait?: number;
-  }): Promise<TerminalProcessResult> => terminalClient.getCommandStatus.query(params);
+  }): Promise<TerminalProcessResult> =>
+    withTerminalErrorHandling(() => terminalClient.getCommandStatus.query(params));
 
   killCommand = (params: { force?: boolean; processId: string; topicId: string }) =>
-    terminalClient.killCommand.mutate(params);
+    withTerminalErrorHandling(() => terminalClient.killCommand.mutate(params));
 
   listFiles = (params: { path?: string; topicId: string }): Promise<TerminalListFilesResult> =>
-    terminalClient.listFiles.query(params);
+    withTerminalErrorHandling(() => terminalClient.listFiles.query(params));
 
   readFile = (params: {
     endLine?: number;
@@ -60,10 +89,10 @@ class OpenTerminalWorkspaceService {
     startLine?: number;
     topicId: string;
   }): Promise<{ content: string; path: string; success: boolean; totalLines?: number }> =>
-    terminalClient.readFile.query(params);
+    withTerminalErrorHandling(() => terminalClient.readFile.query(params));
 
   resetCurrentTopicWorkspace = (topicId: string) =>
-    terminalClient.resetCurrentTopicWorkspace.mutate({ topicId });
+    withTerminalErrorHandling(() => terminalClient.resetCurrentTopicWorkspace.mutate({ topicId }));
 
   runCommand = (params: {
     background?: boolean;
@@ -71,13 +100,14 @@ class OpenTerminalWorkspaceService {
     cwd?: string;
     topicId: string;
     wait?: number;
-  }): Promise<TerminalProcessResult> => terminalClient.runCommand.mutate(params);
+  }): Promise<TerminalProcessResult> =>
+    withTerminalErrorHandling(() => terminalClient.runCommand.mutate(params));
 
   sendCommandInput = (params: { input: string; processId: string; topicId: string }) =>
-    terminalClient.sendCommandInput.mutate(params);
+    withTerminalErrorHandling(() => terminalClient.sendCommandInput.mutate(params));
 
   workspaceInfo = (topicId: string): Promise<TerminalWorkspaceInfo> =>
-    terminalClient.workspaceInfo.query({ topicId });
+    withTerminalErrorHandling(() => terminalClient.workspaceInfo.query({ topicId }));
 }
 
 export const openTerminalWorkspaceService = new OpenTerminalWorkspaceService();

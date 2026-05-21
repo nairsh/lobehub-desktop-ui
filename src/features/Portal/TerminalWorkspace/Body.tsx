@@ -18,6 +18,7 @@ import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
+  OPEN_TERMINAL_API_MISSING,
   openTerminalWorkspaceService,
   type TerminalFileEntry,
   type TerminalWorkspaceInfo,
@@ -109,6 +110,22 @@ const TerminalWorkspaceBody = memo(() => {
   const [isRunning, setIsRunning] = useState(false);
   const [terminalOutput, setTerminalOutput] = useState('');
 
+  const getErrorMessage = useCallback(
+    (error: unknown) => {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        error.code === OPEN_TERMINAL_API_MISSING
+      ) {
+        return t('terminalWorkspace.serverMissingApis');
+      }
+
+      return error instanceof Error ? error.message : String(error);
+    },
+    [t],
+  );
+
   const sortedFiles = useMemo(
     () =>
       [...files].sort((a, b) => {
@@ -130,12 +147,12 @@ const TerminalWorkspaceBody = memo(() => {
         setCurrentPath(result.directory);
         setFiles(result.entries);
       } catch (error) {
-        setError(error instanceof Error ? error.message : String(error));
+        setError(getErrorMessage(error));
       } finally {
         setLoadingFiles(false);
       }
     },
-    [topicId],
+    [getErrorMessage, topicId],
   );
 
   useEffect(() => {
@@ -152,13 +169,13 @@ const TerminalWorkspaceBody = memo(() => {
         return loadFiles(result.topicWorkspacePath);
       })
       .catch((error) => {
-        if (!cancelled) setError(error instanceof Error ? error.message : String(error));
+        if (!cancelled) setError(getErrorMessage(error));
       });
 
     return () => {
       cancelled = true;
     };
-  }, [loadFiles, topicId]);
+  }, [getErrorMessage, loadFiles, topicId]);
 
   useEffect(() => {
     if (!topicId || !processId || !isRunning) return;
@@ -171,15 +188,13 @@ const TerminalWorkspaceBody = memo(() => {
           setIsRunning(result.running);
         })
         .catch((error) => {
-          setTerminalOutput(
-            (value) => `${value}\n${error instanceof Error ? error.message : error}`,
-          );
+          setTerminalOutput((value) => `${value}\n${getErrorMessage(error)}`);
           setIsRunning(false);
         });
     }, 1500);
 
     return () => window.clearInterval(timer);
-  }, [isRunning, processId, topicId]);
+  }, [getErrorMessage, isRunning, processId, topicId]);
 
   const readFile = useCallback(
     async (file: TerminalFileEntry) => {
@@ -195,10 +210,10 @@ const TerminalWorkspaceBody = memo(() => {
         });
         setSelectedFile({ content: result.content, path: result.path });
       } catch (error) {
-        setError(error instanceof Error ? error.message : String(error));
+        setError(getErrorMessage(error));
       }
     },
-    [topicId],
+    [getErrorMessage, topicId],
   );
 
   const runCommand = useCallback(
@@ -222,12 +237,10 @@ const TerminalWorkspaceBody = memo(() => {
         setIsRunning(result.running);
         setCommand('');
       } catch (error) {
-        setTerminalOutput(
-          (value) => `${value}${error instanceof Error ? error.message : String(error)}\n`,
-        );
+        setTerminalOutput((value) => `${value}${getErrorMessage(error)}\n`);
       }
     },
-    [command, currentPath, topicId],
+    [command, currentPath, getErrorMessage, topicId],
   );
 
   const sendInput = useCallback(async () => {
