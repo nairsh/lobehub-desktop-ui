@@ -3,11 +3,24 @@ import {
   type SandboxExportFileResult as ExportAndUploadFileResult,
 } from '@lobechat/builtin-tool-cloud-sandbox';
 
-import { lambdaClient } from '@/libs/trpc/client';
+import { toolsClient } from '@/libs/trpc/client';
 
 interface CloudSandboxContext {
   topicId: string;
   userId?: string;
+}
+
+interface ExecInSandboxInput {
+  params: Record<string, any>;
+  toolName: string;
+  topicId: string;
+  userId?: string;
+}
+
+interface ExportAndUploadFileInput {
+  filename: string;
+  path: string;
+  topicId: string;
 }
 
 class TrpcCloudSandboxProvider {
@@ -16,13 +29,14 @@ class TrpcCloudSandboxProvider {
     params: Record<string, any>,
     context: CloudSandboxContext,
   ): Promise<CallToolResult> {
-    const result = await lambdaClient.terminal.callTool.mutate({
+    const input: ExecInSandboxInput = {
       params,
       toolName,
       topicId: context.topicId,
-    });
+      userId: context.userId,
+    };
 
-    return result as CallToolResult;
+    return toolsClient.market.execInSandbox.mutate(input) as Promise<CallToolResult>;
   }
 
   async exportAndUploadFile(
@@ -30,13 +44,15 @@ class TrpcCloudSandboxProvider {
     filename: string,
     topicId: string,
   ): Promise<ExportAndUploadFileResult> {
-    const result = await lambdaClient.terminal.exportAndUploadFile.mutate({
+    const input: ExportAndUploadFileInput = {
       filename,
       path,
       topicId,
-    });
+    };
 
-    return result as ExportAndUploadFileResult;
+    return toolsClient.market.exportAndUploadFile.mutate(
+      input,
+    ) as Promise<ExportAndUploadFileResult>;
   }
 }
 

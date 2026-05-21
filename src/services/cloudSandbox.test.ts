@@ -6,9 +6,9 @@ const { mockCallTool, mockExportAndUploadFile } = vi.hoisted(() => ({
 }));
 
 vi.mock('@/libs/trpc/client', () => ({
-  lambdaClient: {
-    terminal: {
-      callTool: { mutate: mockCallTool },
+  toolsClient: {
+    market: {
+      execInSandbox: { mutate: mockCallTool },
       exportAndUploadFile: { mutate: mockExportAndUploadFile },
     },
   },
@@ -23,7 +23,7 @@ describe('cloudSandboxService', () => {
   });
 
   describe('callTool', () => {
-    it('delegates to lambdaClient.terminal.callTool', async () => {
+    it('delegates to toolsClient.market.execInSandbox', async () => {
       const expected = { result: { output: 'hello' }, success: true };
       mockCallTool.mockResolvedValue(expected);
 
@@ -37,13 +37,14 @@ describe('cloudSandboxService', () => {
         params: { command: 'echo hello' },
         toolName: 'runCommand',
         topicId: 'topic-1',
+        userId: undefined,
       });
       expect(result).toEqual(expected);
     });
   });
 
   describe('exportAndUploadFile', () => {
-    it('delegates to lambdaClient.terminal.exportAndUploadFile', async () => {
+    it('delegates to toolsClient.market.exportAndUploadFile', async () => {
       const expected = { filename: 'out.txt', success: true, url: '/f/abc' };
       mockExportAndUploadFile.mockResolvedValue(expected);
 
