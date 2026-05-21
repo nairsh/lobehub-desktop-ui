@@ -1,9 +1,18 @@
 'use client';
 
-import { ActionIcon, Button, createModal, Flexbox, Text, useModalContext } from '@lobehub/ui';
+import {
+  ActionIcon,
+  Block,
+  Button,
+  createModal,
+  Flexbox,
+  Icon,
+  Text,
+  useModalContext,
+} from '@lobehub/ui';
 import type { UploadFile } from 'antd';
-import { Input, Upload } from 'antd';
-import { PaperclipIcon, PlusIcon, UploadIcon } from 'lucide-react';
+import { App, Input, Upload } from 'antd';
+import { FileIcon as FileIconLucide, PaperclipIcon, PlusIcon, UploadIcon } from 'lucide-react';
 import { memo, Suspense, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -56,17 +65,20 @@ InstructionsModalContent.displayName = 'InstructionsModalContent';
 const FilesModalContent = memo<{ knowledgeBaseId: string }>(({ knowledgeBaseId }) => {
   const { t } = useTranslation('project');
   const { close } = useModalContext();
+  const { message } = App.useApp();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [loading, setLoading] = useState(false);
-  const uploadWithProgress = useFileStore((s) => s.uploadWithProgress);
+  const pushDockFileList = useFileStore((s) => s.pushDockFileList);
 
   const handleUpload = async () => {
     setLoading(true);
     try {
-      await Promise.all(
-        fileList.map((f) => uploadWithProgress({ file: f.originFileObj as File, knowledgeBaseId })),
-      );
+      const files = fileList.map((f) => f.originFileObj as File).filter(Boolean);
+      await pushDockFileList(files, knowledgeBaseId);
       close();
+    } catch (e: any) {
+      const msg: string = e?.shape?.message || e?.data?.message || e?.message || String(e);
+      message.error(msg);
     } finally {
       setLoading(false);
     }
@@ -122,6 +134,12 @@ const WorkspacePanel = memo<WorkspacePanelProps>(({ knowledgeBaseId, project, pr
   const { t } = useTranslation('project');
   const updateProject = useProjectStore((s) => s.updateProject);
   const currentInstructions = project?.settings?.defaultSystemPrompt ?? '';
+
+  const useFetchKnowledgeItems = useFileStore((s) => s.useFetchKnowledgeItems);
+  const { data: kbFiles } = useFetchKnowledgeItems({
+    knowledgeBaseId,
+    showFilesInKnowledgeBase: true,
+  });
 
   const openInstructions = useCallback(() => {
     createModal({
@@ -200,13 +218,41 @@ const WorkspacePanel = memo<WorkspacePanelProps>(({ knowledgeBaseId, project, pr
               onClick={openFiles}
             />
           </Flexbox>
-          <Flexbox className={styles.panelCardBody} gap={10}>
-            <Text style={{ fontSize: 13 }} type={'secondary'}>
-              {t('noFilesYet', { defaultValue: 'No files added yet.' })}
-            </Text>
-            <Button block size={'small'} onClick={openFiles}>
-              {t('addFiles', { defaultValue: 'Add files' })}
-            </Button>
+          <Flexbox className={styles.panelCardBody} gap={6}>
+            {kbFiles && kbFiles.length > 0 ? (
+              <>
+                <Flexbox gap={2}>
+                  {kbFiles.map((file) => (
+                    <Block
+                      horizontal
+                      align={'center'}
+                      gap={8}
+                      height={32}
+                      key={file.id}
+                      paddingInline={6}
+                      variant={'borderless'}
+                    >
+                      <Icon flex={'none'} icon={FileIconLucide} opacity={0.5} size={'small'} />
+                      <Text ellipsis style={{ flex: 1, fontSize: 12 }}>
+                        {file.name}
+                      </Text>
+                    </Block>
+                  ))}
+                </Flexbox>
+                <Button block size={'small'} onClick={openFiles}>
+                  {t('addFiles', { defaultValue: 'Add files' })}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Text style={{ fontSize: 13 }} type={'secondary'}>
+                  {t('noFilesYet', { defaultValue: 'No files added yet.' })}
+                </Text>
+                <Button block size={'small'} onClick={openFiles}>
+                  {t('addFiles', { defaultValue: 'Add files' })}
+                </Button>
+              </>
+            )}
           </Flexbox>
         </Flexbox>
       </Flexbox>

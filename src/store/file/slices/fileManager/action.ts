@@ -222,18 +222,13 @@ export class FileManageActionImpl {
     // toggle file ids
     this.#get().toggleParsingIds(ids);
 
-    // parse files
-    const pools = ids.map(async (id) => {
-      try {
-        await ragService.createParseFileTask(id, params?.skipExist);
-      } catch (e) {
-        console.error(e);
-      }
-    });
-
-    await Promise.all(pools);
-    await this.#get().refreshFileList();
-    this.#get().toggleParsingIds(ids, false);
+    try {
+      // parse files — all share the same embedding model config so one rejection means all fail
+      await Promise.all(ids.map((id) => ragService.createParseFileTask(id, params?.skipExist)));
+    } finally {
+      await this.#get().refreshFileList();
+      this.#get().toggleParsingIds(ids, false);
+    }
   };
 
   pushDockFileList = async (

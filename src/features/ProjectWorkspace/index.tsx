@@ -25,6 +25,10 @@ import { builtinAgentSelectors } from '@/store/agent/selectors';
 import { useChatStore } from '@/store/chat';
 import { fileChatSelectors, useFileStore } from '@/store/file';
 import { projectSelectors, useProjectStore } from '@/store/project';
+import {
+  setActiveProjectKnowledgeBaseId,
+  setActiveProjectSystemPrompt,
+} from '@/store/project/projectContext';
 import { type ChatTopic } from '@/types/topic';
 
 import { styles } from './style';
@@ -58,6 +62,7 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId, project
   const switchTopic = useChatStore((s) => s.switchTopic);
   const clearChatUploadFileList = useFileStore((s) => s.clearChatUploadFileList);
   const clearChatContextSelections = useFileStore((s) => s.clearChatContextSelections);
+  const currentInstructions = project?.settings?.defaultSystemPrompt ?? '';
 
   const [topics, setTopics] = useState<ChatTopic[]>([]);
 
@@ -87,6 +92,15 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId, project
     return () => setLibraryId(undefined);
   }, [knowledgeBaseId, setLibraryId]);
 
+  useLayoutEffect(() => {
+    setActiveProjectKnowledgeBaseId(knowledgeBaseId);
+    setActiveProjectSystemPrompt(currentInstructions || undefined);
+    return () => {
+      setActiveProjectKnowledgeBaseId(undefined);
+      setActiveProjectSystemPrompt(undefined);
+    };
+  }, [knowledgeBaseId, currentInstructions]);
+
   const handleSend = useCallback(
     async ({ getEditorData }: { getEditorData?: () => unknown }) => {
       const { inputMessage, mainInputEditor } = useChatStore.getState();
@@ -107,6 +121,7 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId, project
           editorData,
           files: fileList,
           message: inputMessage,
+          projectSystemPrompt: currentInstructions || undefined,
         });
         navigate(SESSION_CHAT_URL(inboxAgentId, false));
       } finally {
@@ -133,6 +148,7 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId, project
       );
     },
     [
+      currentInstructions,
       inboxAgentId,
       projectId,
       sendMessage,
