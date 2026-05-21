@@ -11,7 +11,7 @@ import {
   useModalContext,
 } from '@lobehub/ui';
 import type { UploadFile } from 'antd';
-import { App, Input, Upload } from 'antd';
+import { Input, message, Upload } from 'antd';
 import { FileIcon as FileIconLucide, PaperclipIcon, PlusIcon, UploadIcon } from 'lucide-react';
 import { memo, Suspense, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -65,7 +65,6 @@ InstructionsModalContent.displayName = 'InstructionsModalContent';
 const FilesModalContent = memo<{ knowledgeBaseId: string }>(({ knowledgeBaseId }) => {
   const { t } = useTranslation('project');
   const { close } = useModalContext();
-  const { message } = App.useApp();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [loading, setLoading] = useState(false);
   const pushDockFileList = useFileStore((s) => s.pushDockFileList);
