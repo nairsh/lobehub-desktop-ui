@@ -15,6 +15,7 @@ import { HomeBody, HomeTitle } from './Home';
 import { MessageDetail } from './MessageDetail';
 import { Notebook } from './Notebook';
 import { Plugins } from './Plugins';
+import { TerminalWorkspace } from './TerminalWorkspace';
 import { Thread } from './Thread';
 import { type PortalImpl } from './type';
 
@@ -27,6 +28,7 @@ const VIEW_COMPONENTS: Record<PortalViewType, PortalImpl> = {
   [PortalViewType.Artifact]: Artifacts,
   [PortalViewType.Document]: Document,
   [PortalViewType.Notebook]: Notebook,
+  [PortalViewType.TerminalWorkspace]: TerminalWorkspace,
   [PortalViewType.FilePreview]: FilePreview,
   [PortalViewType.MessageDetail]: MessageDetail,
   [PortalViewType.ToolUI]: Plugins,

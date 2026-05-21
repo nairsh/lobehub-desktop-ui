@@ -36,6 +36,8 @@ const showFilePreview = (s: ChatStoreState) => currentViewType(s) === PortalView
 const showMessageDetail = (s: ChatStoreState) =>
   currentViewType(s) === PortalViewType.MessageDetail;
 const showPluginUI = (s: ChatStoreState) => currentViewType(s) === PortalViewType.ToolUI;
+const showTerminalWorkspace = (s: ChatStoreState) =>
+  currentViewType(s) === PortalViewType.TerminalWorkspace;
 
 // ============== Data Extractors ==============
 
@@ -170,6 +172,7 @@ export const chatPortalSelectors = {
   showFilePreview,
   showMessageDetail,
   showPluginUI,
+  showTerminalWorkspace,
 
   // Artifact data
   currentArtifact,

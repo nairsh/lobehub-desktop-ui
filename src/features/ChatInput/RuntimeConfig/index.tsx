@@ -1,7 +1,7 @@
 import { isDesktop } from '@lobechat/const';
 import { type RuntimeEnvMode } from '@lobechat/types';
 import { Github } from '@lobehub/icons';
-import { Flexbox, Icon, Popover, Skeleton, Tooltip } from '@lobehub/ui';
+import { ActionIcon, Flexbox, Icon, Popover, Skeleton, Tooltip } from '@lobehub/ui';
 import { createStaticStyles, cx } from 'antd-style';
 import {
   Check,
@@ -12,6 +12,7 @@ import {
   LaptopIcon,
   MonitorOffIcon,
   SquircleDashed,
+  TerminalIcon,
 } from 'lucide-react';
 import { memo, type ReactNode, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -109,6 +110,7 @@ const RuntimeConfig = memo(() => {
   ]);
 
   const topicWorkingDirectory = useChatStore(topicSelectors.currentTopicWorkingDirectory);
+  const openTerminalWorkspace = useChatStore((s) => s.openTerminalWorkspace);
   const agentWorkingDirectory = useAgentStore((s) =>
     agentId ? agentByIdSelectors.getAgentWorkingDirectoryById(agentId)(s) : undefined,
   );
@@ -255,6 +257,16 @@ const RuntimeConfig = memo(() => {
           </div>
         </Popover>
         {rightContent()}
+        {runtimeMode === 'cloud' && (
+          <Tooltip title={t('runtimeEnv.openTerminalWorkspace')}>
+            <ActionIcon
+              icon={TerminalIcon}
+              size={'small'}
+              title={t('runtimeEnv.openTerminalWorkspace')}
+              onClick={openTerminalWorkspace}
+            />
+          </Tooltip>
+        )}
       </Flexbox>
 
       {/* Right: Permission control */}

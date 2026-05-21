@@ -299,6 +299,7 @@ export default {
   'runtimeEnv.mode.localDesc': 'Access local files and commands',
   'runtimeEnv.mode.none': 'Off',
   'runtimeEnv.mode.noneDesc': 'Disable runtime environment',
+  'runtimeEnv.openTerminalWorkspace': 'Open Terminal workspace',
   'runtimeEnv.selectMode': 'Select Runtime Environment',
   'runtimeEnv.title': 'Runtime Environment',
   'search.grounding.searchQueries': 'Search Keywords',

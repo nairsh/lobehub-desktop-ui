@@ -106,6 +106,10 @@ export class ChatPortalActionImpl {
     this.#get().pushPortalView({ type: PortalViewType.Notebook });
   };
 
+  openTerminalWorkspace = (): void => {
+    this.#get().pushPortalView({ type: PortalViewType.TerminalWorkspace });
+  };
+
   openToolUI = (messageId: string, identifier: string): void => {
     this.#get().pushPortalView({ identifier, messageId, type: PortalViewType.ToolUI });
   };

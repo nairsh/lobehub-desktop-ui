@@ -15,6 +15,7 @@ export enum PortalViewType {
   Home = 'home',
   MessageDetail = 'messageDetail',
   Notebook = 'notebook',
+  TerminalWorkspace = 'terminalWorkspace',
   Thread = 'thread',
   ToolUI = 'toolUI',
 }
@@ -32,6 +33,7 @@ export type PortalViewData =
   | { type: PortalViewType.Notebook }
   | { file: PortalFile; type: PortalViewType.FilePreview }
   | { messageId: string; type: PortalViewType.MessageDetail }
+  | { type: PortalViewType.TerminalWorkspace }
   | { identifier: string; messageId: string; type: PortalViewType.ToolUI }
   | { startMessageId?: string; threadId?: string; type: PortalViewType.Thread }
   | { agentId: string; type: PortalViewType.GroupThread };
