@@ -14,6 +14,7 @@ import { merge } from '@/utils/merge';
 import { safeParseJSON } from '@/utils/safeParseJSON';
 
 import { dbMessageSelectors, displayMessageSelectors } from '../../message/selectors';
+import { sanitizeToolMessagePayload } from './sanitizeToolMessagePayload';
 
 /**
  * Params for batch updating tool message content, state, and error
@@ -229,7 +230,8 @@ export class PluginOptimisticUpdateActionImpl {
     const { replaceMessages, internal_getConversationContext, internal_dispatchMessage } =
       this.#get();
 
-    const { content, metadata, pluginState, pluginError } = params;
+    const sanitizedParams = sanitizeToolMessagePayload(params);
+    const { content, metadata, pluginState, pluginError } = sanitizedParams;
 
     // Batch optimistic updates - update frontend immediately
     internal_dispatchMessage(

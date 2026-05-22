@@ -14,6 +14,10 @@ export const systemPrompt = `You have access to the LobeHub Cloud Sandbox tools,
 - The default workspace root is \`/home/user\`; \`/workspace\` may exist only as a legacy fallback and should not be your first choice
 - The persistent shared workspace lives at \`/home/user/shared\`
 - The current topic workspace lives at \`/home/user/topics/<topicId>\`
+- Chat attachments are not automatically the same thing as files already present in this terminal
+- When the user asks about an uploaded chat file, use the file content already provided in the conversation context first
+- Only search the terminal filesystem for that file when the user explicitly asks for file operations, or when you genuinely need the physical file path
+- When chat uploads are synced into compute, look in the topic workspace \`uploads/\` directory first before scanning elsewhere
 - Use the topic workspace for task-specific code, generated outputs, and short-lived work
 - Use the shared workspace for reusable repos, installed tools, caches, credentials materialized for tools, and user assets that should remain available across topics
 - A topic reset clears the topic workspace and topic-scoped processes, but should leave the shared workspace intact

@@ -14,7 +14,6 @@ import { useFileStore } from '@/store/file';
 import { fileChatSelectors } from '@/store/file/selectors';
 import { fileManagerSelectors } from '@/store/file/slices/fileManager/selectors';
 
-import { syncFilesToComputeWorkspace } from '../computeSync';
 import { getActiveUploadCount, mergePortalFiles } from '../utils';
 import FileItem from './Item';
 
@@ -29,7 +28,6 @@ const FileList = () => {
   const { t } = useTranslation('portal');
   const { message } = App.useApp();
   const inputReference = useRef<HTMLInputElement>(null);
-  const topicId = useChatStore((s) => s.activeTopicId);
   const files = useChatStore(chatSelectors.currentUserFiles, isEqual);
   const isCurrentChatLoaded = useChatStore(chatSelectors.isCurrentChatLoaded);
   const [
@@ -64,21 +62,7 @@ const FileList = () => {
     if (nextFiles.length === 0) return;
 
     try {
-      await Promise.all([
-        uploadChatFiles(nextFiles),
-        syncFilesToComputeWorkspace(topicId, nextFiles)
-          .then((result) => {
-            if (result.failed > 0) {
-              message.warning(t('files.computeSyncPartial', { count: result.failed }));
-            }
-            if (result.skipped > 0) {
-              message.info(t('files.computeSyncSkipped', { count: result.skipped }));
-            }
-          })
-          .catch(() => {
-            message.warning(t('files.computeSyncUnavailable'));
-          }),
-      ]);
+      await uploadChatFiles(nextFiles);
       await refreshFileList();
     } catch (error) {
       message.error(error instanceof Error ? error.message : t('files.uploadFailed'));

@@ -4,9 +4,11 @@ import { t } from 'i18next';
 
 import { notification } from '@/components/AntdStaticMethods';
 import { FILE_UPLOAD_BLACKLIST } from '@/const/file';
+import { syncFilesToComputeWorkspace } from '@/features/Portal/Home/Body/Files/computeSync';
 import { fileService } from '@/services/file';
 import { ragService } from '@/services/rag';
 import { UPLOAD_NETWORK_ERROR } from '@/services/upload';
+import { getChatStoreState } from '@/store/chat';
 import { type UploadFileListDispatch } from '@/store/file/reducers/uploadFileList';
 import { uploadFileListReducer } from '@/store/file/reducers/uploadFileList';
 import { type StoreSetter } from '@/store/types';
@@ -174,6 +176,30 @@ export class FileActionImpl {
     });
 
     await Promise.all(pools);
+
+    const topicId = getChatStoreState().activeTopicId ?? undefined;
+
+    try {
+      const result = await syncFilesToComputeWorkspace(topicId, files);
+
+      if (result.failed > 0) {
+        notification.warning({
+          message: t('files.computeSyncPartial', { count: result.failed, ns: 'portal' }),
+        });
+      }
+
+      if (result.skipped > 0) {
+        notification.info({
+          message: t('files.computeSyncSkipped', { count: result.skipped, ns: 'portal' }),
+        });
+      }
+    } catch {
+      if (topicId) {
+        notification.warning({
+          message: t('files.computeSyncUnavailable', { ns: 'portal' }),
+        });
+      }
+    }
   };
 }
 
