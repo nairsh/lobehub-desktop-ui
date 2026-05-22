@@ -353,7 +353,7 @@ export const CloudSandboxManifest: BuiltinToolManifest = {
     },
     {
       description:
-        'Export a file from the sandbox to cloud storage. The file will be uploaded to a pre-signed URL and can be downloaded by the user.',
+        'Export a file from the sandbox to LobeHub storage. Previewable files can be opened in the file preview portal, and all exported files can be downloaded by the user.',
       name: CloudSandboxApiName.exportFile,
       parameters: {
         properties: {

@@ -32,7 +32,7 @@ export class SessionService {
     const { config, group, meta, ...session } = data;
     return lambdaClient.session.createSession.mutate({
       config: { ...config, ...meta } as any,
-      session: { ...session, groupId: group, projectId: projectId ?? undefined },
+      session: { ...session, groupId: group, projectId: projectId ?? undefined } as any,
       type,
     });
   };

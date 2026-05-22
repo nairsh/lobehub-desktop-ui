@@ -5,24 +5,22 @@ import { memo } from 'react';
 
 import { type FileListItem } from '@/types/files';
 
+import {
+  HTML_EXTENSIONS,
+  HTML_MIME_TYPES,
+  IMAGE_EXTENSIONS,
+  IMAGE_MIME_TYPES,
+  matchesFileType,
+} from './fileType';
 import NotSupport from './NotSupport';
 import CodeViewer from './Renderer/Code';
+import HTMLViewer from './Renderer/HTML';
 import ImageViewer from './Renderer/Image';
 import MSDocViewer from './Renderer/MSDoc';
 import PDFViewer from './Renderer/PDF';
 import VideoViewer from './Renderer/Video';
 
 // File type definitions
-const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp'];
-const IMAGE_MIME_TYPES = new Set([
-  'image/jpg',
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/gif',
-  'image/bmp',
-]);
-
 const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.ogg'];
 const VIDEO_MIME_TYPES = new Set(['video/mp4', 'video/webm', 'video/ogg', 'mp4', 'webm', 'ogg']);
 
@@ -203,34 +201,6 @@ const ARCHIVE_MIME_TYPES = new Set([
   'application/x-xz',
 ]);
 
-// Helper function to check file type
-const matchesFileType = (
-  fileType: string | undefined,
-  fileName: string | undefined,
-  extensions: string[],
-  mimeTypes: Set<string>,
-): boolean => {
-  const lowerFileType = fileType?.toLowerCase();
-  const lowerFileName = fileName?.toLowerCase();
-
-  // Check MIME type
-  if (lowerFileType && mimeTypes.has(lowerFileType)) {
-    return true;
-  }
-
-  // Check file extension in fileType
-  if (lowerFileType && extensions.some((ext) => lowerFileType.includes(ext.slice(1)))) {
-    return true;
-  }
-
-  // Check file extension in fileName
-  if (lowerFileName && extensions.some((ext) => lowerFileName.endsWith(ext))) {
-    return true;
-  }
-
-  return false;
-};
-
 interface FileViewerProps extends FileListItem {
   className?: string;
   style?: CSSProperties;
@@ -253,6 +223,11 @@ const FileViewer = memo<FileViewerProps>(({ id, style, fileType, url, name }) =>
   // Video files
   if (matchesFileType(fileType, name, VIDEO_EXTENSIONS, VIDEO_MIME_TYPES)) {
     return <VideoViewer fileId={id} url={url} />;
+  }
+
+  // HTML files should render as documents, not syntax-highlighted source.
+  if (matchesFileType(fileType, name, HTML_EXTENSIONS, HTML_MIME_TYPES)) {
+    return <HTMLViewer fileId={id} url={url} />;
   }
 
   // Archive files (zip, rar, 7z, etc.) - not supported for preview

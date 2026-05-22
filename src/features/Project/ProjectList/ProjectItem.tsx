@@ -86,20 +86,20 @@ const ProjectItem = memo<ProjectItemProps>(({ project }) => {
       <Block
         clickable
         horizontal
-        active={isActive}
         align={'center'}
         gap={8}
         height={32}
         paddingInline={2}
+        style={isActive ? { background: cssVar.colorFillSecondary } : undefined}
         variant={'borderless'}
         onClick={handleClick}
       >
-        <Icon flex={'none'} icon={FolderIcon} size={'small'} />
+        <Icon icon={FolderIcon} size={'small'} style={{ flex: 'none' }} />
         <Text ellipsis style={{ flex: 1 }}>
           {project.name}
         </Text>
         {isPinned && (
-          <Icon className={styles.pinIcon} flex={'none'} icon={BookmarkIcon} size={12} />
+          <Icon className={styles.pinIcon} icon={BookmarkIcon} size={12} style={{ flex: 'none' }} />
         )}
       </Block>
     </Dropdown>

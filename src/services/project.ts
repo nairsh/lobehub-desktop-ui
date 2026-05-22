@@ -2,16 +2,17 @@ import { lambdaClient } from '@/libs/trpc/client';
 import type { ProjectCreate, ProjectUpdate } from '@/types/project';
 
 class ProjectService {
-  create = async (params: ProjectCreate) => lambdaClient.project.create.mutate(params);
+  private client = (lambdaClient as any).project;
 
-  delete = async (id: string) => lambdaClient.project.delete.mutate({ id });
+  create = async (params: ProjectCreate) => this.client.create.mutate(params);
 
-  getById = async (id: string) => lambdaClient.project.getById.query({ id });
+  delete = async (id: string) => this.client.delete.mutate({ id });
 
-  list = async () => lambdaClient.project.list.query();
+  getById = async (id: string) => this.client.getById.query({ id });
 
-  update = async (id: string, value: ProjectUpdate) =>
-    lambdaClient.project.update.mutate({ id, value });
+  list = async () => this.client.list.query();
+
+  update = async (id: string, value: ProjectUpdate) => this.client.update.mutate({ id, value });
 }
 
 export const projectService = new ProjectService();

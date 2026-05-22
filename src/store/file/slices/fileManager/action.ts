@@ -403,6 +403,28 @@ export class FileManageActionImpl {
     await this.#get().refreshFileList();
   };
 
+  renameFileItem = async (id: string, name: string): Promise<void> => {
+    const nextName = name.trim();
+    if (!nextName) return;
+
+    await mutate(
+      (key) => Array.isArray(key) && key[0] === FETCH_ALL_KNOWLEDGE_KEY,
+      async (currentData: FileListItem[] | undefined) => {
+        if (!currentData) return currentData;
+
+        return currentData.map((item) =>
+          item.id === id ? { ...item, name: nextName, updatedAt: new Date() } : item,
+        );
+      },
+      {
+        revalidate: false,
+      },
+    );
+
+    await fileService.updateFile(id, { name: nextName });
+    await this.#get().refreshFileList();
+  };
+
   renameFolder = async (folderId: string, newName: string): Promise<void> => {
     // Optimistically update all file list caches
     await mutate(

@@ -11,6 +11,17 @@ import { type FileUploadState, type FileUploadStatus } from '@/types/files/uploa
 
 export const UPLOAD_NETWORK_ERROR = 'NetWorkError';
 
+export class UploadRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status?: number,
+    readonly response?: string,
+  ) {
+    super(message);
+    this.name = 'UploadRequestError';
+  }
+}
+
 /**
  * Generate file storage path metadata for S3-compatible storage
  * @param originalFilename - Original filename
@@ -173,7 +184,7 @@ class UploadService {
     });
 
     xhr.open('PUT', preSignUrl);
-    xhr.setRequestHeader('Content-Type', file.type);
+    xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
     const data = await file.arrayBuffer();
 
     await new Promise((resolve, reject) => {
@@ -186,12 +197,25 @@ class UploadService {
           });
           resolve(xhr.response);
         } else {
-          reject(xhr.statusText);
+          reject(
+            new UploadRequestError(
+              `Upload failed with HTTP ${xhr.status}${xhr.statusText ? ` ${xhr.statusText}` : ''}`,
+              xhr.status,
+              typeof xhr.responseText === 'string' ? xhr.responseText : undefined,
+            ),
+          );
         }
       });
       xhr.addEventListener('error', () => {
         if (xhr.status === 0) reject(UPLOAD_NETWORK_ERROR);
-        else reject(xhr.statusText);
+        else
+          reject(
+            new UploadRequestError(
+              `Upload failed with HTTP ${xhr.status}${xhr.statusText ? ` ${xhr.statusText}` : ''}`,
+              xhr.status,
+              typeof xhr.responseText === 'string' ? xhr.responseText : undefined,
+            ),
+          );
       });
       xhr.addEventListener('abort', () => {
         onProgress?.('cancelled', { progress: 0, restTime: 0, speed: 0 });

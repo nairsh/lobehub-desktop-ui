@@ -11,6 +11,7 @@ import type { BuiltinRenderProps } from '@lobechat/types';
 import { ActionIcon, Flexbox, Text } from '@lobehub/ui';
 import { createStaticStyles, cssVar } from 'antd-style';
 import { memo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { useChatStore } from '@/store/chat';
 
@@ -24,6 +25,9 @@ const styles = createStaticStyles(({ css }) => ({
   statusIcon: css`
     font-size: 12px;
   `,
+  primaryText: css`
+    cursor: pointer;
+  `,
 }));
 
 interface ExportFileParams {
@@ -32,7 +36,10 @@ interface ExportFileParams {
 
 const ExportFile = memo<BuiltinRenderProps<ExportFileParams, ExportFileState>>(
   ({ args, messageId, pluginState }) => {
+    const { t } = useTranslation('plugin');
     const isSuccess = pluginState?.success;
+    const canPreview = Boolean(isSuccess && pluginState?.previewable && pluginState.fileId);
+    const canOpenArtifact = Boolean(isSuccess && pluginState?.artifact);
     const [openArtifact, openFilePreview] = useChatStore((s) => [
       s.openArtifact,
       s.openFilePreview,
@@ -81,6 +88,20 @@ const ExportFile = memo<BuiltinRenderProps<ExportFileParams, ExportFileState>>(
       openFilePreview({ fileId: pluginState.fileId });
     }, [openFilePreview, pluginState?.fileId]);
 
+    const handlePrimaryAction = useCallback(() => {
+      if (canPreview) {
+        handleOpenPreview();
+        return;
+      }
+
+      if (canOpenArtifact) {
+        handleOpenArtifact();
+        return;
+      }
+
+      void handleDownload();
+    }, [canOpenArtifact, canPreview, handleDownload, handleOpenArtifact, handleOpenPreview]);
+
     return (
       <Flexbox className={styles.container} gap={8}>
         <Flexbox horizontal align={'center'} gap={8}>
@@ -92,22 +113,41 @@ const ExportFile = memo<BuiltinRenderProps<ExportFileParams, ExportFileState>>(
           ) : (
             <CloseCircleFilled className={styles.statusIcon} style={{ color: cssVar.colorError }} />
           )}
-          <Text code as={'span'} fontSize={12}>
+          <Text
+            code
+            as={'span'}
+            className={isSuccess ? styles.primaryText : undefined}
+            fontSize={12}
+            title={canPreview ? t('builtins.lobe-cloud-sandbox.export.preview') : undefined}
+            onClick={isSuccess ? handlePrimaryAction : undefined}
+          >
             {isSuccess
-              ? `Exported: ${pluginState?.filename || args.path}`
-              : `Failed to export ${args.path}`}
+              ? t('builtins.lobe-cloud-sandbox.export.exported', {
+                  filename: pluginState?.filename || args.path,
+                })
+              : t('builtins.lobe-cloud-sandbox.export.failed', { path: args.path })}
           </Text>
           {isSuccess && pluginState?.artifact && (
-            <ActionIcon icon={FileTextOutlined} size={'small'} onClick={handleOpenArtifact} />
+            <ActionIcon
+              icon={FileTextOutlined}
+              size={'small'}
+              title={t('builtins.lobe-cloud-sandbox.export.openArtifact')}
+              onClick={handleOpenArtifact}
+            />
           )}
           {isSuccess && pluginState?.previewable && pluginState?.fileId && (
-            <ActionIcon icon={EyeOutlined} size={'small'} onClick={handleOpenPreview} />
+            <ActionIcon
+              icon={EyeOutlined}
+              size={'small'}
+              title={t('builtins.lobe-cloud-sandbox.export.preview')}
+              onClick={handleOpenPreview}
+            />
           )}
           {isSuccess && pluginState?.downloadUrl && (
             <ActionIcon
               icon={DownloadOutlined}
               size={'small'}
-              title="Download"
+              title={t('builtins.lobe-cloud-sandbox.export.download')}
               onClick={handleDownload}
             />
           )}

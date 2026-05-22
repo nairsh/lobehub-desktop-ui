@@ -108,6 +108,13 @@ class OpenTerminalWorkspaceService {
 
   workspaceInfo = (topicId: string): Promise<TerminalWorkspaceInfo> =>
     withTerminalErrorHandling(() => terminalClient.workspaceInfo.query({ topicId }));
+
+  writeFile = (params: {
+    content: string;
+    path: string;
+    topicId: string;
+  }): Promise<{ bytesWritten?: number; path: string; success: boolean }> =>
+    withTerminalErrorHandling(() => terminalClient.writeFile.mutate(params));
 }
 
 export const openTerminalWorkspaceService = new OpenTerminalWorkspaceService();

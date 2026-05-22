@@ -64,6 +64,7 @@ vi.mock('@/libs/trpc/client', () => ({
       getFiles: { query: vi.fn() },
       getKnowledgeItems: { query: vi.fn() },
       removeFileAsyncTask: { mutate: vi.fn() },
+      updateFile: { mutate: vi.fn() },
     },
   },
 }));
@@ -226,6 +227,26 @@ describe('FileManagerActions', () => {
       });
 
       expect(result.current.dockUploadFileList).toHaveLength(0);
+    });
+  });
+
+  describe('renameFileItem', () => {
+    it('updates the file name and refreshes file lists', async () => {
+      const { result } = renderHook(() => useStore());
+      const refreshSpy = vi.spyOn(result.current, 'refreshFileList').mockResolvedValue();
+
+      await act(async () => {
+        await result.current.renameFileItem('file-1', '  report.pdf  ');
+      });
+
+      expect(lambdaClient.file.updateFile.mutate).toHaveBeenCalledWith({
+        id: 'file-1',
+        name: 'report.pdf',
+      });
+      expect(mutate).toHaveBeenCalledWith(expect.any(Function), expect.any(Function), {
+        revalidate: false,
+      });
+      expect(refreshSpy).toHaveBeenCalled();
     });
   });
 

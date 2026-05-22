@@ -273,11 +273,7 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId }) => {
 
             {/* Chats divider + conversations */}
             <Flexbox className={styles.conversationsSection}>
-              <Divider
-                orientation={'left'}
-                orientationMargin={0}
-                style={{ marginBlock: '16px 8px' }}
-              >
+              <Divider orientationMargin={0} style={{ marginBlock: '16px 8px' }}>
                 <Text style={{ fontSize: 12 }} type={'secondary'}>
                   {t('chats', { defaultValue: 'Chats' })}
                 </Text>
@@ -304,13 +300,17 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId }) => {
                       variant={'borderless'}
                       onClick={() => handleOpenTopic(topic.id)}
                     >
-                      <Icon flex={'none'} icon={MessageSquareIcon} opacity={0.5} size={'small'} />
+                      <Icon
+                        icon={MessageSquareIcon}
+                        size={'small'}
+                        style={{ flex: 'none', opacity: 0.5 }}
+                      />
                       <Text ellipsis style={{ flex: 1, fontSize: 13 }}>
                         {topic.title ||
                           t('untitledConversation', { defaultValue: 'New conversation' })}
                       </Text>
                       {topic.updatedAt && (
-                        <Text flex={'none'} style={{ fontSize: 11 }} type={'secondary'}>
+                        <Text style={{ flex: 'none', fontSize: 11 }} type={'secondary'}>
                           {dayjs().diff(dayjs(topic.updatedAt), 'd') < 7
                             ? dayjs(topic.updatedAt).fromNow()
                             : dayjs(topic.updatedAt).format('MMM D')}

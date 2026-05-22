@@ -136,43 +136,43 @@ export default defineConfig({
       '/api': {
         target: proxyTarget,
         changeOrigin: true,
-        rejectUnauthorized: false,
+        secure: false,
       },
       '/auth': {
         target: proxyTarget,
         changeOrigin: true,
-        rejectUnauthorized: false,
+        secure: false,
       },
       '/signin': {
         target: proxyTarget,
         changeOrigin: true,
-        rejectUnauthorized: false,
+        secure: false,
       },
       '/signup': {
         target: proxyTarget,
         changeOrigin: true,
-        rejectUnauthorized: false,
+        secure: false,
       },
       '/oidc': {
         target: proxyTarget,
         changeOrigin: true,
-        rejectUnauthorized: false,
+        secure: false,
       },
       '/trpc': {
         target: proxyTarget,
         changeOrigin: true,
-        rejectUnauthorized: false,
+        secure: false,
       },
       '/webapi': {
         target: proxyTarget,
         changeOrigin: true,
-        rejectUnauthorized: false,
+        secure: false,
       },
       '^/(signin|signup|auth)': {
         target: proxyTarget,
         changeOrigin: true,
-        rejectUnauthorized: false,
-        pathRewrite: (path) => {
+        secure: false,
+        rewrite: (path: string) => {
           // Preserve query string
           const [pathname, search] = path.split('?');
           return search ? `${pathname}?${search}` : pathname;

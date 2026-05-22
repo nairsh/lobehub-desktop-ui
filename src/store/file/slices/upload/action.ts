@@ -183,6 +183,15 @@ export class FileUploadActionImpl {
 
       return { ...data, dimensions, filename: file.name };
     } catch (error) {
+      onStatusUpdate?.({
+        id: statusId,
+        type: 'updateFile',
+        value: {
+          status: 'error',
+          uploadState: { progress: 0, restTime: 0, speed: 0 },
+        },
+      });
+
       // Handle file storage plan limit error
       if ((error as any)?.message?.includes('beyond the plan limit')) {
         onStatusUpdate?.({ id: statusId, type: 'removeFile' });
