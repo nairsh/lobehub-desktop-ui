@@ -1,0 +1,5 @@
+Company Report for AcmeCorp (2026):
+- Revenue: $10M (200% increase year-over-year)
+- Main Products: Rocket skates, giant magnets, and portable holes.
+- CEO: Wile E. Coyote
+- Secret Passcode for verification: ACME_ROCKET_2026_SECRET_KEY

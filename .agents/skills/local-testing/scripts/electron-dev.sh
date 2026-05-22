@@ -197,7 +197,7 @@ do_start() {
 
   (
     cd "$PROJECT_ROOT/apps/desktop" && \
-    ELECTRON_ENABLE_LOGGING=1 npx electron-vite dev -- --remote-debugging-port="$CDP_PORT" \
+    ELECTRON_ENABLE_LOGGING=1 REMOTE_DEBUGGING_PORT="$CDP_PORT" npx electron-vite dev -- --remote-debugging-port="$CDP_PORT" \
       >> "$ELECTRON_LOG" 2>&1
   ) &
   local bg_pid=$!

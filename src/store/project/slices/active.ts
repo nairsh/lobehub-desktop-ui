@@ -4,6 +4,7 @@ import type { StoreSetter } from '@/store/types';
 export interface ProjectActiveAction {
   addTopicToProject: (projectId: string, topicId: string) => void;
   clearActiveProject: () => void;
+  removeTopicFromProject: (projectId: string, topicId: string) => void;
   setActiveProject: (id: string | null) => void;
   togglePinProject: (id: string) => void;
 }
@@ -31,6 +32,17 @@ export class ProjectActiveActionImpl implements ProjectActiveAction {
 
   clearActiveProject = (): void => {
     this.#set({ activeProjectId: null });
+  };
+
+  removeTopicFromProject = (projectId: string, topicId: string): void => {
+    const { topicIdsByProject } = this.#get();
+    const existing = topicIdsByProject[projectId] ?? [];
+    this.#set({
+      topicIdsByProject: {
+        ...topicIdsByProject,
+        [projectId]: existing.filter((id) => id !== topicId),
+      },
+    });
   };
 
   setActiveProject = (id: string | null): void => {

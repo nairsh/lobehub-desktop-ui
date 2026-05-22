@@ -315,6 +315,8 @@ export default {
     'The current model does not support function calls, so it needs to be paired with a model that does support function calls for online searching.',
   'search.searchModel.title': 'Search helper model',
   'search.title': 'Web search',
+  'project.addTo': 'Add to project',
+  'project.startNew': 'New project',
   'mode.agent-builder': 'Agent Builder',
   'mode.bot-builder': 'Bot Builder',
   'mode.cloud-sandbox': 'Cloud Sandbox',
