@@ -145,6 +145,7 @@ export interface QueryTopicParams {
    */
   isInbox?: boolean;
   pageSize?: number;
+  sessionId?: string | null;
 }
 
 /**

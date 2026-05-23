@@ -4,6 +4,7 @@ import { type ChatGroupAgentItem } from '@/database/schemas/chatGroup';
 
 export interface ChatMessageState {
   activeAgentId: string;
+  activeSessionId?: string;
   /**
    * Raw messages from database (flat structure)
    */
@@ -29,6 +30,7 @@ export interface ChatMessageState {
 
 export const initialMessageState: ChatMessageState = {
   activeAgentId: '',
+  activeSessionId: undefined,
   dbMessagesMap: {},
   groupAgentMaps: {},
   isCreatingMessage: false,

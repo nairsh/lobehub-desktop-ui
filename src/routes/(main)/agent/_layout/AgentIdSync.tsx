@@ -6,6 +6,9 @@ import { createStoreUpdater } from 'zustand-utils';
 import { useAgentStore } from '@/store/agent';
 import { useChatStore } from '@/store/chat';
 
+const getActiveSessionId = (id?: string) =>
+  id && (id === 'inbox' || id.startsWith('ssn_')) ? id : undefined;
+
 const AgentIdSync = () => {
   const useStoreUpdater = createStoreUpdater(useAgentStore);
   const useChatStoreUpdater = createStoreUpdater(useChatStore);
@@ -14,9 +17,11 @@ const AgentIdSync = () => {
   const searchParamsRef = useRef(searchParams);
   searchParamsRef.current = searchParams;
   const prevAgentId = usePrevious(params.aid);
+  const activeSessionId = getActiveSessionId(params.aid);
 
   useStoreUpdater('activeAgentId', params.aid);
   useChatStoreUpdater('activeAgentId', params.aid ?? '');
+  useChatStoreUpdater('activeSessionId', activeSessionId);
 
   // Reset activeTopicId when switching to a different agent
   // This prevents messages from being saved to the wrong topic bucket
@@ -39,14 +44,18 @@ const AgentIdSync = () => {
   }, [params.aid, prevAgentId]);
 
   useMount(() => {
-    useChatStore.setState({ activeAgentId: params.aid }, false, 'AgentIdSync/mountAgentId');
+    useChatStore.setState(
+      { activeAgentId: params.aid, activeSessionId },
+      false,
+      'AgentIdSync/mountAgentId',
+    );
   });
 
   // Clear activeAgentId when unmounting (leaving chat page)
   useUnmount(() => {
     useAgentStore.setState({ activeAgentId: undefined }, false, 'AgentIdSync/unmountAgentId');
     useChatStore.setState(
-      { activeAgentId: undefined, activeTopicId: undefined },
+      { activeAgentId: undefined, activeSessionId: undefined, activeTopicId: undefined },
       false,
       'AgentIdSync/unmountAgentId',
     );

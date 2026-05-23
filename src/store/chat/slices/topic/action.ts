@@ -34,6 +34,9 @@ const n = setNamespace('t');
 
 const SWR_USE_FETCH_TOPIC = 'SWR_USE_FETCH_TOPIC';
 const SWR_USE_SEARCH_TOPIC = 'SWR_USE_SEARCH_TOPIC';
+
+const isSessionOwnedChatId = (id?: string | null) =>
+  !!id && (id === 'inbox' || id.startsWith('ssn_'));
 type CronTopicsGroupWithJobInfo = {
   cronJob: unknown;
   cronJobId: string;
@@ -96,7 +99,7 @@ export class ChatTopicActionImpl {
   };
 
   createTopic = async (sessionId?: string): Promise<string | undefined> => {
-    const { activeAgentId, internal_createTopic } = this.#get();
+    const { activeAgentId, activeSessionId, internal_createTopic } = this.#get();
 
     const messages = displayMessageSelectors.activeDisplayMessages(this.#get());
 
@@ -104,7 +107,7 @@ export class ChatTopicActionImpl {
     const topicId = await internal_createTopic({
       title: t('defaultTitle', { ns: 'topic' }),
       messages: messages.map((m) => m.id),
-      sessionId: sessionId || activeAgentId,
+      sessionId: sessionId || activeSessionId || activeAgentId,
     });
     this.#set({ creatingTopic: false }, false, n('creatingTopic/end'));
 
@@ -116,13 +119,13 @@ export class ChatTopicActionImpl {
     const messages = displayMessageSelectors.activeDisplayMessages(this.#get());
     if (messages.length === 0) return;
 
-    const { activeAgentId, summaryTopicTitle, internal_createTopic } = this.#get();
+    const { activeAgentId, activeSessionId, summaryTopicTitle, internal_createTopic } = this.#get();
 
     // 1. create topic and bind these messages
     const topicId = await internal_createTopic({
       title: t('defaultTitle', { ns: 'topic' }),
       messages: messages.map((m) => m.id),
-      sessionId: sessionId || activeAgentId,
+      sessionId: sessionId || activeSessionId || activeAgentId,
     });
 
     this.#get().internal_updateTopicLoading(topicId, true);
@@ -156,7 +159,8 @@ export class ChatTopicActionImpl {
   };
 
   importTopic = async (data: string): Promise<string | undefined> => {
-    const { activeAgentId, activeGroupId, refreshTopic, switchTopic } = this.#get();
+    const { activeAgentId, activeGroupId, activeSessionId, refreshTopic, switchTopic } =
+      this.#get();
 
     if (!activeAgentId) return;
 
@@ -168,7 +172,7 @@ export class ChatTopicActionImpl {
 
     try {
       const result = await topicService.importTopic({
-        agentId: activeAgentId,
+        agentId: activeSessionId || activeAgentId,
         data,
         groupId: activeGroupId,
       });
@@ -307,12 +311,14 @@ export class ChatTopicActionImpl {
       groupId,
       pageSize: customPageSize,
       isInbox,
+      sessionId,
     }: {
       agentId?: string;
       excludeTriggers?: string[];
       groupId?: string;
       isInbox?: boolean;
       pageSize?: number;
+      sessionId?: string;
     } = {},
   ): SWRResponse<{ items: ChatTopic[]; total: number }> => {
     const pageSize = customPageSize || 20;
@@ -331,6 +337,7 @@ export class ChatTopicActionImpl {
               isInbox,
               pageSize,
               ...(effectiveExcludeTriggers ? { excludeTriggers: effectiveExcludeTriggers } : {}),
+              ...(sessionId ? { sessionId } : {}),
             },
           ]
         : null,
@@ -357,6 +364,7 @@ export class ChatTopicActionImpl {
           groupId,
           isInbox,
           pageSize,
+          sessionId,
         });
 
         // Reset expanding state after fetch completes
@@ -403,7 +411,7 @@ export class ChatTopicActionImpl {
   };
 
   loadMoreTopics = async (): Promise<void> => {
-    const { activeAgentId, activeGroupId, topicDataMap } = this.#get();
+    const { activeAgentId, activeGroupId, activeSessionId, topicDataMap } = this.#get();
     const key = topicMapKey({ agentId: activeAgentId, groupId: activeGroupId });
     const currentData = topicDataMap[key];
 
@@ -432,6 +440,7 @@ export class ChatTopicActionImpl {
         excludeTriggers,
         groupId: activeGroupId,
         pageSize,
+        sessionId: activeGroupId ? undefined : activeSessionId,
       });
 
       const currentTopics = currentData?.items || [];
@@ -474,15 +483,22 @@ export class ChatTopicActionImpl {
     {
       agentId,
       groupId,
+      sessionId,
     }: {
       agentId?: string;
       groupId?: string;
+      sessionId?: string;
     } = {},
   ): SWRResponse<ChatTopic[]> => {
     return useSWR<ChatTopic[]>(
-      keywords ? [SWR_USE_SEARCH_TOPIC, keywords, agentId, groupId] : null,
-      ([, keywords, agentId, groupId]: [string, string, string | undefined, string | undefined]) =>
-        topicService.searchTopics(keywords, agentId, groupId),
+      keywords ? [SWR_USE_SEARCH_TOPIC, keywords, agentId, groupId, sessionId] : null,
+      ([, keywords, agentId, groupId, sessionId]: [
+        string,
+        string,
+        string | undefined,
+        string | undefined,
+        string | undefined,
+      ]) => topicService.searchTopics(keywords, agentId, groupId, sessionId),
       {
         onSuccess: (data) => {
           this.#set(
@@ -541,10 +557,16 @@ export class ChatTopicActionImpl {
   };
 
   removeSessionTopics = async (): Promise<void> => {
-    const { switchTopic, activeAgentId, refreshTopic } = this.#get();
-    if (!activeAgentId) return;
+    const { switchTopic, activeAgentId, activeSessionId, refreshTopic } = this.#get();
+    const sessionId = activeSessionId || activeAgentId;
+    if (!sessionId) return;
 
-    await topicService.removeTopicsByAgentId(activeAgentId);
+    if (isSessionOwnedChatId(sessionId)) {
+      await topicService.removeTopics(sessionId);
+    } else {
+      if (!activeAgentId) return;
+      await topicService.removeTopicsByAgentId(activeAgentId);
+    }
     await refreshTopic();
 
     // switch to default topic
@@ -608,10 +630,13 @@ export class ChatTopicActionImpl {
   };
 
   refreshTopic = async (): Promise<void> => {
-    const { activeAgentId, activeGroupId } = this.#get();
+    const { activeAgentId, activeGroupId, activeSessionId } = this.#get();
     // Use topicMapKey to generate the same key used in useFetchTopics
     // Key format: [SWR_USE_FETCH_TOPIC, containerKey, { isInbox, pageSize }]
-    const containerKey = topicMapKey({ agentId: activeAgentId, groupId: activeGroupId });
+    const containerKey = topicMapKey({
+      agentId: activeSessionId || activeAgentId,
+      groupId: activeGroupId,
+    });
     await mutate(
       (key) => Array.isArray(key) && key[0] === SWR_USE_FETCH_TOPIC && key[1] === containerKey,
     );

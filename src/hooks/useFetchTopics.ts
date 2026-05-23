@@ -4,14 +4,18 @@ import { useChatStore } from '@/store/chat';
 import { useGlobalStore } from '@/store/global';
 import { systemStatusSelectors } from '@/store/global/selectors';
 
+const isSessionOwnedChatId = (id?: string | null) =>
+  !!id && (id === 'inbox' || id.startsWith('ssn_'));
+
 /**
  * Fetch topics for the current session (agent or group)
  */
 export const useFetchTopics = (options?: { excludeTriggers?: string[] }) => {
   const isInbox = useAgentStore(builtinAgentSelectors.isInboxAgent);
-  const [activeAgentId, activeGroupId, useFetchTopicsHook] = useChatStore((s) => [
+  const [activeAgentId, activeGroupId, activeSessionId, useFetchTopicsHook] = useChatStore((s) => [
     s.activeAgentId,
     s.activeGroupId,
+    s.activeSessionId,
     s.useFetchTopics,
   ]);
 
@@ -26,6 +30,8 @@ export const useFetchTopics = (options?: { excludeTriggers?: string[] }) => {
     groupId: activeGroupId,
     isInbox: activeGroupId ? false : isInbox,
     pageSize: topicPageSize,
+    sessionId:
+      !activeGroupId && isSessionOwnedChatId(activeSessionId) ? activeSessionId : undefined,
   });
 
   return {
