@@ -14,10 +14,8 @@ const truncateString = (value: string) => {
 const sanitizeSerializableValue = (value: unknown, depth = 0): unknown => {
   if (value == null) return value;
 
-  const valueType = typeof value;
-
-  if (valueType === 'string') return truncateString(value);
-  if (valueType === 'number' || valueType === 'boolean') return value;
+  if (typeof value === 'string') return truncateString(value);
+  if (typeof value === 'number' || typeof value === 'boolean') return value;
 
   if (depth >= MAX_METADATA_DEPTH) {
     if (Array.isArray(value)) return `[truncated array:${value.length}]`;
@@ -30,7 +28,7 @@ const sanitizeSerializableValue = (value: unknown, depth = 0): unknown => {
       .map((item) => sanitizeSerializableValue(item, depth + 1));
   }
 
-  if (valueType === 'object') {
+  if (typeof value === 'object') {
     const entries = Object.entries(value as Record<string, unknown>).slice(0, MAX_METADATA_ITEMS);
 
     return Object.fromEntries(
@@ -56,8 +54,16 @@ const sanitizePluginState = (value: unknown) => {
   };
 };
 
-export const sanitizeToolMessagePayload = <T extends Record<string, unknown>>(payload: T) => {
-  const nextPayload = { ...payload } as T & {
+export const sanitizeToolMessagePayload = <
+  T extends {
+    content?: string;
+    metadata?: Record<string, unknown>;
+    pluginState?: unknown;
+  },
+>(
+  payload: T,
+) => {
+  const nextPayload = { ...payload } as Omit<T, 'content' | 'metadata' | 'pluginState'> & {
     content?: string;
     metadata?: Record<string, unknown>;
     pluginState?: unknown;

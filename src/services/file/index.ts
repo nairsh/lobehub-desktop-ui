@@ -112,6 +112,10 @@ export class FileService {
     return lambdaClient.document.getFolderBreadcrumb.query({ slug });
   };
 
+  getOcrStatus = async () => {
+    return (lambdaClient.file as any).getOcrStatus.query();
+  };
+
   checkFileHash = async (hash: string): Promise<CheckFileHashResult> => {
     return lambdaClient.file.checkFileHash.mutate({ hash });
   };

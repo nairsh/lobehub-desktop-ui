@@ -231,7 +231,9 @@ export class PluginOptimisticUpdateActionImpl {
       this.#get();
 
     const sanitizedParams = sanitizeToolMessagePayload(params);
-    const { content, metadata, pluginState, pluginError } = sanitizedParams;
+    const { content, pluginError } = sanitizedParams;
+    const metadata = sanitizedParams.metadata as Record<string, any> | undefined;
+    const pluginState = sanitizedParams.pluginState as Record<string, any> | undefined;
 
     // Batch optimistic updates - update frontend immediately
     internal_dispatchMessage(
