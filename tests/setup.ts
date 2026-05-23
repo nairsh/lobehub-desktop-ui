@@ -50,6 +50,29 @@ if (typeof globalThis.window === 'undefined') {
   });
 }
 
+// Bun/Vitest can expose a malformed global localStorage before happy-dom's
+// window storage is wired onto globalThis. Normalize it so store modules that
+// touch storage during import can safely initialize.
+if (typeof globalThis.window !== 'undefined') {
+  const windowStorage = globalThis.window.localStorage;
+
+  if (typeof globalThis.localStorage?.getItem !== 'function') {
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      value: windowStorage,
+      writable: true,
+    });
+  }
+
+  if (typeof globalThis.sessionStorage?.getItem !== 'function') {
+    Object.defineProperty(globalThis, 'sessionStorage', {
+      configurable: true,
+      value: globalThis.window.sessionStorage,
+      writable: true,
+    });
+  }
+}
+
 // remove antd hash on test
 theme.defaultConfig.hashed = false;
 

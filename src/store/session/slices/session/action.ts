@@ -184,9 +184,17 @@ export class SessionActionImpl {
   };
 
   switchSession = (sessionId: string): void => {
-    if (this.#get().activeAgentId === sessionId) return;
+    if (this.#get().activeSessionId === sessionId) return;
 
-    this.#set({ activeAgentId: sessionId }, false, n(`activeSession/${sessionId}`));
+    this.#set(
+      {
+        activeAgentId: sessionId,
+        activeId: sessionId,
+        activeSessionId: sessionId,
+      },
+      false,
+      n(`activeSession/${sessionId}`),
+    );
   };
 
   toggleAgentPinned = (): void => {

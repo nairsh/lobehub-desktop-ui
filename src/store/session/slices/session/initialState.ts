@@ -8,6 +8,11 @@ export interface SessionState {
    */
   activeId: string;
   /**
+   * @title Current active normal-chat session
+   * @description Explicit session identity for agent-free / normal chat flows.
+   */
+  activeSessionId: string;
+  /**
    * whether all agents drawer is open
    */
   allAgentsDrawerOpen: boolean;
@@ -39,6 +44,7 @@ export interface SessionState {
 }
 
 export const initialSessionState: SessionState = {
+  activeSessionId: 'inbox',
   activeId: 'inbox',
   allAgentsDrawerOpen: false,
   defaultSessions: [],
