@@ -8,7 +8,7 @@ export interface MessageMapKeyInput {
   /**
    * Agent ID (maps to scopeId in main/thread scope)
    */
-  agentId: string;
+  agentId?: string;
   groupId?: string;
   /**
    * Whether this is a new/creating state (for optimistic updates)
@@ -22,6 +22,7 @@ export interface MessageMapKeyInput {
    */
   projectId?: string | null;
   scope?: MessageMapScope;
+  sessionId?: string;
   /**
    * Sub Agent ID for group orchestration scenarios
    * Used as subTopicId in group_agent scope
@@ -42,7 +43,8 @@ export interface MessageMapKeyInput {
  * Handles mapping from agentId/threadId to scopeId/subTopicId format
  */
 const toMessageMapContext = (input: MessageMapKeyInput): MessageMapContext => {
-  const { agentId, topicId, threadId, isNew, scope, groupId, subAgentId } = input;
+  const { agentId, sessionId, topicId, threadId, isNew, scope, groupId, subAgentId } = input;
+  const scopeId = agentId || sessionId || '';
 
   // If threadId is present and scope is explicitly 'thread', use thread scope
   // Thread scope takes priority when explicitly requested, even with groupId
@@ -50,7 +52,7 @@ const toMessageMapContext = (input: MessageMapKeyInput): MessageMapContext => {
   if (threadId && scope === 'thread') {
     return {
       scope: 'thread',
-      scopeId: agentId,
+      scopeId,
       subTopicId: threadId,
       topicId,
     };
@@ -78,7 +80,7 @@ const toMessageMapContext = (input: MessageMapKeyInput): MessageMapContext => {
   if (threadId) {
     return {
       scope: scope ?? 'thread',
-      scopeId: agentId,
+      scopeId,
       subTopicId: threadId,
       topicId,
     };
@@ -90,7 +92,7 @@ const toMessageMapContext = (input: MessageMapKeyInput): MessageMapContext => {
   return {
     isNew,
     scope: scope === 'sub_agent' ? 'main' : (scope ?? 'main'),
-    scopeId: agentId,
+    scopeId,
     topicId,
   };
 };

@@ -1,3 +1,5 @@
+import '../../../../session/slices/session/testSetup';
+
 import { act, renderHook } from '@testing-library/react';
 import { produce } from 'immer';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -1098,6 +1100,7 @@ describe('Operation Actions', () => {
       act(() => {
         useChatStore.setState({
           activeAgentId: 'global-agent',
+          activeSessionId: 'ssn_global-session',
           activeTopicId: 'global-topic',
           activeThreadId: 'global-thread',
           activeGroupId: 'global-group',
@@ -1107,9 +1110,30 @@ describe('Operation Actions', () => {
       const context = result.current.internal_getConversationContext({});
 
       expect(context.agentId).toBe('global-agent');
+      expect(context.sessionId).toBeUndefined();
       expect(context.topicId).toBe('global-topic');
       expect(context.threadId).toBe('global-thread');
       expect(context.groupId).toBe('global-group');
+    });
+
+    it('should include sessionId for session-owned chats in global fallback context', () => {
+      const { result } = renderHook(() => useChatStore());
+
+      act(() => {
+        useChatStore.setState({
+          activeAgentId: 'ssn_session-owned',
+          activeSessionId: 'ssn_session-owned',
+          activeGroupId: undefined,
+          activeThreadId: undefined,
+          activeTopicId: 'global-topic',
+        });
+      });
+
+      const context = result.current.internal_getConversationContext({});
+
+      expect(context.agentId).toBe('ssn_session-owned');
+      expect(context.sessionId).toBe('ssn_session-owned');
+      expect(context.topicId).toBe('global-topic');
     });
 
     it('should throw error when operationId is invalid', () => {

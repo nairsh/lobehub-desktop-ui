@@ -26,6 +26,8 @@ const log = debug('lobe-store:operation');
 
 const isSameNullableContextValue = (left?: string | null, right?: string | null): boolean =>
   (left ?? null) === (right ?? null);
+const isSessionOwnedChatId = (id?: string | null) =>
+  !!id && (id === 'inbox' || id.startsWith('ssn_'));
 
 /**
  * Operation Actions
@@ -55,33 +57,39 @@ export class OperationActionsImpl {
         );
         throw new Error(`Operation not found: ${context.operationId}`);
       }
-      const { agentId, topicId, threadId, scope, isNew, groupId, projectId } = operation.context;
+      const { agentId, sessionId, topicId, threadId, scope, isNew, groupId, projectId } =
+        operation.context;
       log(
-        '[internal_getConversationContext] get from operation %s: agentId=%s, topicId=%s, threadId=%s, scope=%s, groupId=%s',
+        '[internal_getConversationContext] get from operation %s: agentId=%s, sessionId=%s, topicId=%s, threadId=%s, scope=%s, groupId=%s',
         context.operationId,
         agentId,
+        sessionId,
         topicId,
         threadId,
         scope,
         groupId,
       );
-      return { agentId: agentId!, topicId, threadId, scope, isNew, groupId, projectId };
+      return { agentId, groupId, isNew, projectId, scope, sessionId, threadId, topicId };
     }
 
     // Fallback to global state
     const agentId = this.#get().activeAgentId;
+    const activeSessionId = this.#get().activeSessionId;
     const groupId = this.#get().activeGroupId;
     const projectId = getProjectStoreState().activeProjectId;
     const topicId = this.#get().activeTopicId;
     const threadId = this.#get().activeThreadId;
+    const sessionId =
+      !groupId && isSessionOwnedChatId(activeSessionId) ? activeSessionId : undefined;
     log('[internal_getConversationContext] use global state: ', {
       agentId,
+      sessionId,
       topicId,
       threadId,
       groupId,
       projectId,
     });
-    return { agentId, topicId, threadId, groupId, projectId };
+    return { agentId, groupId, projectId, sessionId, threadId, topicId };
   };
 
   startOperation = (params: {

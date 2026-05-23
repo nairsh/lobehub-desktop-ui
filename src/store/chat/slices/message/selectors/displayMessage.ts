@@ -28,8 +28,9 @@ import { messageMapKey } from '../../../utils/messageMapKey';
  */
 export const currentDisplayChatKey = (s: ChatStoreState) =>
   messageMapKey({
-    agentId: s.activeAgentId,
+    agentId: s.activeAgentId || s.activeSessionId,
     groupId: s.activeGroupId,
+    sessionId: s.activeSessionId,
     threadId: s.activeThreadId,
     topicId: s.activeTopicId,
   });
@@ -47,7 +48,7 @@ const getDisplayMessagesByKey =
  * Get current active agent's display messages (includes assistantGroup messages)
  */
 const activeDisplayMessages = (s: ChatStoreState): UIChatMessage[] => {
-  if (!s.activeAgentId) return [];
+  if (!s.activeAgentId && !s.activeSessionId) return [];
   return getDisplayMessagesByKey(currentDisplayChatKey(s))(s);
 };
 
@@ -148,7 +149,7 @@ const isCurrentDisplayChatLoaded = (s: ChatStoreState) => !!s.messagesMap[curren
  * Show inbox welcome screen
  */
 const showInboxWelcome = (s: ChatStoreState): boolean => {
-  const isInbox = s.activeAgentId === INBOX_SESSION_ID;
+  const isInbox = (s.activeSessionId || s.activeAgentId) === INBOX_SESSION_ID;
   if (!isInbox) return false;
 
   const data = activeDisplayMessages(s);

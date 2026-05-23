@@ -1,3 +1,5 @@
+import '../../../session/slices/session/testSetup';
+
 import { type UIChatMessage } from '@lobechat/types';
 import { TraceEventType } from '@lobechat/types';
 import * as lobeUIModules from '@lobehub/ui';
@@ -54,7 +56,8 @@ vi.mock('@/services/topic', () => ({
 const realRefreshMessages = useChatStore.getState().refreshMessages;
 // Mock state
 const mockState = {
-  activeAgentId: 'session-id',
+  activeAgentId: 'ssn_session-id',
+  activeSessionId: 'ssn_session-id',
   activeTopicId: 'topic-id',
   messages: [],
   refreshMessages: vi.fn(),
@@ -98,12 +101,15 @@ describe('chatMessage actions', () => {
         await result.current.addAIMessage();
       });
 
-      expect(messageService.createMessage).toHaveBeenCalledWith({
-        content: inputMessage,
-        role: 'assistant',
-        agentId: mockState.activeAgentId,
-        topicId: mockState.activeTopicId,
-      });
+      expect(messageService.createMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: inputMessage,
+          role: 'assistant',
+          agentId: mockState.activeAgentId,
+          sessionId: mockState.activeSessionId,
+          topicId: mockState.activeTopicId,
+        }),
+      );
     });
 
     it('should call updateMessageInput with empty string', async () => {
@@ -144,14 +150,17 @@ describe('chatMessage actions', () => {
         await result.current.addUserMessage({ message, fileList });
       });
 
-      expect(messageService.createMessage).toHaveBeenCalledWith({
-        content: message,
-        files: fileList,
-        role: 'user',
-        agentId: mockState.activeAgentId,
-        topicId: mockState.activeTopicId,
-        threadId: undefined,
-      });
+      expect(messageService.createMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: message,
+          files: fileList,
+          role: 'user',
+          agentId: mockState.activeAgentId,
+          sessionId: mockState.activeSessionId,
+          topicId: mockState.activeTopicId,
+          threadId: undefined,
+        }),
+      );
     });
 
     it('should call optimisticCreateMessage with threadId when activeThreadId is set', async () => {
@@ -168,14 +177,17 @@ describe('chatMessage actions', () => {
         await result.current.addUserMessage({ message });
       });
 
-      expect(messageService.createMessage).toHaveBeenCalledWith({
-        content: message,
-        files: undefined,
-        role: 'user',
-        agentId: mockState.activeAgentId,
-        topicId: mockState.activeTopicId,
-        threadId: activeThreadId,
-      });
+      expect(messageService.createMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: message,
+          files: undefined,
+          role: 'user',
+          agentId: mockState.activeAgentId,
+          sessionId: mockState.activeSessionId,
+          topicId: mockState.activeTopicId,
+          threadId: activeThreadId,
+        }),
+      );
     });
 
     it('should call updateMessageInput with empty string', async () => {
@@ -198,14 +210,17 @@ describe('chatMessage actions', () => {
         await result.current.addUserMessage({ message });
       });
 
-      expect(messageService.createMessage).toHaveBeenCalledWith({
-        content: message,
-        files: undefined,
-        role: 'user',
-        agentId: mockState.activeAgentId,
-        topicId: mockState.activeTopicId,
-        threadId: undefined,
-      });
+      expect(messageService.createMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: message,
+          files: undefined,
+          role: 'user',
+          agentId: mockState.activeAgentId,
+          sessionId: mockState.activeSessionId,
+          topicId: mockState.activeTopicId,
+          threadId: undefined,
+        }),
+      );
     });
   });
 
@@ -239,7 +254,7 @@ describe('chatMessage actions', () => {
 
       expect(deleteSpy).toHaveBeenCalledWith(messageId);
       expect(replaceMessagesSpy).toHaveBeenCalledWith(mockMessages, {
-        context: { agentId: 'session-id', topicId: undefined, threadId: undefined },
+        context: expect.objectContaining({ agentId: 'session-id', topicId: undefined }),
       });
     });
 
@@ -278,12 +293,12 @@ describe('chatMessage actions', () => {
       });
 
       // Only the message itself should be deleted, tool messages remain as orphaned
-      expect(removeMessagesSpy).toHaveBeenCalledWith([messageId], {
-        agentId: 'session-id',
-        topicId: undefined,
-      });
+      expect(removeMessagesSpy).toHaveBeenCalledWith(
+        [messageId],
+        expect.objectContaining({ agentId: 'session-id', topicId: undefined }),
+      );
       expect(replaceMessagesSpy).toHaveBeenCalledWith(mockMessages, {
-        context: { agentId: 'session-id', topicId: undefined, threadId: undefined },
+        context: expect.objectContaining({ agentId: 'session-id', topicId: undefined }),
       });
     });
 
@@ -331,12 +346,12 @@ describe('chatMessage actions', () => {
         await result.current.deleteMessage(groupMessageId);
       });
 
-      expect(removeMessagesSpy).toHaveBeenCalledWith([groupMessageId, 'child-1', 'child-2'], {
-        agentId: 'session-id',
-        topicId: undefined,
-      });
+      expect(removeMessagesSpy).toHaveBeenCalledWith(
+        [groupMessageId, 'child-1', 'child-2'],
+        expect.objectContaining({ agentId: 'session-id', topicId: undefined }),
+      );
       expect(replaceMessagesSpy).toHaveBeenCalledWith(mockMessages, {
-        context: { agentId: 'session-id', topicId: undefined, threadId: undefined },
+        context: expect.objectContaining({ agentId: 'session-id', topicId: undefined }),
       });
     });
 
@@ -396,13 +411,10 @@ describe('chatMessage actions', () => {
       // Should delete assistantGroup message + all children + tool results of children
       expect(removeMessagesSpy).toHaveBeenCalledWith(
         [groupMessageId, 'child-1', 'child-2', 'tool-result-1'],
-        {
-          agentId: 'session-id',
-          topicId: undefined,
-        },
+        expect.objectContaining({ agentId: 'session-id', topicId: undefined }),
       );
       expect(replaceMessagesSpy).toHaveBeenCalledWith(mockMessages, {
-        context: { agentId: 'session-id', topicId: undefined, threadId: undefined },
+        context: expect.objectContaining({ agentId: 'session-id', topicId: undefined }),
       });
     });
   });
@@ -514,10 +526,10 @@ describe('chatMessage actions', () => {
         {
           tools: [{ id: 'tool2' }],
         },
-        {
+        expect.objectContaining({
           agentId: sessionId,
           topicId,
-        },
+        }),
       );
     });
   });
@@ -681,7 +693,7 @@ describe('chatMessage actions', () => {
       expect(spy).toHaveBeenCalledWith(
         messageId,
         expect.objectContaining({ content: newContent }),
-        { agentId: 'session-id', topicId: 'topic-id' },
+        expect.objectContaining({ agentId: 'ssn_session-id', topicId: 'topic-id' }),
       );
     });
 
@@ -717,7 +729,7 @@ describe('chatMessage actions', () => {
 
       expect(replaceMessagesSpy).toHaveBeenCalledWith([], {
         action: 'optimisticUpdateMessageContent',
-        context: { agentId: 'session-id', topicId: 'topic-id', threadId: undefined },
+        context: expect.objectContaining({ agentId: 'ssn_session-id', topicId: 'topic-id' }),
       });
     });
   });
@@ -752,6 +764,7 @@ describe('chatMessage actions', () => {
       expect(mutate).toHaveBeenCalledWith([
         'SWR_USE_FETCH_MESSAGES',
         activeAgentId,
+        mockState.activeSessionId,
         activeTopicId,
         'session',
       ]);
@@ -969,10 +982,11 @@ describe('chatMessage actions', () => {
         await result.current.optimisticUpdateMessagePlugin(messageId, pluginValue);
       });
 
-      expect(updateMessagePluginSpy).toHaveBeenCalledWith(messageId, pluginValue, {
-        agentId: 'session-id',
-        topicId: 'topic-id',
-      });
+      expect(updateMessagePluginSpy).toHaveBeenCalledWith(
+        messageId,
+        pluginValue,
+        expect.objectContaining({ agentId: 'ssn_session-id', topicId: 'topic-id' }),
+      );
     });
 
     it('should replace messages after updating plugin', async () => {
@@ -986,7 +1000,7 @@ describe('chatMessage actions', () => {
       });
 
       expect(replaceMessagesSpy).toHaveBeenCalledWith([], {
-        context: { agentId: 'session-id', topicId: 'topic-id', threadId: undefined },
+        context: expect.objectContaining({ agentId: 'ssn_session-id', topicId: 'topic-id' }),
       });
     });
 
