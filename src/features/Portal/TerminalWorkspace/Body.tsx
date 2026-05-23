@@ -162,11 +162,28 @@ const TerminalWorkspaceBody = memo(() => {
 
     openTerminalWorkspaceService
       .workspaceInfo(topicId)
-      .then((result) => {
+      .then(async (result) => {
         if (cancelled) return;
         setInfo(result);
-        setCurrentPath(result.rootPath);
-        return loadFiles(result.rootPath);
+
+        // Prefer the topic uploads subdirectory so synced uploads are discoverable.
+        // Use direct listFiles (not loadFiles) because loadFiles catches errors internally
+        // and would silently set the error state without letting us detect the failure.
+        const uploadsPath = `${result.topicWorkspacePath}/uploads`;
+        try {
+          const listResult = await openTerminalWorkspaceService.listFiles({
+            path: uploadsPath,
+            topicId,
+          });
+          if (cancelled) return;
+          setCurrentPath(listResult.directory);
+          setFiles(listResult.entries);
+        } catch (_err) {
+          // uploads/ not available — fall back to topic workspace path
+          if (cancelled) return;
+          setCurrentPath(result.topicWorkspacePath);
+          await loadFiles(result.topicWorkspacePath);
+        }
       })
       .catch((error) => {
         if (!cancelled) setError(getErrorMessage(error));

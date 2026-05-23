@@ -22,6 +22,10 @@ import { chatService } from '@/services/chat';
 import { resolveSelectedSkillsWithContent } from '@/services/chat/mecha/skillPreload';
 import { resolveSelectedToolsWithContent } from '@/services/chat/mecha/toolPreload';
 import { messageService } from '@/services/message';
+import {
+  isOpenTerminalApiMissing,
+  openTerminalWorkspaceService,
+} from '@/services/openTerminalWorkspace';
 import { getAgentStoreState } from '@/store/agent';
 import { agentSelectors } from '@/store/agent/selectors';
 import { agentGroupByIdSelectors, getChatGroupStoreState } from '@/store/agentGroup';
@@ -612,6 +616,48 @@ export class ConversationLifecycleActionImpl {
             topicId: execContext.topicId,
           },
         );
+      }
+    }
+
+    // ── Compute materialization: sync uploaded files before LLM execution ──
+    // Consume pending file IDs from earlier uploads, plus the current message's attached files.
+    // Important: await materialization before agent execution so compute workspace is ready.
+    {
+      const finalTopicId = data.topicId ?? operationContext.topicId;
+      const attachedFileIds = (fileIdList || []).filter(Boolean);
+      const pendingIds = getFileStoreState().consumePendingComputeMaterializeFileIds();
+
+      // Deduplicate across both sources
+      const allFileIds = [...new Set([...attachedFileIds, ...pendingIds])];
+
+      if (finalTopicId && allFileIds.length > 0) {
+        try {
+          const result = await openTerminalWorkspaceService.materializeFiles({
+            fileIds: allFileIds,
+            overwrite: false,
+            topicId: finalTopicId,
+          });
+
+          const failed = result.results.filter((r) => r.status === 'failed');
+          if (failed.length > 0) {
+            console.warn(
+              '[sendMessage] materializeFiles failures:',
+              failed.map((f) => f.fileId),
+            );
+            // Re-add failed IDs to pending so they can be retried on next send
+            getFileStoreState().addPendingComputeMaterializeFileIds(failed.map((f) => f.fileId));
+          }
+        } catch (error) {
+          if (isOpenTerminalApiMissing(error)) {
+            // API missing: silently continue — the agent can still work
+            // without compute-synced files. Do NOT re-add IDs to avoid
+            // repeated blocking attempts.
+          } else {
+            console.warn('[sendMessage] materializeFiles error:', error);
+            // Non-API error: re-add all IDs for a retry on next send
+            getFileStoreState().addPendingComputeMaterializeFileIds(allFileIds);
+          }
+        }
       }
     }
 

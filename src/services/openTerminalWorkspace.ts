@@ -30,6 +30,10 @@ const withTerminalErrorHandling = async <T>(callback: () => Promise<T>): Promise
   }
 };
 
+export const isOpenTerminalApiMissing = (error: unknown): boolean =>
+  error instanceof OpenTerminalApiMissingError ||
+  (error != null && typeof error === 'object' && (error as any).code === OPEN_TERMINAL_API_MISSING);
+
 export interface TerminalFileEntry {
   isDirectory: boolean;
   modifiedAt?: string;
@@ -65,6 +69,31 @@ export interface TerminalWorkspaceInfo {
   sharedWorkspacePath: string;
   success: boolean;
   topicWorkspacePath: string;
+}
+
+export type MaterializeFileStatus = 'synced' | 'failed' | 'skipped';
+
+export interface MaterializeFileResult {
+  bytesWritten?: number;
+  error?: string;
+  fileId: string;
+  filename: string;
+  method?: 'url-pull' | 'server-copy';
+  path?: string;
+  status: MaterializeFileStatus;
+}
+
+export interface MaterializeFilesResult {
+  directory: string;
+  results: MaterializeFileResult[];
+  success: boolean;
+}
+
+export interface MaterializeFilesParams {
+  directory?: string;
+  fileIds: string[];
+  overwrite?: boolean;
+  topicId: string;
 }
 
 class OpenTerminalWorkspaceService {
@@ -109,12 +138,31 @@ class OpenTerminalWorkspaceService {
   workspaceInfo = (topicId: string): Promise<TerminalWorkspaceInfo> =>
     withTerminalErrorHandling(() => terminalClient.workspaceInfo.query({ topicId }));
 
+  materializeFiles = (params: MaterializeFilesParams): Promise<MaterializeFilesResult> =>
+    withTerminalErrorHandling(() => terminalClient.materializeFiles.mutate(params));
+
   writeFile = (params: {
     content: string;
     path: string;
     topicId: string;
   }): Promise<{ bytesWritten?: number; path: string; success: boolean }> =>
     withTerminalErrorHandling(() => terminalClient.writeFile.mutate(params));
+
+  // ── File management (right-sidebar / terminal workspace) ──
+  // These call dedicated tRPC procedures when available; fall back gracefully when absent.
+
+  deleteFile = (params: { path: string; topicId: string }): Promise<{ success: boolean }> =>
+    withTerminalErrorHandling(() => terminalClient.deleteFile.mutate(params));
+
+  renameFile = (params: {
+    newPath: string;
+    oldPath: string;
+    topicId: string;
+  }): Promise<{ newPath: string; success: boolean }> =>
+    withTerminalErrorHandling(() => terminalClient.renameFile.mutate(params));
+
+  createDirectory = (params: { path: string; topicId: string }): Promise<{ success: boolean }> =>
+    withTerminalErrorHandling(() => terminalClient.createDirectory.mutate(params));
 }
 
 export const openTerminalWorkspaceService = new OpenTerminalWorkspaceService();

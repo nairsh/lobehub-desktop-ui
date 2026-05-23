@@ -6,6 +6,10 @@ import { notification } from '@/components/AntdStaticMethods';
 import { FILE_UPLOAD_BLACKLIST } from '@/const/file';
 import { syncFilesToComputeWorkspace } from '@/features/Portal/Home/Body/Files/computeSync';
 import { fileService } from '@/services/file';
+import {
+  isOpenTerminalApiMissing,
+  openTerminalWorkspaceService,
+} from '@/services/openTerminalWorkspace';
 import { ragService } from '@/services/rag';
 import { UPLOAD_NETWORK_ERROR } from '@/services/upload';
 import { getChatStoreState } from '@/store/chat';
@@ -108,6 +112,32 @@ export class FileActionImpl {
     }
   };
 
+  addPendingComputeMaterializeFileIds = (ids: string[]): void => {
+    const current = this.#get().pendingComputeMaterializeFileIds;
+    // Deduplicate: only add IDs not already registered
+    const existing = new Set(current);
+    const newIds = ids.filter((id) => !existing.has(id));
+    if (newIds.length === 0) return;
+
+    this.#set(
+      { pendingComputeMaterializeFileIds: [...current, ...newIds] },
+      false,
+      n('addPendingComputeMaterializeFileIds'),
+    );
+  };
+
+  consumePendingComputeMaterializeFileIds = (): string[] => {
+    const ids = this.#get().pendingComputeMaterializeFileIds;
+    if (ids.length === 0) return [];
+
+    this.#set(
+      { pendingComputeMaterializeFileIds: [] },
+      false,
+      n('consumePendingComputeMaterializeFileIds'),
+    );
+    return ids;
+  };
+
   uploadChatFiles = async (rawFiles: File[]): Promise<void> => {
     const { dispatchChatUploadFileList } = this.#get();
     // 0. skip file in blacklist
@@ -141,6 +171,9 @@ export class FileActionImpl {
     dispatchChatUploadFileList({ files: uploadFiles, type: 'addFiles' });
 
     // upload files and process it
+    // Collect real server file IDs for compute materialization
+    const uploadedFileIds: string[] = [];
+
     const pools = files.map(async (file) => {
       let fileResult: { id: string; url: string } | undefined;
 
@@ -169,6 +202,9 @@ export class FileActionImpl {
 
       if (!fileResult) return;
 
+      // capture the real server file ID for compute materialization
+      uploadedFileIds.push(fileResult.id);
+
       // image don't need to be chunked and embedding
       if (isChunkingUnsupported(file.type)) return;
 
@@ -179,25 +215,72 @@ export class FileActionImpl {
 
     const topicId = getChatStoreState().activeTopicId ?? undefined;
 
-    try {
-      const result = await syncFilesToComputeWorkspace(topicId, files);
+    // ── Primary: server-side materializeFiles ──
+    if (topicId && uploadedFileIds.length > 0) {
+      try {
+        const result = await openTerminalWorkspaceService.materializeFiles({
+          overwrite: false,
+          fileIds: uploadedFileIds,
+          topicId,
+        });
 
-      if (result.failed > 0) {
-        notification.warning({
-          message: t('files.computeSyncPartial', { count: result.failed, ns: 'portal' }),
-        });
-      }
+        const failed = result.results.filter((r) => r.status === 'failed');
+        const skipped = result.results.filter((r) => r.status === 'skipped');
 
-      if (result.skipped > 0) {
-        notification.info({
-          message: t('files.computeSyncSkipped', { count: result.skipped, ns: 'portal' }),
-        });
+        if (failed.length > 0) {
+          console.warn(
+            '[uploadChatFiles] materializeFiles failures:',
+            failed.map((f) => f.fileId),
+          );
+        }
+        if (skipped.length > 0) {
+          console.info(
+            '[uploadChatFiles] materializeFiles skipped:',
+            skipped.map((f) => f.fileId),
+          );
+        }
+
+        // Only return early if ALL files materialized (no failures).
+        // Skips are acceptable — the server decided not to materialize those.
+        if (failed.length === 0) return;
+      } catch (error) {
+        if (!isOpenTerminalApiMissing(error)) {
+          console.warn('[uploadChatFiles] materializeFiles error:', error);
+        }
+        // fall through to client-side fallback below
       }
-    } catch {
-      if (topicId) {
-        notification.warning({
-          message: t('files.computeSyncUnavailable', { ns: 'portal' }),
-        });
+    }
+
+    // ── Defer: no topicId — store file IDs for sendMessage ──
+    if (!topicId && uploadedFileIds.length > 0) {
+      this.addPendingComputeMaterializeFileIds(uploadedFileIds);
+      return;
+    }
+
+    // ── Fallback: client-side sync (raw File[] → compute workspace) ──
+    if (topicId && uploadedFileIds.length > 0) {
+      // Server-side materialization already attempted and failed.
+      // We still have the raw File[] objects. Try client sync as last resort.
+      try {
+        const result = await syncFilesToComputeWorkspace(topicId, files);
+
+        if (result.failed > 0) {
+          notification.warning({
+            message: t('files.computeSyncPartial', { count: result.failed, ns: 'portal' }),
+          });
+        }
+
+        if (result.skipped > 0) {
+          notification.info({
+            message: t('files.computeSyncSkipped', { count: result.skipped, ns: 'portal' }),
+          });
+        }
+      } catch {
+        if (topicId) {
+          notification.warning({
+            message: t('files.computeSyncUnavailable', { ns: 'portal' }),
+          });
+        }
       }
     }
   };

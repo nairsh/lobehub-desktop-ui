@@ -57,6 +57,7 @@ export default {
   'terminalWorkspace.stop': 'Stop command',
   'terminalWorkspace.tabs.files': 'Files',
   'terminalWorkspace.tabs.terminal': 'Terminal',
+  'terminalWorkspace.uploadsDirectory': 'Uploads',
   'terminalWorkspace.topicDirectory': 'Topic',
   'terminalWorkspace.title': 'Terminal Workspace',
   'terminalWorkspace.workspacePaths': 'Topic: {{topic}} · Shared: {{shared}}',
