@@ -80,7 +80,7 @@ export const useCreateMenuItems = () => {
     {
       onSuccess: async (sessionId) => {
         navigate(`/agent/${sessionId}`);
-        await refreshAgentList();
+        // Sessions are already refreshed inside storeCreateChat; no agent list refresh needed.
       },
     },
   );

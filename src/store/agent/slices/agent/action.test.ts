@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { agentService } from '@/services/agent';
 import { agentDocumentService } from '@/services/agentDocument';
+import { chatSessionService } from '@/services/chatSession';
 import { type LobeAgentConfig } from '@/types/agent';
 import { withSWR } from '~test-utils';
 
@@ -40,6 +41,12 @@ vi.mock('@/services/agentDocument', () => ({
       policyLoadFormat: undefined,
       title: doc.title,
     })),
+}));
+
+vi.mock('@/services/chatSession', () => ({
+  chatSessionService: {
+    updateChatConfig: vi.fn(),
+  },
 }));
 
 // Mock sessionStore
@@ -229,6 +236,26 @@ describe('AgentSlice Actions', () => {
         expect.any(AbortSignal),
       );
     });
+
+    it('should persist normal chat session config through chat service', async () => {
+      const { result } = renderHook(() => useAgentStore());
+
+      vi.mocked(chatSessionService.updateChatConfig).mockResolvedValue(undefined);
+
+      act(() => {
+        useAgentStore.setState({ activeAgentId: 'ssn_chat' });
+      });
+
+      await act(async () => {
+        await result.current.updateAgentConfig({ model: 'gpt-4', provider: 'openai' });
+      });
+
+      expect(chatSessionService.updateChatConfig).toHaveBeenCalledWith('ssn_chat', {
+        model: 'gpt-4',
+        provider: 'openai',
+      });
+      expect(agentService.updateAgentConfig).not.toHaveBeenCalled();
+    });
   });
 
   describe('updateAgentMeta', () => {
@@ -325,6 +352,25 @@ describe('AgentSlice Actions', () => {
         { chatConfig: { historyCount: 10 } },
         expect.any(AbortSignal),
       );
+    });
+
+    it('should persist normal chat chatConfig through chat service', async () => {
+      const { result } = renderHook(() => useAgentStore());
+
+      vi.mocked(chatSessionService.updateChatConfig).mockResolvedValue(undefined);
+
+      act(() => {
+        useAgentStore.setState({ activeAgentId: 'ssn_chat' });
+      });
+
+      await act(async () => {
+        await result.current.updateAgentChatConfig({ historyCount: 10 });
+      });
+
+      expect(chatSessionService.updateChatConfig).toHaveBeenCalledWith('ssn_chat', {
+        chatConfig: { historyCount: 10 },
+      });
+      expect(agentService.updateAgentConfig).not.toHaveBeenCalled();
     });
   });
 

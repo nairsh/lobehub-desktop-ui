@@ -3,9 +3,17 @@
 import { type PropsWithChildren, type ReactNode } from 'react';
 import { memo, useLayoutEffect, useSyncExternalStore } from 'react';
 
-import Sidebar from '@/routes/(main)/home/_layout/Sidebar';
+import HomeSidebarContent from '@/routes/(main)/home/_layout/SidebarContent';
 
 import { NavPanelDraggable } from './components/NavPanelDraggable';
+
+// Stable fallback used when no portal has registered content yet, such as initial mount or
+// after an agent-free session unmounts route-specific sidebar content. Using HomeSidebarContent
+// directly avoids a portal cleanup/register loop.
+const HOME_FALLBACK: { key: string; node: ReactNode } = {
+  key: 'home',
+  node: <HomeSidebarContent />,
+};
 
 export const NAV_PANEL_RIGHT_DRAWER_ID = 'nav-panel-drawer';
 
@@ -35,8 +43,7 @@ const NavPanel = memo(() => {
     getNavPanelSnapshot,
   );
 
-  // Use home Content as fallback when no portal content is provided
-  const activeContent = panelContent || { key: 'home', node: <Sidebar /> };
+  const activeContent = panelContent || HOME_FALLBACK;
 
   return (
     <>
@@ -74,6 +81,11 @@ export const NavPanelPortal = memo<NavPanelPortalProps>(({ children, navKey = 'd
     });
     // Intentionally keep previous content until new one mounts.
   }, [children, navKey]);
+
+  // Reset snapshot when this portal leaves the tree so NavPanel falls back to home sidebar.
+  useLayoutEffect(() => {
+    return () => setNavPanelSnapshot(null);
+  }, []);
 
   return null;
 });

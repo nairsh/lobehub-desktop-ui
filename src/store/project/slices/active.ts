@@ -6,6 +6,7 @@ export interface ProjectActiveAction {
   clearActiveProject: () => void;
   removeTopicFromProject: (projectId: string, topicId: string) => void;
   setActiveProject: (id: string | null) => void;
+  setPendingProjectForAgent: (agentId: string, projectId: string | null) => void;
   togglePinProject: (id: string) => void;
 }
 
@@ -47,6 +48,19 @@ export class ProjectActiveActionImpl implements ProjectActiveAction {
 
   setActiveProject = (id: string | null): void => {
     this.#set({ activeProjectId: id });
+  };
+
+  setPendingProjectForAgent = (agentId: string, projectId: string | null): void => {
+    const { pendingProjectIdByAgentId } = this.#get();
+    if (projectId === null) {
+      const next = { ...pendingProjectIdByAgentId };
+      delete next[agentId];
+      this.#set({ pendingProjectIdByAgentId: next });
+    } else {
+      this.#set({
+        pendingProjectIdByAgentId: { ...pendingProjectIdByAgentId, [agentId]: projectId },
+      });
+    }
   };
 
   togglePinProject = (id: string): void => {

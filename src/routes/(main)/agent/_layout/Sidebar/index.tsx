@@ -1,18 +1,9 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 
-import { NavPanelPortal } from '@/features/NavPanel';
-import SideBarLayout from '@/features/NavPanel/SideBarLayout';
-
-import Body from './Body';
-import Header from './Header';
-
-const Sidebar = memo(() => {
-  return (
-    <NavPanelPortal navKey="agent">
-      <SideBarLayout body={<Body />} header={<Header />} />
-    </NavPanelPortal>
-  );
-});
+// The agent-specific Topics/Cron sidebar is intentionally not registered here.
+// The home sidebar (Chats + Agents) stays active via the home layout's NavPanelPortal,
+// keeping the same sidebar visible whether the user is on home or inside a chat.
+const Sidebar = memo(() => null);
 
 Sidebar.displayName = 'ChatSidebar';
 

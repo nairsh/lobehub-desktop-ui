@@ -55,19 +55,14 @@ export class SessionActionImpl {
   /**
    * Create a new normal chat session without a dedicated agent record.
    * This is the Phase 1 replacement for the deprecated createSession path.
-   * Automatically includes the active project ID if one is set.
    */
   createChat = async (
     params: CreateChatParams = {},
     isSwitchSession: boolean = true,
   ): Promise<string> => {
     const { switchSession, refreshSessions } = this.#get();
-    const { activeProjectId } = getProjectStoreState();
 
-    const { sessionId } = await chatSessionService.createChat({
-      ...params,
-      projectId: params.projectId ?? activeProjectId ?? undefined,
-    });
+    const { sessionId } = await chatSessionService.createChat(params);
     await refreshSessions();
 
     const analytics = getSingletonAnalyticsOptional();

@@ -20,20 +20,22 @@ export interface CreateChatResult {
 export type ChatConfigUpdate = NonNullable<CreateChatParams['config']>;
 
 class ChatSessionService {
+  private client = lambdaClient as any;
+
   /**
    * Create a new chat session without a dedicated agent record.
    * Phase 1 replacement for the deprecated SessionService.createSession path.
    */
   createChat = async (params: CreateChatParams = {}): Promise<CreateChatResult> => {
-    return lambdaClient.chat.createChat.mutate(params);
+    return this.client.chat.createChat.mutate(params);
   };
 
   getChatConfig = async (sessionId: string) => {
-    return lambdaClient.chat.getChatConfig.query({ sessionId });
+    return this.client.chat.getChatConfig.query({ sessionId });
   };
 
   updateChatConfig = async (sessionId: string, config: ChatConfigUpdate) => {
-    return lambdaClient.chat.updateChatConfig.mutate({ config: config as any, sessionId });
+    return this.client.chat.updateChatConfig.mutate({ config: config as any, sessionId });
   };
 }
 

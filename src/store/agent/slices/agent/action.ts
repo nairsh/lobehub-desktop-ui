@@ -17,6 +17,7 @@ import {
   mapAgentDocumentsToContext,
   resolveAgentDocumentsContext,
 } from '@/services/agentDocument';
+import { type ChatConfigUpdate, chatSessionService } from '@/services/chatSession';
 import type { StoreSetter } from '@/store/types';
 import { getUserStoreState } from '@/store/user';
 import { userProfileSelectors } from '@/store/user/selectors';
@@ -46,6 +47,20 @@ type AgentMetaUpdate = Partial<
  */
 
 type Setter = StoreSetter<AgentStore>;
+const isNormalChatSessionId = (id: string) => id.startsWith('ssn_');
+const toChatConfigUpdate = (data: PartialDeep<LobeAgentConfig>): ChatConfigUpdate => {
+  const update: ChatConfigUpdate = {};
+
+  if ('chatConfig' in data) update.chatConfig = data.chatConfig as Record<string, unknown>;
+  if ('model' in data) update.model = data.model as string | undefined;
+  if ('params' in data) update.params = data.params as Record<string, unknown>;
+  if ('plugins' in data) update.plugins = data.plugins as string[] | undefined;
+  if ('provider' in data) update.provider = data.provider as string | undefined;
+  if ('systemRole' in data) update.systemRole = data.systemRole as string | undefined;
+
+  return update;
+};
+
 export const createAgentSlice = (set: Setter, get: () => AgentStore, _api?: unknown) =>
   new AgentSliceActionImpl(set, get, _api);
 
@@ -360,6 +375,19 @@ export class AgentSliceActionImpl {
     updateSaveStatus('saving');
 
     try {
+      if (isNormalChatSessionId(id)) {
+        const chatConfigUpdate = toChatConfigUpdate(data);
+
+        if (Object.keys(chatConfigUpdate).length > 0) {
+          if (signal?.aborted) throw new DOMException(MESSAGE_CANCEL_FLAT, 'AbortError');
+
+          await chatSessionService.updateChatConfig(id, chatConfigUpdate);
+        }
+
+        updateSaveStatus('saved');
+        return;
+      }
+
       // 2. API call returns updated agent data
       const result = await agentService.updateAgentConfig(id, data, signal);
 

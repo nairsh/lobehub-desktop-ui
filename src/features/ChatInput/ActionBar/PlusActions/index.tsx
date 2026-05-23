@@ -15,7 +15,7 @@ import {
   LibraryBig,
   PlusIcon,
 } from 'lucide-react';
-import { memo, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { message } from '@/components/AntdStaticMethods';
@@ -123,21 +123,43 @@ const PlusActions = memo(() => {
   const supportToolUse = useModelSupportToolUse(model, provider);
 
   const activeTopicId = useChatStore((s) => s.activeTopicId);
-  const [projectList, addTopicToProject, removeTopicFromProject] = useProjectStore((s) => [
-    projectSelectors.projectList(s),
-    s.addTopicToProject,
-    s.removeTopicFromProject,
-  ]);
+  const [projectList, addTopicToProject, removeTopicFromProject, setPendingProjectForAgent] =
+    useProjectStore((s) => [
+      projectSelectors.projectList(s),
+      s.addTopicToProject,
+      s.removeTopicFromProject,
+      s.setPendingProjectForAgent,
+    ]);
   const currentProjectId = useProjectStore(projectSelectors.projectIdByTopicId(activeTopicId));
   const currentProject = useProjectStore(
     currentProjectId ? projectSelectors.projectById(currentProjectId) : () => null,
   );
+  const pendingProjectId = useProjectStore(projectSelectors.pendingProjectIdByAgentId(agentId));
+  const pendingProject = useProjectStore(
+    pendingProjectId ? projectSelectors.projectById(pendingProjectId) : () => null,
+  );
+
+  // When a new topic is created for this agent, apply the pending project association.
+  useEffect(() => {
+    if (activeTopicId && pendingProjectId && !currentProjectId) {
+      addTopicToProject(pendingProjectId, activeTopicId);
+      setPendingProjectForAgent(agentId, null);
+    }
+  }, [
+    activeTopicId,
+    addTopicToProject,
+    agentId,
+    currentProjectId,
+    pendingProjectId,
+    setPendingProjectForAgent,
+  ]);
 
   const showSearchIndicator = rawSearchMode === 'auto';
   const showMemoryIndicator = isMemoryEnabled;
   const showLibraryIndicator = enableKnowledgeBase && enabledKnowledgeBases.length > 0;
   const showModeIndicator = !!activeMode;
-  const showProjectIndicator = !!currentProjectId;
+  const showProjectIndicator = !!currentProjectId || !!pendingProjectId;
+  const activeProjectDisplay = currentProject ?? pendingProject;
 
   const setActiveMode = async (mode: AgentMode | null) => {
     await updateAgentChatConfig({ activeMode: mode });
@@ -146,7 +168,7 @@ const PlusActions = memo(() => {
   const projectChildren: ActionDropdownMenuItems = [
     ...projectList.map((p) => ({
       icon:
-        currentProjectId === p.id ? (
+        currentProjectId === p.id || pendingProjectId === p.id ? (
           <FolderOpenIcon size={16} style={{ color: cssVar.colorInfo }} />
         ) : (
           FolderOpenIcon
@@ -154,7 +176,10 @@ const PlusActions = memo(() => {
       key: `project-${p.id}`,
       label: p.name,
       onClick: () => {
-        if (!activeTopicId) return;
+        if (!activeTopicId) {
+          setPendingProjectForAgent(agentId, pendingProjectId === p.id ? null : p.id);
+          return;
+        }
         if (currentProjectId === p.id) {
           removeTopicFromProject(p.id, activeTopicId);
         } else {
@@ -372,10 +397,12 @@ const PlusActions = memo(() => {
             color={cssVar.colorInfo}
             icon={FolderOpenIcon}
             showTooltip={false}
-            title={currentProject?.name}
+            title={activeProjectDisplay?.name}
             onClick={() => {
               if (activeTopicId && currentProjectId) {
                 removeTopicFromProject(currentProjectId, activeTopicId);
+              } else if (pendingProjectId) {
+                setPendingProjectForAgent(agentId, null);
               }
             }}
           />
