@@ -374,6 +374,47 @@ describe('AgentSlice Actions', () => {
     });
   });
 
+  describe('updateAgentRuntimeEnvConfigById', () => {
+    it('should persist working directory in normal chat runtimeEnv config', async () => {
+      const { result } = renderHook(() => useAgentStore());
+
+      vi.mocked(chatSessionService.updateChatConfig).mockResolvedValue(undefined);
+
+      await act(async () => {
+        await result.current.updateAgentRuntimeEnvConfigById('ssn_chat', {
+          workingDirectory: '/workspace/project',
+        });
+      });
+
+      expect(chatSessionService.updateChatConfig).toHaveBeenCalledWith('ssn_chat', {
+        chatConfig: { runtimeEnv: { workingDirectory: '/workspace/project' } },
+      });
+      expect(agentService.updateAgentConfig).not.toHaveBeenCalled();
+    });
+
+    it('should persist runtime mode and working directory together', async () => {
+      const { result } = renderHook(() => useAgentStore());
+
+      vi.mocked(chatSessionService.updateChatConfig).mockResolvedValue(undefined);
+
+      await act(async () => {
+        await result.current.updateAgentRuntimeEnvConfigById('ssn_chat', {
+          runtimeMode: { desktop: 'local' },
+          workingDirectory: '/workspace/project',
+        });
+      });
+
+      expect(chatSessionService.updateChatConfig).toHaveBeenCalledWith('ssn_chat', {
+        chatConfig: {
+          runtimeEnv: {
+            runtimeMode: { desktop: 'local' },
+            workingDirectory: '/workspace/project',
+          },
+        },
+      });
+    });
+  });
+
   describe('optimisticUpdateAgentConfig', () => {
     it('should perform optimistic update and then use API result', async () => {
       const { result } = renderHook(() => useAgentStore());

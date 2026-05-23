@@ -245,7 +245,6 @@ export class AgentSliceActionImpl {
     }
 
     const restConfig = { ...config };
-    delete restConfig.workingDirectory;
     if (Object.keys(restConfig).length > 0) {
       await this.#get().updateAgentChatConfigById(agentId, { runtimeEnv: restConfig });
     }

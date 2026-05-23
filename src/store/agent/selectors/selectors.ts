@@ -276,6 +276,7 @@ const currentAgentWorkingDirectory = (s: AgentStoreState): string | undefined =>
     if (!activeAgentId) return globalAgentContextManager.getContext().homePath;
 
     return (
+      currentAgentRuntimeEnvConfig(s)?.workingDirectory ??
       getLocalAgentWorkingDirectory(activeAgentId) ??
       globalAgentContextManager.getContext().homePath
     );
