@@ -2,6 +2,7 @@ import { type AgentState } from '@lobechat/agent-runtime';
 import { consumeStreamUntilDone } from '@lobechat/model-runtime';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { SessionModel } from '@/database/models/session';
 import * as ContextEngineering from '@/server/modules/Mecha/ContextEngineering';
 import { initModelRuntimeFromDB } from '@/server/modules/ModelRuntime';
 
@@ -21,6 +22,12 @@ vi.mock('@/server/services/message', () => ({
   MessageService: vi.fn().mockImplementation(() => ({
     createCompressionGroup: mockCreateCompressionGroup,
     finalizeCompression: mockFinalizeCompression,
+  })),
+}));
+
+vi.mock('@/database/models/session', () => ({
+  SessionModel: vi.fn().mockImplementation(() => ({
+    findByIdOrSlug: vi.fn().mockResolvedValue(undefined),
   })),
 }));
 
@@ -1142,6 +1149,57 @@ describe('RuntimeExecutors', () => {
         await executors.call_llm!(instruction, state);
 
         expect(engineSpy).toHaveBeenCalledWith(expect.objectContaining({ evalContext }));
+      });
+
+      it('should prefer session metadata for ssn chats in lobehub skill placeholders', async () => {
+        vi.mocked(SessionModel).mockImplementation(
+          () =>
+            ({
+              findByIdOrSlug: vi.fn().mockResolvedValue({
+                meta: {
+                  description: 'Session-owned description',
+                  title: 'Session-owned title',
+                },
+              }),
+            }) as any,
+        );
+
+        const ctxWithConfig: RuntimeExecutorContext = {
+          ...ctx,
+          agentConfig: { plugins: [], systemRole: 'test' },
+        };
+        const executors = createRuntimeExecutors(ctxWithConfig);
+        const state = createMockState({
+          metadata: {
+            agentConfig: {
+              description: 'Legacy agent description',
+              title: 'Legacy agent title',
+            },
+            agentId: 'ssn_runtime_chat',
+            threadId: 'thread-123',
+            topicId: undefined,
+          },
+        });
+
+        const instruction = {
+          payload: {
+            messages: [{ content: 'Hello', role: 'user' }],
+            model: 'gpt-4',
+            provider: 'openai',
+          },
+          type: 'call_llm' as const,
+        };
+
+        await executors.call_llm!(instruction, state);
+
+        expect(engineSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            additionalVariables: expect.objectContaining({
+              agent_description: 'Session-owned description',
+              agent_title: 'Session-owned title',
+            }),
+          }),
+        );
       });
 
       it('should build capabilities from LOBE_DEFAULT_MODEL_LIST', async () => {

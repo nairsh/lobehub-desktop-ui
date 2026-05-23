@@ -33,6 +33,7 @@ import { serializePartsForStorage } from '@lobechat/utils';
 import debug from 'debug';
 
 import { type MessageModel, MessageModel as MessageModelClass } from '@/database/models/message';
+import { SessionModel } from '@/database/models/session';
 import { TopicModel } from '@/database/models/topic';
 import { type LobeChatDatabase } from '@/database/type';
 import { serverMessagesEngine } from '@/server/modules/Mecha/ContextEngineering';
@@ -95,6 +96,9 @@ const getToolFailureKind = (result: ToolExecutionResultResponse): ToolFailureKin
 
 const shouldRetryTool = (kind: ToolFailureKind | undefined, attempt: number, maxRetries: number) =>
   kind === 'retry' && attempt <= maxRetries;
+
+const isSessionOwnedChatId = (id?: string | null) =>
+  !!id && (id === 'inbox' || id.startsWith('ssn_'));
 
 // Builds a postProcessUrl callback that resolves S3 keys in file-backed fields
 // (imageList, videoList, fileList) to absolute URLs. Must be passed to every
@@ -520,10 +524,8 @@ export const createRuntimeExecutors = (
         // `{{agent_id}}` / `{{agent_title}}` / `{{topic_id}}` etc. into the
         // model's prompt without needing a separate context injector.
         //
-        // - agent_title / agent_description: read directly from agentConfig,
-        //   which is the result of AgentModel.getAgentConfig() and already
-        //   contains the full enriched agent record (title, description, ...).
-        //   No extra query needed.
+        // - agent_title / agent_description: prefer session metadata for
+        //   session-owned chats, otherwise fall back to agentConfig.
         // - topic_title: requires a single primary-key lookup against the
         //   topics table. Skipped when topicId is missing or the lookup fails
         //   (best-effort, falls back to empty string so the template still
@@ -533,6 +535,26 @@ export const createRuntimeExecutors = (
         const lobehubSkillAgentMeta = state.metadata?.agentConfig as
           | { description?: string | null; title?: string | null }
           | undefined;
+        const lobehubSkillSessionId = isSessionOwnedChatId(lobehubSkillAgentId)
+          ? lobehubSkillAgentId
+          : undefined;
+
+        let lobehubSkillSessionMeta:
+          | {
+              description?: string | null;
+              title?: string | null;
+            }
+          | undefined;
+        if (lobehubSkillSessionId && ctx.serverDB && ctx.userId) {
+          try {
+            const sessionModelForLobehub = new SessionModel(ctx.serverDB, ctx.userId);
+            const sessionRecord =
+              await sessionModelForLobehub.findByIdOrSlug(lobehubSkillSessionId);
+            lobehubSkillSessionMeta = sessionRecord?.meta as typeof lobehubSkillSessionMeta;
+          } catch (error) {
+            log('Failed to load session meta for lobehub skill placeholders: %O', error);
+          }
+        }
 
         let lobehubSkillTopicTitle = '';
         if (lobehubSkillTopicId && ctx.serverDB && ctx.userId) {
@@ -547,8 +569,9 @@ export const createRuntimeExecutors = (
 
         const lobehubSkillVariables: Record<string, string> = {
           agent_id: lobehubSkillAgentId ?? '',
-          agent_title: lobehubSkillAgentMeta?.title ?? '',
-          agent_description: lobehubSkillAgentMeta?.description ?? '',
+          agent_title: lobehubSkillSessionMeta?.title ?? lobehubSkillAgentMeta?.title ?? '',
+          agent_description:
+            lobehubSkillSessionMeta?.description ?? lobehubSkillAgentMeta?.description ?? '',
           topic_id: lobehubSkillTopicId ?? '',
           topic_title: lobehubSkillTopicTitle,
         };

@@ -1,11 +1,12 @@
 // @vitest-environment node
 import { ThreadType } from '@lobechat/types';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AgentModel } from '@/database/models/agent';
 import { MessageModel } from '@/database/models/message';
 import { ThreadModel } from '@/database/models/thread';
 import { TopicModel } from '@/database/models/topic';
+import { resolveContext } from '@/server/routers/lambda/_helpers/resolveContext';
 import { AiChatService } from '@/server/services/aiChat';
 
 import { aiChatRouter } from '../aiChat';
@@ -14,6 +15,9 @@ vi.mock('@/database/models/agent');
 vi.mock('@/database/models/message');
 vi.mock('@/database/models/thread');
 vi.mock('@/database/models/topic');
+vi.mock('@/server/routers/lambda/_helpers/resolveContext', () => ({
+  resolveContext: vi.fn(),
+}));
 vi.mock('@/server/services/aiChat');
 vi.mock('@/server/services/file', () => ({
   FileService: vi.fn(),
@@ -24,6 +28,78 @@ vi.mock('@/server/modules/ModelRuntime', () => ({
 
 describe('aiChatRouter', () => {
   const mockCtx = { userId: 'u1' };
+
+  beforeEach(() => {
+    vi.mocked(resolveContext).mockImplementation(async (input: any) => ({
+      agentId: input.agentId ?? null,
+      groupId: input.groupId ?? null,
+      sessionId: input.sessionId ?? null,
+      threadId: input.threadId ?? null,
+      topicId: input.topicId ?? null,
+    }));
+  });
+
+  it('should resolve ssn agent ids to session-owned topic and message writes', async () => {
+    const mockCreateTopic = vi.fn().mockResolvedValue({ id: 't-ssn' });
+    const mockCreateMessage = vi
+      .fn()
+      .mockResolvedValueOnce({ id: 'm-user' })
+      .mockResolvedValueOnce({ id: 'm-assistant' });
+    const mockGet = vi.fn().mockResolvedValue({ messages: [], topics: undefined });
+
+    vi.mocked(resolveContext).mockResolvedValue({
+      agentId: null,
+      groupId: null,
+      sessionId: 'ssn_runtime_chat',
+      threadId: null,
+      topicId: null,
+    });
+    vi.mocked(TopicModel).mockImplementation(() => ({ create: mockCreateTopic }) as any);
+    vi.mocked(MessageModel).mockImplementation(() => ({ create: mockCreateMessage }) as any);
+    vi.mocked(AiChatService).mockImplementation(() => ({ getMessagesAndTopics: mockGet }) as any);
+
+    const caller = aiChatRouter.createCaller({ ...mockCtx, serverDB: {} } as any);
+
+    await caller.sendMessageInServer({
+      agentId: 'ssn_runtime_chat',
+      newAssistantMessage: { model: 'deepseek-v4-flash', provider: 'deepseek' },
+      newTopic: { title: 'Session topic' },
+      newUserMessage: { content: 'ping' },
+    } as any);
+
+    expect(mockCreateTopic).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agentId: undefined,
+        sessionId: 'ssn_runtime_chat',
+        title: 'Session topic',
+      }),
+    );
+    expect(mockCreateMessage).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        agentId: undefined,
+        role: 'user',
+        sessionId: 'ssn_runtime_chat',
+        topicId: 't-ssn',
+      }),
+    );
+    expect(mockCreateMessage).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        agentId: undefined,
+        role: 'assistant',
+        sessionId: 'ssn_runtime_chat',
+        topicId: 't-ssn',
+      }),
+    );
+    expect(mockGet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agentId: undefined,
+        sessionId: 'ssn_runtime_chat',
+        topicId: 't-ssn',
+      }),
+    );
+  });
 
   it('should create topic optionally, create user/assistant messages, and return payload', async () => {
     const mockCreateTopic = vi.fn().mockResolvedValue({ id: 't1' });

@@ -66,11 +66,9 @@ export const aiChatRouter = router({
         input.newTopic,
         input.newThread,
       );
-      let sessionId = input.sessionId;
-      if (!sessionId) {
-        const context = await resolveContext(input, ctx.serverDB, ctx.userId);
-        if (!!context.sessionId) sessionId = context.sessionId;
-      }
+      const resolvedContext = await resolveContext(input, ctx.serverDB, ctx.userId);
+      const resolvedAgentId = resolvedContext.agentId ?? undefined;
+      const sessionId = input.sessionId ?? resolvedContext.sessionId ?? undefined;
 
       let topicId = input.topicId!;
       let threadId = input.threadId;
@@ -82,7 +80,7 @@ export const aiChatRouter = router({
       if (input.newTopic) {
         log('creating new topic with title: %s', input.newTopic.title);
         const topicItem = await ctx.topicModel.create({
-          agentId: input.agentId,
+          agentId: resolvedAgentId,
           groupId: input.groupId,
           messages: input.newTopic.topicMessageIds,
           sessionId,
@@ -93,9 +91,9 @@ export const aiChatRouter = router({
         log('new topic created with id: %s', topicId);
 
         // update agent's updatedAt to reflect new activity
-        if (input.agentId) {
-          await ctx.agentModel.touchUpdatedAt(input.agentId);
-          log('agent updatedAt touched for agentId: %s', input.agentId);
+        if (resolvedAgentId) {
+          await ctx.agentModel.touchUpdatedAt(resolvedAgentId);
+          log('agent updatedAt touched for agentId: %s', resolvedAgentId);
         }
       }
 
@@ -127,7 +125,7 @@ export const aiChatRouter = router({
 
         for (const preloadMessage of input.preloadMessages) {
           const preloadItem = await ctx.messageModel.create({
-            agentId: input.agentId,
+            agentId: resolvedAgentId,
             content: preloadMessage.content,
             groupId: input.groupId,
             metadata: preloadMessage.metadata,
@@ -154,7 +152,7 @@ export const aiChatRouter = router({
         : undefined;
 
       const userMessageItem = await ctx.messageModel.create({
-        agentId: input.agentId,
+        agentId: resolvedAgentId,
         content: input.newUserMessage.content,
         editorData: input.newUserMessage.editorData,
         files: input.newUserMessage.files,
@@ -178,7 +176,7 @@ export const aiChatRouter = router({
         input.newAssistantMessage.metadata,
       );
       const assistantMessageItem = await ctx.messageModel.create({
-        agentId: input.agentId,
+        agentId: resolvedAgentId,
         content: LOADING_FLAT,
         groupId: input.groupId,
         metadata: input.newAssistantMessage.metadata,
@@ -195,7 +193,7 @@ export const aiChatRouter = router({
       // retrieve latest messages and topic with
       log('retrieving messages and topics');
       const { messages, topics } = await ctx.aiChatService.getMessagesAndTopics({
-        agentId: input.agentId,
+        agentId: resolvedAgentId,
         groupId: input.groupId,
         includeTopic: isCreateNewTopic,
         sessionId,
