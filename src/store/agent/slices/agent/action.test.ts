@@ -45,6 +45,7 @@ vi.mock('@/services/agentDocument', () => ({
 
 vi.mock('@/services/chatSession', () => ({
   chatSessionService: {
+    getChatConfig: vi.fn(),
     updateChatConfig: vi.fn(),
   },
 }));
@@ -525,6 +526,27 @@ describe('AgentSlice Actions', () => {
       expect(agentService.getAgentConfigById).toHaveBeenCalledWith('agent-1');
       expect(useAgentStore.getState().activeAgentId).toBe('agent-1');
       expect(useAgentStore.getState().agentMap['agent-1']).toBeDefined();
+    });
+
+    it('should fetch normal chat config through chatSessionService for ssn routes', async () => {
+      const mockChatConfig = {
+        chatConfig: { enableHistoryCount: true },
+        id: 'ssn_chat_1',
+        model: 'deepseek-v4-flash',
+      } as LobeAgentConfig;
+
+      vi.mocked(chatSessionService.getChatConfig).mockResolvedValueOnce(mockChatConfig as any);
+
+      const { result } = renderHook(() => useAgentStore().useFetchAgentConfig(true, 'ssn_chat_1'), {
+        wrapper: withSWR,
+      });
+
+      await waitFor(() => expect(result.current.data).toEqual(mockChatConfig));
+
+      expect(chatSessionService.getChatConfig).toHaveBeenCalledWith('ssn_chat_1');
+      expect(agentService.getAgentConfigById).not.toHaveBeenCalled();
+      expect(useAgentStore.getState().activeAgentId).toBe('ssn_chat_1');
+      expect(useAgentStore.getState().agentMap['ssn_chat_1']).toBeDefined();
     });
   });
 });

@@ -1,4 +1,5 @@
 import { lambdaClient } from '@/libs/trpc/client';
+import { type KnowledgeItem } from '@/types/knowledgeBase';
 
 export interface CreateChatParams {
   config?: {
@@ -34,8 +35,44 @@ class ChatSessionService {
     return this.client.chat.getChatConfig.query({ sessionId });
   };
 
+  getKnowledgeBasesAndFiles = async (sessionId: string): Promise<KnowledgeItem[]> => {
+    return this.client.chat.getKnowledgeBasesAndFiles.query({ sessionId });
+  };
+
   updateChatConfig = async (sessionId: string, config: ChatConfigUpdate) => {
     return this.client.chat.updateChatConfig.mutate({ config: config as any, sessionId });
+  };
+
+  createChatFiles = async (sessionId: string, fileIds: string[], enabled?: boolean) => {
+    return this.client.chat.createChatFiles.mutate({ enabled, fileIds, sessionId });
+  };
+
+  deleteChatFile = async (sessionId: string, fileId: string) => {
+    return this.client.chat.deleteChatFile.mutate({ fileId, sessionId });
+  };
+
+  toggleFile = async (sessionId: string, fileId: string, enabled?: boolean) => {
+    return this.client.chat.toggleFile.mutate({ enabled, fileId, sessionId });
+  };
+
+  createChatKnowledgeBase = async (
+    sessionId: string,
+    knowledgeBaseId: string,
+    enabled?: boolean,
+  ) => {
+    return this.client.chat.createChatKnowledgeBase.mutate({
+      enabled,
+      knowledgeBaseId,
+      sessionId,
+    });
+  };
+
+  deleteChatKnowledgeBase = async (sessionId: string, knowledgeBaseId: string) => {
+    return this.client.chat.deleteChatKnowledgeBase.mutate({ knowledgeBaseId, sessionId });
+  };
+
+  toggleKnowledgeBase = async (sessionId: string, knowledgeBaseId: string, enabled?: boolean) => {
+    return this.client.chat.toggleKnowledgeBase.mutate({ enabled, knowledgeBaseId, sessionId });
   };
 }
 

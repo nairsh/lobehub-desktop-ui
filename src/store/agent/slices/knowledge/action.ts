@@ -3,11 +3,13 @@ import { type SWRResponse } from 'swr';
 
 import { mutate, useClientDataSWR } from '@/libs/swr';
 import { agentService } from '@/services/agent';
+import { chatSessionService } from '@/services/chatSession';
 import { type StoreSetter } from '@/store/types';
 
 import { type AgentStore } from '../../store';
 
 const FETCH_AGENT_KNOWLEDGE_KEY = 'FETCH_AGENT_KNOWLEDGE';
+const isNormalChatSessionId = (id: string) => id.startsWith('ssn_');
 
 /**
  * Knowledge Slice Actions
@@ -33,7 +35,11 @@ export class KnowledgeSliceActionImpl {
     if (!activeAgentId) return;
     if (fileIds.length === 0) return;
 
-    await agentService.createAgentFiles(activeAgentId, fileIds, enabled);
+    if (isNormalChatSessionId(activeAgentId)) {
+      await chatSessionService.createChatFiles(activeAgentId, fileIds, enabled);
+    } else {
+      await agentService.createAgentFiles(activeAgentId, fileIds, enabled);
+    }
     await internal_refreshAgentConfig(activeAgentId);
     await internal_refreshAgentKnowledge();
   };
@@ -43,7 +49,11 @@ export class KnowledgeSliceActionImpl {
       this.#get();
     if (!activeAgentId) return;
 
-    await agentService.createAgentKnowledgeBase(activeAgentId, knowledgeBaseId, true);
+    if (isNormalChatSessionId(activeAgentId)) {
+      await chatSessionService.createChatKnowledgeBase(activeAgentId, knowledgeBaseId, true);
+    } else {
+      await agentService.createAgentKnowledgeBase(activeAgentId, knowledgeBaseId, true);
+    }
     await internal_refreshAgentConfig(activeAgentId);
     await internal_refreshAgentKnowledge();
   };
@@ -57,7 +67,11 @@ export class KnowledgeSliceActionImpl {
       this.#get();
     if (!activeAgentId) return;
 
-    await agentService.deleteAgentFile(activeAgentId, fileId);
+    if (isNormalChatSessionId(activeAgentId)) {
+      await chatSessionService.deleteChatFile(activeAgentId, fileId);
+    } else {
+      await agentService.deleteAgentFile(activeAgentId, fileId);
+    }
     await internal_refreshAgentConfig(activeAgentId);
     await internal_refreshAgentKnowledge();
   };
@@ -67,7 +81,11 @@ export class KnowledgeSliceActionImpl {
       this.#get();
     if (!activeAgentId) return;
 
-    await agentService.deleteAgentKnowledgeBase(activeAgentId, knowledgeBaseId);
+    if (isNormalChatSessionId(activeAgentId)) {
+      await chatSessionService.deleteChatKnowledgeBase(activeAgentId, knowledgeBaseId);
+    } else {
+      await agentService.deleteAgentKnowledgeBase(activeAgentId, knowledgeBaseId);
+    }
     await internal_refreshAgentConfig(activeAgentId);
     await internal_refreshAgentKnowledge();
   };
@@ -76,7 +94,11 @@ export class KnowledgeSliceActionImpl {
     const { activeAgentId, internal_refreshAgentConfig } = this.#get();
     if (!activeAgentId) return;
 
-    await agentService.toggleFile(activeAgentId, id, open);
+    if (isNormalChatSessionId(activeAgentId)) {
+      await chatSessionService.toggleFile(activeAgentId, id, open);
+    } else {
+      await agentService.toggleFile(activeAgentId, id, open);
+    }
     await internal_refreshAgentConfig(activeAgentId);
   };
 
@@ -84,14 +106,21 @@ export class KnowledgeSliceActionImpl {
     const { activeAgentId, internal_refreshAgentConfig } = this.#get();
     if (!activeAgentId) return;
 
-    await agentService.toggleKnowledgeBase(activeAgentId, id, open);
+    if (isNormalChatSessionId(activeAgentId)) {
+      await chatSessionService.toggleKnowledgeBase(activeAgentId, id, open);
+    } else {
+      await agentService.toggleKnowledgeBase(activeAgentId, id, open);
+    }
     await internal_refreshAgentConfig(activeAgentId);
   };
 
   useFetchFilesAndKnowledgeBases = (agentId?: string): SWRResponse<KnowledgeItem[]> => {
     return useClientDataSWR<KnowledgeItem[]>(
       agentId ? [FETCH_AGENT_KNOWLEDGE_KEY, agentId] : null,
-      ([, id]: string[]) => agentService.getFilesAndKnowledgeBases(id),
+      ([, id]: string[]) =>
+        isNormalChatSessionId(id)
+          ? chatSessionService.getKnowledgeBasesAndFiles(id)
+          : agentService.getFilesAndKnowledgeBases(id),
       {
         fallbackData: [],
       },

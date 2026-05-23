@@ -291,14 +291,16 @@ export class AgentSliceActionImpl {
     return useClientDataSWRWithSync<LobeAgentConfig>(
       swrKey,
       async () => {
-        const data = await agentService.getAgentConfigById(agentId);
+        const data = isNormalChatSessionId(agentId)
+          ? await chatSessionService.getChatConfig(agentId)
+          : await agentService.getAgentConfigById(agentId);
         return data as LobeAgentConfig;
       },
       {
         onData: (data) => {
           if (!data) return;
           this.#get().internal_dispatchAgentMap(agentId, data);
-          this.#set({ activeAgentId: data.id }, false, 'fetchAgentConfig');
+          this.#set({ activeAgentId: agentId }, false, 'fetchAgentConfig');
         },
       },
     );
