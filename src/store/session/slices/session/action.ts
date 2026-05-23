@@ -116,23 +116,6 @@ export class SessionActionImpl {
     );
     await refreshSessions();
 
-    // Track new agent creation analytics
-    const analytics = getSingletonAnalyticsOptional();
-    if (analytics) {
-      const userStore = getUserStoreState();
-      const userId = userProfileSelectors.userId(userStore);
-
-      analytics.track({
-        name: 'new_agent_created',
-        properties: {
-          assistant_name: newSession.meta?.title || 'Untitled Agent',
-          assistant_tags: newSession.meta?.tags || [],
-          session_id: id,
-          user_id: userId || 'anonymous',
-        },
-      });
-    }
-
     // Whether to goto  to the new session after creation, the default is to switch to
     if (isSwitchSession) switchSession(id);
 
