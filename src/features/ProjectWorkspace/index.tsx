@@ -3,6 +3,7 @@
 import { SESSION_CHAT_URL } from '@lobechat/const';
 import { ActionIcon, Block, DropdownMenu, Flexbox, Icon, Text } from '@lobehub/ui';
 import { Divider } from 'antd';
+import { cssVar } from 'antd-style';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import {
@@ -55,11 +56,9 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId, project
   const refreshProjects = useProjectStore((s) => s.refreshProjects);
   const deleteProject = useProjectStore((s) => s.deleteProject);
   const togglePin = useProjectStore((s) => s.togglePinProject);
-  const addTopicToProject = useProjectStore((s) => s.addTopicToProject);
   const storedTopicIds = useProjectStore(projectSelectors.projectTopicIds(projectId));
   const inboxAgentId = useAgentStore(builtinAgentSelectors.inboxAgentId);
   const sendMessage = useChatStore((s) => s.sendMessage);
-  const switchTopic = useChatStore((s) => s.switchTopic);
   const clearChatUploadFileList = useFileStore((s) => s.clearChatUploadFileList);
   const clearChatContextSelections = useFileStore((s) => s.clearChatContextSelections);
   const currentInstructions = project?.settings?.defaultSystemPrompt ?? '';
@@ -155,7 +154,6 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId, project
       navigate,
       clearChatUploadFileList,
       clearChatContextSelections,
-      addTopicToProject,
     ],
   );
 
@@ -166,7 +164,7 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId, project
       // switchTopic is async but we fire-and-forget
       useChatStore.getState().switchTopic(topicId);
     },
-    [inboxAgentId, navigate, switchTopic],
+    [inboxAgentId, navigate],
   );
 
   const handleRename = useCallback(() => {
@@ -231,7 +229,8 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId, project
               />
             </DropdownMenu>
             <ActionIcon
-              active={isPinned}
+              color={isPinned ? cssVar.colorWarning : undefined}
+              fill={isPinned ? cssVar.colorWarning : undefined}
               icon={BookmarkIcon}
               size={'middle'}
               title={
