@@ -35,6 +35,9 @@ jobs:
           APP_URL: http://localhost:3015
           DATABASE_URL: postgresql://postgres@localhost:5432/postgres
           KEY_VAULTS_SECRET: oLXWIiR/AKF+rWaqy9lHkrYgzpATbW3CtJp3UfkVgpE=
+          POSTHOG_KEY: ${{ secrets.POSTHOG_KEY || vars.POSTHOG_KEY }}
+          POSTHOG_HOST: ${{ secrets.POSTHOG_HOST || vars.POSTHOG_HOST }}
+          DEBUG_POSTHOG_ANALYTICS: ${{ secrets.DEBUG_POSTHOG_ANALYTICS || vars.DEBUG_POSTHOG_ANALYTICS }}
 
       - name: Upload desktop artifacts
         uses: actions/upload-artifact@v6

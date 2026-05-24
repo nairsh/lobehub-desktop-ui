@@ -116,6 +116,9 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           NEXT_PUBLIC_DESKTOP_PROJECT_ID: ${{ secrets.UMAMI_NIGHTLY_DESKTOP_PROJECT_ID }}
           NEXT_PUBLIC_DESKTOP_UMAMI_BASE_URL: ${{ secrets.UMAMI_NIGHTLY_DESKTOP_BASE_URL }}
+          POSTHOG_KEY: ${{ secrets.POSTHOG_KEY || vars.POSTHOG_KEY }}
+          POSTHOG_HOST: ${{ secrets.POSTHOG_HOST || vars.POSTHOG_HOST }}
+          DEBUG_POSTHOG_ANALYTICS: ${{ secrets.DEBUG_POSTHOG_ANALYTICS || vars.DEBUG_POSTHOG_ANALYTICS }}
 
           # allow provisionally
           CSC_FOR_PULL_REQUEST: true
@@ -137,6 +140,9 @@ jobs:
           KEY_VAULTS_SECRET: 'oLXWIiR/AKF+rWaqy9lHkrYgzpATbW3CtJp3UfkVgpE='
           NEXT_PUBLIC_DESKTOP_PROJECT_ID: ${{ secrets.UMAMI_NIGHTLY_DESKTOP_PROJECT_ID }}
           NEXT_PUBLIC_DESKTOP_UMAMI_BASE_URL: ${{ secrets.UMAMI_NIGHTLY_DESKTOP_BASE_URL }}
+          POSTHOG_KEY: ${{ secrets.POSTHOG_KEY || vars.POSTHOG_KEY }}
+          POSTHOG_HOST: ${{ secrets.POSTHOG_HOST || vars.POSTHOG_HOST }}
+          DEBUG_POSTHOG_ANALYTICS: ${{ secrets.DEBUG_POSTHOG_ANALYTICS || vars.DEBUG_POSTHOG_ANALYTICS }}
           # 将 TEMP 和 TMP 目录设置到 C 盘
           TEMP: C:\temp
           TMP: C:\temp
@@ -154,6 +160,9 @@ jobs:
           KEY_VAULTS_SECRET: 'oLXWIiR/AKF+rWaqy9lHkrYgzpATbW3CtJp3UfkVgpE='
           NEXT_PUBLIC_DESKTOP_PROJECT_ID: ${{ secrets.UMAMI_NIGHTLY_DESKTOP_PROJECT_ID }}
           NEXT_PUBLIC_DESKTOP_UMAMI_BASE_URL: ${{ secrets.UMAMI_NIGHTLY_DESKTOP_BASE_URL }}
+          POSTHOG_KEY: ${{ secrets.POSTHOG_KEY || vars.POSTHOG_KEY }}
+          POSTHOG_HOST: ${{ secrets.POSTHOG_HOST || vars.POSTHOG_HOST }}
+          DEBUG_POSTHOG_ANALYTICS: ${{ secrets.DEBUG_POSTHOG_ANALYTICS || vars.DEBUG_POSTHOG_ANALYTICS }}
 
       # 处理 macOS latest-mac.yml 重命名 (避免多架构覆盖)
       - name: Rename macOS latest-mac.yml for multi-architecture support

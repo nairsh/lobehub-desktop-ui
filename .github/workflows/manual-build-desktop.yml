@@ -134,6 +134,9 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           NEXT_PUBLIC_DESKTOP_PROJECT_ID: ${{ inputs.channel == 'stable' && secrets.UMAMI_STABLE_DESKTOP_PROJECT_ID || secrets.UMAMI_BETA_DESKTOP_PROJECT_ID }}
           NEXT_PUBLIC_DESKTOP_UMAMI_BASE_URL: ${{ inputs.channel == 'stable' && secrets.UMAMI_STABLE_DESKTOP_BASE_URL || secrets.UMAMI_BETA_DESKTOP_BASE_URL }}
+          POSTHOG_KEY: ${{ secrets.POSTHOG_KEY || vars.POSTHOG_KEY }}
+          POSTHOG_HOST: ${{ secrets.POSTHOG_HOST || vars.POSTHOG_HOST }}
+          DEBUG_POSTHOG_ANALYTICS: ${{ secrets.DEBUG_POSTHOG_ANALYTICS || vars.DEBUG_POSTHOG_ANALYTICS }}
           CSC_FOR_PULL_REQUEST: true
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
@@ -200,6 +203,9 @@ jobs:
           KEY_VAULTS_SECRET: 'oLXWIiR/AKF+rWaqy9lHkrYgzpATbW3CtJp3UfkVgpE='
           NEXT_PUBLIC_DESKTOP_PROJECT_ID: ${{ inputs.channel == 'stable' && secrets.UMAMI_STABLE_DESKTOP_PROJECT_ID || secrets.UMAMI_BETA_DESKTOP_PROJECT_ID }}
           NEXT_PUBLIC_DESKTOP_UMAMI_BASE_URL: ${{ inputs.channel == 'stable' && secrets.UMAMI_STABLE_DESKTOP_BASE_URL || secrets.UMAMI_BETA_DESKTOP_BASE_URL }}
+          POSTHOG_KEY: ${{ secrets.POSTHOG_KEY || vars.POSTHOG_KEY }}
+          POSTHOG_HOST: ${{ secrets.POSTHOG_HOST || vars.POSTHOG_HOST }}
+          DEBUG_POSTHOG_ANALYTICS: ${{ secrets.DEBUG_POSTHOG_ANALYTICS || vars.DEBUG_POSTHOG_ANALYTICS }}
           TEMP: C:\temp
           TMP: C:\temp
 
@@ -244,6 +250,9 @@ jobs:
           KEY_VAULTS_SECRET: 'oLXWIiR/AKF+rWaqy9lHkrYgzpATbW3CtJp3UfkVgpE='
           NEXT_PUBLIC_DESKTOP_PROJECT_ID: ${{ inputs.channel == 'stable' && secrets.UMAMI_STABLE_DESKTOP_PROJECT_ID || secrets.UMAMI_BETA_DESKTOP_PROJECT_ID }}
           NEXT_PUBLIC_DESKTOP_UMAMI_BASE_URL: ${{ inputs.channel == 'stable' && secrets.UMAMI_STABLE_DESKTOP_BASE_URL || secrets.UMAMI_BETA_DESKTOP_BASE_URL }}
+          POSTHOG_KEY: ${{ secrets.POSTHOG_KEY || vars.POSTHOG_KEY }}
+          POSTHOG_HOST: ${{ secrets.POSTHOG_HOST || vars.POSTHOG_HOST }}
+          DEBUG_POSTHOG_ANALYTICS: ${{ secrets.DEBUG_POSTHOG_ANALYTICS || vars.DEBUG_POSTHOG_ANALYTICS }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6

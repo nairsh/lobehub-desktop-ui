@@ -20,47 +20,53 @@ type Props = {
 };
 
 let analyticsInstance: ReturnType<typeof createSingletonAnalytics> | null = null;
+let analyticsInstanceConfigKey = '';
 
-export const LobeAnalyticsProvider = memo(
-  ({ children, ga4Config, postHogConfig }: Props) => {
-    const analytics = useMemo(() => {
-      if (analyticsInstance) {
-        return analyticsInstance;
-      }
+const getConfigKey = (
+  ga4Config: GoogleAnalyticsProviderConfig,
+  postHogConfig: PostHogProviderAnalyticsConfig,
+) => JSON.stringify({ ga4Config, postHogConfig });
 
-      analyticsInstance = createSingletonAnalytics({
-        business: BUSINESS_LINE,
-        debug: isDev,
-        providers: {
-          ga4: ga4Config,
-          posthog: postHogConfig,
-        },
-      });
+export const LobeAnalyticsProvider = memo(({ children, ga4Config, postHogConfig }: Props) => {
+  const analytics = useMemo(() => {
+    const configKey = getConfigKey(ga4Config, postHogConfig);
 
+    if (analyticsInstance && analyticsInstanceConfigKey === configKey) {
       return analyticsInstance;
-    }, []);
+    }
 
-    if (!analytics) return children;
+    analyticsInstance = createSingletonAnalytics({
+      business: BUSINESS_LINE,
+      debug: isDev,
+      providers: {
+        ga4: ga4Config,
+        posthog: postHogConfig,
+      },
+    });
+    analyticsInstanceConfigKey = configKey;
 
-    return (
-      <AnalyticsProvider
-        client={analytics}
-        onInitializeSuccess={() => {
-          analyticsInstance?.setGlobalContext({
+    return analyticsInstance;
+  }, [ga4Config, postHogConfig]);
+
+  if (!analytics) return children;
+
+  return (
+    <AnalyticsProvider
+      client={analytics}
+      onInitializeSuccess={() => {
+        analyticsInstance?.setGlobalContext({
+          platform: isDesktop ? 'desktop' : 'web',
+        });
+
+        analyticsInstance
+          ?.getProvider('posthog')
+          ?.getNativeInstance()
+          ?.register({
             platform: isDesktop ? 'desktop' : 'web',
           });
-
-          analyticsInstance
-            ?.getProvider('posthog')
-            ?.getNativeInstance()
-            ?.register({
-              platform: isDesktop ? 'desktop' : 'web',
-            });
-        }}
-      >
-        {children}
-      </AnalyticsProvider>
-    );
-  },
-  () => true,
-);
+      }}
+    >
+      {children}
+    </AnalyticsProvider>
+  );
+});

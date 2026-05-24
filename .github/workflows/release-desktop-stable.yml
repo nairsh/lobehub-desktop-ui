@@ -212,6 +212,9 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           NEXT_PUBLIC_DESKTOP_PROJECT_ID: ${{ secrets.UMAMI_STABLE_DESKTOP_PROJECT_ID }}
           NEXT_PUBLIC_DESKTOP_UMAMI_BASE_URL: ${{ secrets.UMAMI_STABLE_DESKTOP_BASE_URL }}
+          POSTHOG_KEY: ${{ secrets.POSTHOG_KEY || vars.POSTHOG_KEY }}
+          POSTHOG_HOST: ${{ secrets.POSTHOG_HOST || vars.POSTHOG_HOST }}
+          DEBUG_POSTHOG_ANALYTICS: ${{ secrets.DEBUG_POSTHOG_ANALYTICS || vars.DEBUG_POSTHOG_ANALYTICS }}
           # Debug hdiutil issues (https://github.com/electron-userland/electron-builder/issues/8415)
           DEBUG_DMG: true
 
@@ -228,6 +231,9 @@ jobs:
           KEY_VAULTS_SECRET: 'oLXWIiR/AKF+rWaqy9lHkrYgzpATbW3CtJp3UfkVgpE='
           NEXT_PUBLIC_DESKTOP_PROJECT_ID: ${{ secrets.UMAMI_STABLE_DESKTOP_PROJECT_ID }}
           NEXT_PUBLIC_DESKTOP_UMAMI_BASE_URL: ${{ secrets.UMAMI_STABLE_DESKTOP_BASE_URL }}
+          POSTHOG_KEY: ${{ secrets.POSTHOG_KEY || vars.POSTHOG_KEY }}
+          POSTHOG_HOST: ${{ secrets.POSTHOG_HOST || vars.POSTHOG_HOST }}
+          DEBUG_POSTHOG_ANALYTICS: ${{ secrets.DEBUG_POSTHOG_ANALYTICS || vars.DEBUG_POSTHOG_ANALYTICS }}
           TEMP: C:\temp
           TMP: C:\temp
 
@@ -247,6 +253,9 @@ jobs:
           KEY_VAULTS_SECRET: 'oLXWIiR/AKF+rWaqy9lHkrYgzpATbW3CtJp3UfkVgpE='
           NEXT_PUBLIC_DESKTOP_PROJECT_ID: ${{ secrets.UMAMI_STABLE_DESKTOP_PROJECT_ID }}
           NEXT_PUBLIC_DESKTOP_UMAMI_BASE_URL: ${{ secrets.UMAMI_STABLE_DESKTOP_BASE_URL }}
+          POSTHOG_KEY: ${{ secrets.POSTHOG_KEY || vars.POSTHOG_KEY }}
+          POSTHOG_HOST: ${{ secrets.POSTHOG_HOST || vars.POSTHOG_HOST }}
+          DEBUG_POSTHOG_ANALYTICS: ${{ secrets.DEBUG_POSTHOG_ANALYTICS || vars.DEBUG_POSTHOG_ANALYTICS }}
 
       - name: Upload artifacts
         uses: ./.github/actions/desktop-upload-artifacts

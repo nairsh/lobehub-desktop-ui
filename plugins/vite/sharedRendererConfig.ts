@@ -145,6 +145,11 @@ export function sharedRendererDefine(options: { isElectron: boolean; isMobile: b
       .filter(([key]) => key.toUpperCase().startsWith('NEXT_PUBLIC_'))
       .map(([key, value]) => [`process.env.${key}`, JSON.stringify(value)]),
   );
+  const posthogDefine = {
+    'process.env.DEBUG_POSTHOG_ANALYTICS': JSON.stringify(process.env.DEBUG_POSTHOG_ANALYTICS),
+    'process.env.POSTHOG_HOST': JSON.stringify(process.env.POSTHOG_HOST),
+    'process.env.POSTHOG_KEY': JSON.stringify(process.env.POSTHOG_KEY),
+  };
 
   return {
     '__CI__': process.env.CI === 'true' ? 'true' : 'false',
@@ -152,6 +157,7 @@ export function sharedRendererDefine(options: { isElectron: boolean; isMobile: b
     '__ELECTRON__': JSON.stringify(options.isElectron),
     '__MOBILE__': JSON.stringify(options.isMobile),
     ...nextPublicDefine,
+    ...posthogDefine,
     // Keep a safe fallback so generic `process.env` access won't crash in browser runtime.
     'process.env': '{}',
   };
