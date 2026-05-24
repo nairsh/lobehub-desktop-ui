@@ -284,6 +284,21 @@ export default {
   'promptTransform.action': 'Refine Idea',
   'promptTransform.actions.rewrite': 'Expand Details',
   'promptTransform.actions.translate': 'Translate',
+  'promptTransform.modes.general.description':
+    'Keep the prompt concise and practical for direct model input with mild structure improvements.',
+  'promptTransform.modes.general.label': 'General',
+  'promptTransform.modes.deepResearch.description':
+    'Create a neutral research brief with subquestions, evidence needs, assumptions, scope, and output format.',
+  'promptTransform.modes.deepResearch.label': 'Deep Research',
+  'promptTransform.modes.debateSteelman.description':
+    'Balance both sides, highlight core trade-offs and strongest arguments, then frame the request fairly.',
+  'promptTransform.modes.debateSteelman.label': 'Debate Steelman',
+  'promptTransform.modes.neutralizeFraming.description':
+    'Remove loaded wording, avoid bias, and rewrite into a balanced, neutral phrasing.',
+  'promptTransform.modes.neutralizeFraming.label': 'Neutralize Framing',
+  'promptTransform.modes.structuredQuestion.description':
+    'Convert messy input into Context, Task, Constraints, and Output format structure.',
+  'promptTransform.modes.structuredQuestion.label': 'Structured Question',
   'promptTransform.status.rewrite': 'Expanding details...',
   'promptTransform.status.translate': 'Translating...',
   'dataStatistics.messages': 'Messages',

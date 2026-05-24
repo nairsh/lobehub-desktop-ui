@@ -1,6 +1,7 @@
 'use client';
 
-import { memo, useCallback } from 'react';
+import { type TextRewriteMode } from '@lobechat/prompts';
+import { memo, useCallback, useState } from 'react';
 
 import PromptTransformAction from '@/features/PromptTransform/PromptTransformAction';
 import { useAgentStore } from '@/store/agent';
@@ -11,6 +12,7 @@ import { useAgentId } from '../../hooks/useAgentId';
 import { useChatInputStore, useStoreApi } from '../../store';
 
 const PromptTransform = memo(() => {
+  const [textRewriteMode, setTextRewriteMode] = useState<TextRewriteMode>('general');
   const [editor, markdownContent] = useChatInputStore((s) => [s.editor, s.markdownContent]);
   const storeApi = useStoreApi();
   const routeAgentId = useAgentId();
@@ -58,7 +60,9 @@ const PromptTransform = memo(() => {
       mode={'text'}
       prompt={markdownContent}
       taskConfig={taskConfig}
+      textRewriteMode={textRewriteMode}
       onPromptChange={onPromptChange}
+      onTextRewriteModeChange={setTextRewriteMode}
     />
   );
 });

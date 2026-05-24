@@ -1,4 +1,8 @@
-import { chainRewriteGenerationPrompt, chainTranslate } from '@lobechat/prompts';
+import {
+  chainRewriteGenerationPrompt,
+  chainTranslate,
+  type TextRewriteMode,
+} from '@lobechat/prompts';
 import { useCallback, useState } from 'react';
 
 import { chatService } from '@/services/chat';
@@ -16,6 +20,7 @@ interface UsePromptTransformParams {
     model?: string;
     provider?: string;
   };
+  textRewriteMode?: TextRewriteMode;
 }
 
 type PromptTransformAction = 'rewrite' | 'translate';
@@ -23,6 +28,7 @@ type PromptTransformAction = 'rewrite' | 'translate';
 export const usePromptTransform = ({
   getPrompt,
   mode,
+  textRewriteMode,
   prompt,
   onPromptChange,
   taskConfig,
@@ -69,6 +75,7 @@ export const usePromptTransform = ({
             ? chainRewriteGenerationPrompt({
                 mode,
                 prompt: promptContent,
+                textRewriteMode: mode === 'text' ? textRewriteMode : undefined,
               })
             : chainTranslate(promptContent, 'English'),
         ),
@@ -112,6 +119,7 @@ export const usePromptTransform = ({
       isRewriteActionEnabled,
       isTransforming,
       mode,
+      textRewriteMode,
       onPromptChange,
       runPresetTask,
       taskConfig,

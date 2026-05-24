@@ -39,4 +39,65 @@ describe('chainRewriteGenerationPrompt', () => {
     expect(result.messages![0].content).toContain("I'm ready to refine your prompt");
     expect(result.messages![1].content).toContain(prompt);
   });
+
+  it('should use general template for text rewrite by default', () => {
+    const prompt = 'Summarize this for my report';
+
+    const result = chainRewriteGenerationPrompt({ mode: 'text', prompt });
+
+    expect(result.messages![0].content).toContain("Clarify the user's core goal");
+  });
+
+  it('should build deepResearch text rewrite template', () => {
+    const prompt = 'Can you evaluate this startup idea?';
+
+    const result = chainRewriteGenerationPrompt({
+      mode: 'text',
+      prompt,
+      textRewriteMode: 'deepResearch',
+    });
+
+    expect(result.messages![0].content).toContain('neutral research brief');
+    expect(result.messages![0].content).toContain('3-5 concrete subquestions');
+    expect(result.messages![1].content).toContain(prompt);
+  });
+
+  it('should build debateSteelman text rewrite template', () => {
+    const prompt = 'Should we migrate to monorepo?';
+
+    const result = chainRewriteGenerationPrompt({
+      mode: 'text',
+      prompt,
+      textRewriteMode: 'debateSteelman',
+    });
+
+    expect(result.messages![0].content).toContain('strongest arguments on both sides');
+    expect(result.messages![0].content).toContain('balanced framing');
+  });
+
+  it('should build neutralizeFraming text rewrite template', () => {
+    const prompt = 'Why is their solution totally broken?';
+
+    const result = chainRewriteGenerationPrompt({
+      mode: 'text',
+      prompt,
+      textRewriteMode: 'neutralizeFraming',
+    });
+
+    expect(result.messages![0].content).toContain('remove loaded framing');
+    expect(result.messages![0].content).toContain('Keep constraints, names, numbers');
+  });
+
+  it('should build structuredQuestion text rewrite template', () => {
+    const prompt = 'Need a plan, also include budget and timeline and who to ask';
+
+    const result = chainRewriteGenerationPrompt({
+      mode: 'text',
+      prompt,
+      textRewriteMode: 'structuredQuestion',
+    });
+
+    expect(result.messages![0].content).toContain('structured request with these sections');
+    expect(result.messages![0].content).toContain('Output format');
+  });
 });
