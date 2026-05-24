@@ -73,8 +73,8 @@ export class OperationActionsImpl {
     }
 
     // Fallback to global state
-    const agentId = this.#get().activeAgentId;
     const activeSessionId = this.#get().activeSessionId;
+    const agentId = this.#get().activeGroupAgentId || activeSessionId;
     const groupId = this.#get().activeGroupId;
     const projectId = getProjectStoreState().activeProjectId;
     const topicId = this.#get().activeTopicId;
@@ -654,10 +654,11 @@ export class OperationActionsImpl {
   };
 
   markUnreadCompleted = (agentId: string, topicId?: string | null): void => {
-    const { activeAgentId, activeTopicId } = this.#get();
+    const { activeGroupAgentId, activeSessionId, activeTopicId } = this.#get();
+    const currentActiveId = activeGroupAgentId || activeSessionId;
 
     // Only mark when user is NOT currently viewing this agent/topic
-    const isViewingAgent = activeAgentId === agentId;
+    const isViewingAgent = currentActiveId === agentId;
     const isViewingTopic = isViewingAgent && (activeTopicId ?? null) === (topicId ?? null);
 
     if (!isViewingAgent) {

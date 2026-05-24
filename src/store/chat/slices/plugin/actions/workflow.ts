@@ -33,7 +33,8 @@ export class PluginWorkflowActionImpl {
       content,
       parentId,
       role: 'assistant',
-      agentId: parentMessage?.agentId ?? this.#get().activeAgentId,
+      agentId:
+        parentMessage?.agentId ?? (this.#get().activeGroupAgentId || this.#get().activeSessionId),
       topicId:
         parentMessage?.topicId !== undefined ? parentMessage.topicId : this.#get().activeTopicId,
     };
@@ -55,7 +56,8 @@ export class PluginWorkflowActionImpl {
     inPortalThread?: boolean;
     inSearchWorkflow?: boolean;
   } = {}): Promise<void> => {
-    const { internal_execAgentRuntime, activeAgentId, activeTopicId } = this.#get();
+    const { internal_execAgentRuntime, activeGroupAgentId, activeSessionId, activeTopicId } =
+      this.#get();
 
     const chats = inPortalThread
       ? threadSelectors.portalAIChatsWithHistoryConfig(this.#get())
@@ -63,7 +65,7 @@ export class PluginWorkflowActionImpl {
 
     await internal_execAgentRuntime({
       context: {
-        agentId: activeAgentId,
+        agentId: activeGroupAgentId || activeSessionId,
         topicId: activeTopicId,
         threadId,
       },

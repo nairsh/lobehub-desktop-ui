@@ -35,7 +35,7 @@ export class SearchActionImpl {
     const newToolCallId = `tool_call_${nanoid()}`;
 
     const toolMessage: CreateMessageParams = {
-      agentId: message.agentId ?? this.#get().activeAgentId,
+      agentId: message.agentId ?? (this.#get().activeGroupAgentId || this.#get().activeSessionId),
       content: message.content,
       id: undefined,
       parentId: message.parentId,

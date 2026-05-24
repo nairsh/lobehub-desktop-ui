@@ -188,7 +188,6 @@ export class SessionActionImpl {
 
     this.#set(
       {
-        activeAgentId: sessionId,
         activeId: sessionId,
         activeSessionId: sessionId,
       },

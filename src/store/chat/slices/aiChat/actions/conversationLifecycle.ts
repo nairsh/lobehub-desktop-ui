@@ -690,7 +690,9 @@ export class ConversationLifecycleActionImpl {
     const message = dbMessageSelectors.getDbMessageById(id)(this.#get());
     if (!message) return;
 
-    const { activeAgentId, activeTopicId, activeThreadId, activeGroupId } = this.#get();
+    const { activeGroupAgentId, activeSessionId, activeTopicId, activeThreadId, activeGroupId } =
+      this.#get();
+    const activeAgentId = activeGroupAgentId || activeSessionId;
 
     // Create base context for continue operation (using global state)
     const continueContext = {

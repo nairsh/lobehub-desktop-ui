@@ -370,7 +370,8 @@ const WorkspacePanel = memo<WorkspacePanelProps>(({ knowledgeBaseId, project, pr
                               icon: <TrashIcon size={14} />,
                               key: 'delete',
                               label: t('delete', { defaultValue: 'Delete', ns: 'common' }),
-                              onClick: ({ domEvent }) => deleteFile(file.id, domEvent as any),
+                              onClick: ({ domEvent }) =>
+                                deleteFile(file.fileId ?? file.id, domEvent as any),
                             },
                           ]}
                         >

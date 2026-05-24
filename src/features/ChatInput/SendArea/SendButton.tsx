@@ -14,8 +14,8 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
     align-items: center;
     justify-content: center;
 
-    width: 34px;
-    height: 34px;
+    width: 28px;
+    height: 28px;
     border: none;
     border-radius: 50%;
 
@@ -47,9 +47,9 @@ const SendButton = memo(() => {
       onClick={() => (generating ? handleStop() : send())}
     >
       {generating ? (
-        <Square fill={'currentColor'} size={12} strokeWidth={0} />
+        <Square fill={'currentColor'} size={10} strokeWidth={0} />
       ) : (
-        <ArrowRight size={16} />
+        <ArrowRight size={14} />
       )}
     </button>
   );

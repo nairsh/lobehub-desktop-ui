@@ -1,3 +1,4 @@
+import { savePinnedIds } from '@/store/project/initialState';
 import type { ProjectStore } from '@/store/project/store';
 import type { StoreSetter } from '@/store/types';
 
@@ -66,10 +67,10 @@ export class ProjectActiveActionImpl implements ProjectActiveAction {
   togglePinProject = (id: string): void => {
     const { pinnedProjectIds } = this.#get();
     const alreadyPinned = pinnedProjectIds.includes(id);
-    this.#set({
-      pinnedProjectIds: alreadyPinned
-        ? pinnedProjectIds.filter((p) => p !== id)
-        : [...pinnedProjectIds, id],
-    });
+    const next = alreadyPinned
+      ? pinnedProjectIds.filter((p) => p !== id)
+      : [...pinnedProjectIds, id];
+    this.#set({ pinnedProjectIds: next });
+    savePinnedIds(next);
   };
 }

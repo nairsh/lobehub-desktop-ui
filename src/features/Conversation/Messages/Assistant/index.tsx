@@ -1,12 +1,14 @@
 'use client';
 
 import { LOADING_FLAT } from '@lobechat/const';
+import { ModelIcon } from '@lobehub/icons';
 import isEqual from 'fast-deep-equal';
 import { type MouseEventHandler } from 'react';
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 
 import { MESSAGE_ACTION_BAR_PORTAL_ATTRIBUTES } from '@/const/messageActionPortal';
 import { ChatItem } from '@/features/Conversation/ChatItem';
+import { aiModelSelectors, useAiInfraStore } from '@/store/aiInfra';
 import { useUserStore } from '@/store/user';
 import { userGeneralSettingsSelectors } from '@/store/user/selectors';
 
@@ -54,7 +56,17 @@ const AssistantMessage = memo<AssistantMessageProps>(({ id, index, disableEditin
     metadata,
   } = item;
 
-  const avatar = useAgentMeta(agentId);
+  const agentMeta = useAgentMeta(agentId);
+  const modelCard = useAiInfraStore(
+    model ? aiModelSelectors.getEnabledModelById(model, provider ?? '') : () => undefined,
+  );
+  const modelDisplayName = model
+    ? (modelCard?.displayName ?? (model.includes('/') ? model.split('/').at(-1)! : model))
+    : undefined;
+  const avatar = useMemo(
+    () => (modelDisplayName ? { ...agentMeta, title: modelDisplayName } : agentMeta),
+    [agentMeta, modelDisplayName],
+  );
 
   // Get editing, generating, creating, and interrupted state from ConversationStore
   const editing = useConversationStore(messageStateSelectors.isMessageEditing(id));
@@ -112,6 +124,9 @@ const AssistantMessage = memo<AssistantMessageProps>(({ id, index, disableEditin
           )}
           {actionBarHolder}
         </>
+      }
+      customAvatarRender={
+        model ? (_, defaultNode) => <ModelIcon model={model} size={28} type={'color'} /> : undefined
       }
       error={
         errorContent && error && (message === LOADING_FLAT || !message || shouldForceShowError)

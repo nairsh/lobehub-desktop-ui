@@ -30,7 +30,7 @@ import { messageMapKey } from '../../../utils/messageMapKey';
  */
 export const currentDbChatKey = (s: ChatStoreState) =>
   messageMapKey({
-    agentId: s.activeAgentId || s.activeSessionId,
+    agentId: s.activeGroupAgentId || s.activeSessionId,
     sessionId: s.activeSessionId,
     topicId: s.activeTopicId,
   });
@@ -48,7 +48,7 @@ const getDbMessagesByKey =
  * Get current active agent's raw messages from database
  */
 const activeDbMessages = (s: ChatStoreState): UIChatMessage[] => {
-  if (!s.activeAgentId && !s.activeSessionId) return [];
+  if (!s.activeSessionId && !s.activeGroupAgentId) return [];
   return getDbMessagesByKey(currentDbChatKey(s))(s);
 };
 

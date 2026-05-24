@@ -68,13 +68,13 @@ export class PluginTypesActionImpl {
       let groupId = operation?.context?.groupId;
       const topicId = operation?.context?.topicId;
 
-      // For agent-builder tools, inject activeAgentId from store if not in context
-      // This is needed because AgentBuilderProvider uses a separate scope for messages
-      // but the tools need the correct agentId for execution
+      // For agent-builder tools, inject the agent store's activeAgentId (agt_* entity, not session id)
+      // AgentBuilderProvider uses a separate scope so the operation context may not carry agentId
       if (payload.identifier === 'lobe-agent-builder') {
-        const activeAgentId = this.#get().activeAgentId;
-        if (activeAgentId) {
-          agentId = activeAgentId;
+        const { getAgentStoreState } = await import('@/store/agent');
+        const storeAgentId = getAgentStoreState().activeAgentId;
+        if (storeAgentId) {
+          agentId = storeAgentId;
         }
       }
 

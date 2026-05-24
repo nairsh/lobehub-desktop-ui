@@ -52,9 +52,10 @@ const hasThreadBySourceMsgId = (id: string) => (s: ChatStoreState) => {
  * even when activeThreadId is set (i.e., viewing inside a subtopic).
  */
 const getMainScopeMessages = (s: ChatStoreState): UIChatMessage[] => {
-  if (!s.activeAgentId) return [];
+  const activeAgentId = s.activeGroupAgentId || s.activeSessionId;
+  if (!activeAgentId) return [];
   const mainKey = messageMapKey({
-    agentId: s.activeAgentId,
+    agentId: activeAgentId,
     groupId: s.activeGroupId,
     topicId: s.activeTopicId,
   });

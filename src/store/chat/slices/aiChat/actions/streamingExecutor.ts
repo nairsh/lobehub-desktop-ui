@@ -124,8 +124,8 @@ export class StreamingExecutorActionImpl {
   } => {
     // Use provided agentId/topicId or fallback to global state
     // Note: Use || instead of ?? to also fallback when paramAgentId is empty string
-    const { activeAgentId, activeTopicId } = this.#get();
-    const agentId = paramAgentId || activeAgentId;
+    const { activeGroupAgentId, activeSessionId, activeTopicId } = this.#get();
+    const agentId = paramAgentId || activeGroupAgentId || activeSessionId;
     const topicId = paramTopicId !== undefined ? paramTopicId : activeTopicId;
 
     // Determine effectiveAgentId for agent config retrieval:

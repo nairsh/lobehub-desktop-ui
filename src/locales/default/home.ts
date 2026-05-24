@@ -4,6 +4,7 @@ export default {
   'agentSelection.noSelected': 'No agents selected',
   'agentSelection.search': 'No matching agents found',
   'project.create': 'New project',
+  'project.pinned': 'Pinned',
   'project.deleteConfirm':
     'This project will be deleted and can’t be recovered. Confirm to continue.',
   'starter.createAgent': 'Create Agent',

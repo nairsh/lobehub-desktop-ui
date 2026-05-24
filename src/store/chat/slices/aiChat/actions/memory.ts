@@ -35,7 +35,7 @@ export class ChatMemoryActionImpl {
       },
       params: { ...chainSummaryHistory(messages), model, provider, stream: false },
       trace: {
-        sessionId: this.#get().activeAgentId,
+        sessionId: this.#get().activeSessionId,
         topicId: this.#get().activeTopicId,
         traceName: TraceNameMap.SummaryHistoryMessages,
       },

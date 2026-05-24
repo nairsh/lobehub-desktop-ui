@@ -92,7 +92,8 @@ export class ConversationControlActionImpl {
   };
 
   stopGenerateMessage = (): void => {
-    const { activeAgentId, activeTopicId, cancelOperations } = this.#get();
+    const { activeGroupAgentId, activeSessionId, activeTopicId, cancelOperations } = this.#get();
+    const activeAgentId = activeGroupAgentId || activeSessionId;
 
     // Cancel running agent-runtime operations in the current context —
     // both client-side (execAgentRuntime) and Gateway-mode
@@ -112,7 +113,8 @@ export class ConversationControlActionImpl {
   };
 
   cancelSendMessageInServer = (topicId?: string): void => {
-    const { activeAgentId, activeTopicId } = this.#get();
+    const { activeGroupAgentId, activeSessionId, activeTopicId } = this.#get();
+    const activeAgentId = activeGroupAgentId || activeSessionId;
 
     // Determine which operation to cancel
     const targetTopicId = topicId ?? activeTopicId;
@@ -142,7 +144,8 @@ export class ConversationControlActionImpl {
   };
 
   clearSendMessageError = (): void => {
-    const { activeAgentId, activeTopicId } = this.#get();
+    const { activeGroupAgentId, activeSessionId, activeTopicId } = this.#get();
+    const activeAgentId = activeGroupAgentId || activeSessionId;
     const contextKey = messageMapKey({ agentId: activeAgentId, topicId: activeTopicId });
     const operationIds = this.#get().operationsByContext[contextKey] || [];
 
@@ -176,7 +179,7 @@ export class ConversationControlActionImpl {
 
     // Build effective context from provided context or global state
     const effectiveContext: ConversationContext = context ?? {
-      agentId: this.#get().activeAgentId,
+      agentId: this.#get().activeGroupAgentId || this.#get().activeSessionId,
       topicId: this.#get().activeTopicId,
       threadId: this.#get().activeThreadId,
     };
@@ -309,7 +312,7 @@ export class ConversationControlActionImpl {
     const { internal_execAgentRuntime, startOperation, completeOperation } = this.#get();
 
     const effectiveContext: ConversationContext = context ?? {
-      agentId: this.#get().activeAgentId,
+      agentId: this.#get().activeGroupAgentId || this.#get().activeSessionId,
       topicId: this.#get().activeTopicId,
       threadId: this.#get().activeThreadId,
     };
@@ -412,7 +415,7 @@ export class ConversationControlActionImpl {
     const { internal_execAgentRuntime, startOperation, completeOperation } = this.#get();
 
     const effectiveContext: ConversationContext = context ?? {
-      agentId: this.#get().activeAgentId,
+      agentId: this.#get().activeGroupAgentId || this.#get().activeSessionId,
       topicId: this.#get().activeTopicId,
       threadId: this.#get().activeThreadId,
     };
@@ -514,7 +517,7 @@ export class ConversationControlActionImpl {
     const { startOperation, completeOperation } = this.#get();
 
     const effectiveContext: ConversationContext = context ?? {
-      agentId: this.#get().activeAgentId,
+      agentId: this.#get().activeGroupAgentId || this.#get().activeSessionId,
       topicId: this.#get().activeTopicId,
       threadId: this.#get().activeThreadId,
     };
@@ -563,7 +566,7 @@ export class ConversationControlActionImpl {
 
     // Build effective context from provided context or global state
     const effectiveContext: ConversationContext = context ?? {
-      agentId: this.#get().activeAgentId,
+      agentId: this.#get().activeGroupAgentId || this.#get().activeSessionId,
       topicId: this.#get().activeTopicId,
       threadId: this.#get().activeThreadId,
     };
@@ -657,7 +660,7 @@ export class ConversationControlActionImpl {
 
     // Build effective context from provided context or global state
     const effectiveContext: ConversationContext = context ?? {
-      agentId: this.#get().activeAgentId,
+      agentId: this.#get().activeGroupAgentId || this.#get().activeSessionId,
       topicId: this.#get().activeTopicId,
       threadId: this.#get().activeThreadId,
     };

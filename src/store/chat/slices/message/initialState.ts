@@ -3,7 +3,7 @@ import { type UIChatMessage } from '@lobechat/types';
 import { type ChatGroupAgentItem } from '@/database/schemas/chatGroup';
 
 export interface ChatMessageState {
-  activeAgentId: string;
+  activeGroupAgentId?: string;
   activeSessionId?: string;
   /**
    * Raw messages from database (flat structure)
@@ -29,7 +29,7 @@ export interface ChatMessageState {
 }
 
 export const initialMessageState: ChatMessageState = {
-  activeAgentId: '',
+  activeGroupAgentId: undefined,
   activeSessionId: undefined,
   dbMessagesMap: {},
   groupAgentMaps: {},

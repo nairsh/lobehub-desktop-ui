@@ -82,13 +82,13 @@ class ChatGroupInternalAction implements ResetableStore {
       agentStore.internal_dispatchAgentMap(agent.id, agent as any);
     }
 
-    // Set activeAgentId to supervisor for correct model resolution
+    // Set activeGroupAgentId to supervisor for correct model resolution
     if (groupDetail.supervisorAgentId) {
       agentStore.setActiveAgentId(groupDetail.supervisorAgentId);
       useChatStore.setState(
-        { activeAgentId: groupDetail.supervisorAgentId },
+        { activeGroupAgentId: groupDetail.supervisorAgentId },
         false,
-        'syncActiveAgentIdFromAgentGroup',
+        'syncActiveGroupAgentIdFromAgentGroup',
       );
     }
   };
@@ -203,13 +203,13 @@ class ChatGroupInternalAction implements ResetableStore {
             }
           }
 
-          // Set activeAgentId to supervisor for correct model resolution in sendMessage
+          // Set activeGroupAgentId to supervisor for correct model resolution in sendMessage
           if (groupDetail.supervisorAgentId) {
             agentStore.setActiveAgentId(groupDetail.supervisorAgentId);
             useChatStore.setState(
-              { activeAgentId: groupDetail.supervisorAgentId },
+              { activeGroupAgentId: groupDetail.supervisorAgentId },
               false,
-              'syncActiveAgentIdFromAgentGroup',
+              'syncActiveGroupAgentIdFromAgentGroup',
             );
           }
         },

@@ -35,7 +35,7 @@ export class ChatTranslateActionImpl {
 
   getCurrentTracePayload = (data: Partial<TracePayload>): TracePayload => {
     return {
-      sessionId: this.#get().activeAgentId,
+      sessionId: this.#get().activeSessionId,
       topicId: this.#get().activeTopicId,
       ...data,
     };

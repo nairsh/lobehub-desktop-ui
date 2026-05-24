@@ -60,11 +60,11 @@ export class PluginPublicApiActionImpl {
     const message = displayMessageSelectors.getDisplayMessageById(id)(this.#get());
     if (!message || message.role !== 'tool') return;
 
-    const { activeAgentId, activeTopicId, activeThreadId } = this.#get();
+    const { activeGroupAgentId, activeSessionId, activeTopicId, activeThreadId } = this.#get();
 
     await this.#get().internal_execAgentRuntime({
       context: {
-        agentId: activeAgentId,
+        agentId: activeGroupAgentId || activeSessionId,
         topicId: activeTopicId,
         threadId: activeThreadId ?? undefined,
       },

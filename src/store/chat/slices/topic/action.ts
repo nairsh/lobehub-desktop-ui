@@ -99,7 +99,7 @@ export class ChatTopicActionImpl {
   };
 
   createTopic = async (sessionId?: string): Promise<string | undefined> => {
-    const { activeAgentId, activeSessionId, internal_createTopic } = this.#get();
+    const { activeGroupAgentId, activeSessionId, internal_createTopic } = this.#get();
 
     const messages = displayMessageSelectors.activeDisplayMessages(this.#get());
 
@@ -107,7 +107,7 @@ export class ChatTopicActionImpl {
     const topicId = await internal_createTopic({
       title: t('defaultTitle', { ns: 'topic' }),
       messages: messages.map((m) => m.id),
-      sessionId: sessionId || activeSessionId || activeAgentId,
+      sessionId: sessionId || activeSessionId || activeGroupAgentId,
     });
     this.#set({ creatingTopic: false }, false, n('creatingTopic/end'));
 
@@ -119,13 +119,14 @@ export class ChatTopicActionImpl {
     const messages = displayMessageSelectors.activeDisplayMessages(this.#get());
     if (messages.length === 0) return;
 
-    const { activeAgentId, activeSessionId, summaryTopicTitle, internal_createTopic } = this.#get();
+    const { activeGroupAgentId, activeSessionId, summaryTopicTitle, internal_createTopic } =
+      this.#get();
 
     // 1. create topic and bind these messages
     const topicId = await internal_createTopic({
       title: t('defaultTitle', { ns: 'topic' }),
       messages: messages.map((m) => m.id),
-      sessionId: sessionId || activeSessionId || activeAgentId,
+      sessionId: sessionId || activeSessionId || activeGroupAgentId,
     });
 
     this.#get().internal_updateTopicLoading(topicId, true);
@@ -159,8 +160,9 @@ export class ChatTopicActionImpl {
   };
 
   importTopic = async (data: string): Promise<string | undefined> => {
-    const { activeAgentId, activeGroupId, activeSessionId, refreshTopic, switchTopic } =
+    const { activeGroupAgentId, activeGroupId, activeSessionId, refreshTopic, switchTopic } =
       this.#get();
+    const activeAgentId = activeGroupAgentId || activeSessionId;
 
     if (!activeAgentId) return;
 
@@ -172,7 +174,7 @@ export class ChatTopicActionImpl {
 
     try {
       const result = await topicService.importTopic({
-        agentId: activeSessionId || activeAgentId,
+        agentId: activeSessionId || activeGroupAgentId,
         data,
         groupId: activeGroupId,
       });
@@ -239,7 +241,7 @@ export class ChatTopicActionImpl {
   };
 
   favoriteTopic = async (id: string, favorite: boolean): Promise<void> => {
-    const { activeAgentId } = this.#get();
+    const activeAgentId = this.#get().activeGroupAgentId || this.#get().activeSessionId;
     await this.#get().internal_updateTopic(id, { favorite });
 
     if (!activeAgentId) return;
@@ -294,7 +296,8 @@ export class ChatTopicActionImpl {
   };
 
   autoRenameTopicTitle = async (id: string): Promise<void> => {
-    const { activeAgentId: agentId, summaryTopicTitle, internal_updateTopicLoading } = this.#get();
+    const agentId = this.#get().activeGroupAgentId || this.#get().activeSessionId;
+    const { summaryTopicTitle, internal_updateTopicLoading } = this.#get();
 
     internal_updateTopicLoading(id, true);
     const messages = await messageService.getMessages({ agentId, topicId: id });
@@ -411,7 +414,8 @@ export class ChatTopicActionImpl {
   };
 
   loadMoreTopics = async (): Promise<void> => {
-    const { activeAgentId, activeGroupId, activeSessionId, topicDataMap } = this.#get();
+    const { activeGroupAgentId, activeGroupId, activeSessionId, topicDataMap } = this.#get();
+    const activeAgentId = activeGroupAgentId || activeSessionId;
     const key = topicMapKey({ agentId: activeAgentId, groupId: activeGroupId });
     const currentData = topicDataMap[key];
 
@@ -514,7 +518,8 @@ export class ChatTopicActionImpl {
   switchTopic = async (id?: string | null, options?: SwitchTopicOptions): Promise<void> => {
     const opts = options ?? {};
 
-    const { activeAgentId, activeGroupId } = this.#get();
+    const { activeGroupAgentId, activeGroupId, activeSessionId } = this.#get();
+    const activeAgentId = activeGroupAgentId || activeSessionId;
 
     // Clear the _new key data in the following cases:
     // 1. When id is null or undefined (switching to empty topic state)
@@ -557,15 +562,15 @@ export class ChatTopicActionImpl {
   };
 
   removeSessionTopics = async (): Promise<void> => {
-    const { switchTopic, activeAgentId, activeSessionId, refreshTopic } = this.#get();
-    const sessionId = activeSessionId || activeAgentId;
+    const { switchTopic, activeGroupAgentId, activeSessionId, refreshTopic } = this.#get();
+    const sessionId = activeSessionId || activeGroupAgentId;
     if (!sessionId) return;
 
     if (isSessionOwnedChatId(sessionId)) {
       await topicService.removeTopics(sessionId);
     } else {
-      if (!activeAgentId) return;
-      await topicService.removeTopicsByAgentId(activeAgentId);
+      if (!activeGroupAgentId) return;
+      await topicService.removeTopicsByAgentId(activeGroupAgentId);
     }
     await refreshTopic();
 
@@ -599,7 +604,15 @@ export class ChatTopicActionImpl {
   };
 
   removeTopic = async (id: string): Promise<void> => {
-    const { activeAgentId, activeGroupId, activeTopicId, switchTopic, refreshTopic } = this.#get();
+    const {
+      activeGroupAgentId,
+      activeSessionId,
+      activeGroupId,
+      activeTopicId,
+      switchTopic,
+      refreshTopic,
+    } = this.#get();
+    const activeAgentId = activeGroupAgentId || activeSessionId;
     // Allow deletion when either agentId or groupId is active
     if (!activeAgentId && !activeGroupId) return;
 
@@ -630,11 +643,11 @@ export class ChatTopicActionImpl {
   };
 
   refreshTopic = async (): Promise<void> => {
-    const { activeAgentId, activeGroupId, activeSessionId } = this.#get();
+    const { activeGroupAgentId, activeGroupId, activeSessionId } = this.#get();
     // Use topicMapKey to generate the same key used in useFetchTopics
     // Key format: [SWR_USE_FETCH_TOPIC, containerKey, { isInbox, pageSize }]
     const containerKey = topicMapKey({
-      agentId: activeSessionId || activeAgentId,
+      agentId: activeSessionId || activeGroupAgentId,
       groupId: activeGroupId,
     });
     await mutate(
@@ -682,8 +695,11 @@ export class ChatTopicActionImpl {
   };
 
   internal_dispatchTopic = (payload: ChatTopicDispatch, action?: any): void => {
-    const { activeAgentId, activeGroupId } = this.#get();
-    const key = topicMapKey({ agentId: activeAgentId, groupId: activeGroupId });
+    const { activeGroupAgentId, activeGroupId, activeSessionId } = this.#get();
+    const key = topicMapKey({
+      agentId: activeGroupAgentId || activeSessionId,
+      groupId: activeGroupId,
+    });
     const currentData = this.#get().topicDataMap[key];
     const nextItems = topicReducer(currentData?.items, payload);
 

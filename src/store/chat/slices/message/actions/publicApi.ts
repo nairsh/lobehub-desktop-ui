@@ -40,12 +40,13 @@ export class MessagePublicApiActionImpl {
       optimisticCreateMessage,
       updateMessageInput,
       activeTopicId,
-      activeAgentId,
+      activeGroupAgentId,
       activeSessionId,
       activeThreadId,
       activeGroupId,
       inputMessage,
     } = this.#get();
+    const activeAgentId = activeGroupAgentId || activeSessionId;
     if (!activeAgentId) return;
 
     const parentId = displayMessageSelectors.lastDisplayMessageId(this.#get());
@@ -78,11 +79,12 @@ export class MessagePublicApiActionImpl {
       optimisticCreateMessage,
       updateMessageInput,
       activeTopicId,
-      activeAgentId,
+      activeGroupAgentId,
       activeSessionId,
       activeThreadId,
       activeGroupId,
     } = this.#get();
+    const activeAgentId = activeGroupAgentId || activeSessionId;
     if (!activeAgentId) return;
 
     const parentId = displayMessageSelectors.lastDisplayMessageId(this.#get());
@@ -189,14 +191,14 @@ export class MessagePublicApiActionImpl {
 
   clearMessage = async (): Promise<void> => {
     const {
-      activeAgentId,
+      activeGroupAgentId,
       activeSessionId,
       activeTopicId,
       activeGroupId,
       refreshTopic,
       switchTopic,
     } = this.#get();
-    const sessionId = activeSessionId || activeAgentId;
+    const sessionId = activeSessionId || activeGroupAgentId;
 
     // For group sessions, we need to clear group messages using groupId
     // For regular sessions, we clear session messages using agentId

@@ -35,7 +35,8 @@ export class MessageQueryActionImpl {
   }
 
   refreshMessages = async (context?: Partial<ConversationContext>): Promise<void> => {
-    const agentId = context?.agentId ?? this.#get().activeAgentId;
+    const agentId =
+      context?.agentId ?? (this.#get().activeGroupAgentId || this.#get().activeSessionId);
     const activeSessionId = this.#get().activeSessionId;
     const sessionId =
       context?.sessionId ??
@@ -61,7 +62,8 @@ export class MessageQueryActionImpl {
     // Priority 1: Use explicit context if provided (preserving scope)
     if (params?.context) {
       ctx = {
-        agentId: params.context.agentId ?? this.#get().activeAgentId,
+        agentId:
+          params.context.agentId ?? (this.#get().activeGroupAgentId || this.#get().activeSessionId),
         // Preserve groupId from context
         groupId: params.context.groupId,
         // Preserve scope from context
@@ -82,7 +84,7 @@ export class MessageQueryActionImpl {
     // Priority 3: Fallback to global state
     else {
       ctx = {
-        agentId: this.#get().activeAgentId,
+        agentId: this.#get().activeGroupAgentId || this.#get().activeSessionId,
         groupId: this.#get().activeGroupId,
         sessionId: this.#get().activeSessionId,
         threadId: this.#get().activeThreadId,
