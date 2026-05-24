@@ -137,13 +137,13 @@ describe('Conversation right panel mount', () => {
     expect(screen.getByTestId('workspace-resources')).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByTestId('right-panel')).toHaveAttribute('data-expand', 'true');
-      expect(useGlobalStore.getState().status.showRightPanel).toBe(true);
+      expect(screen.getByTestId('right-panel')).toHaveAttribute('data-expand', 'false');
+      expect(useGlobalStore.getState().status.showRightPanel).toBe(false);
     });
 
     unmount();
 
-    expect(useGlobalStore.getState().status.showRightPanel).toBe(true);
+    expect(useGlobalStore.getState().status.showRightPanel).toBe(false);
   });
 
   it('renders resources section and empty state', () => {
