@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { agentService } from '@/services/agent';
+import { chatSessionService } from '@/services/chatSession';
 import { KnowledgeType } from '@/types/knowledgeBase';
 import { withSWR } from '~test-utils';
 
@@ -18,6 +19,18 @@ vi.mock('@/services/agent', () => ({
     deleteAgentFile: vi.fn(),
     deleteAgentKnowledgeBase: vi.fn(),
     getFilesAndKnowledgeBases: vi.fn(),
+    toggleFile: vi.fn(),
+    toggleKnowledgeBase: vi.fn(),
+  },
+}));
+
+vi.mock('@/services/chatSession', () => ({
+  chatSessionService: {
+    createChatFiles: vi.fn(),
+    createChatKnowledgeBase: vi.fn(),
+    deleteChatFile: vi.fn(),
+    deleteChatKnowledgeBase: vi.fn(),
+    getKnowledgeBasesAndFiles: vi.fn(),
     toggleFile: vi.fn(),
     toggleKnowledgeBase: vi.fn(),
   },
@@ -92,6 +105,27 @@ describe('KnowledgeSlice Actions', () => {
         true,
       );
     });
+
+    it('should route normal chat file attachments through chatSessionService', async () => {
+      const { result } = renderHook(() => useAgentStore());
+
+      vi.mocked(chatSessionService.createChatFiles).mockResolvedValue(undefined as any);
+
+      act(() => {
+        useAgentStore.setState({ activeAgentId: 'ssn_chat_1' });
+      });
+
+      await act(async () => {
+        await result.current.addFilesToAgent(['file-1'], true);
+      });
+
+      expect(chatSessionService.createChatFiles).toHaveBeenCalledWith(
+        'ssn_chat_1',
+        ['file-1'],
+        true,
+      );
+      expect(agentService.createAgentFiles).not.toHaveBeenCalled();
+    });
   });
 
   describe('addKnowledgeBaseToAgent', () => {
@@ -119,6 +153,27 @@ describe('KnowledgeSlice Actions', () => {
       });
 
       expect(agentService.createAgentKnowledgeBase).toHaveBeenCalledWith('agent-1', 'kb-1', true);
+    });
+
+    it('should route normal chat knowledge-base attachments through chatSessionService', async () => {
+      const { result } = renderHook(() => useAgentStore());
+
+      vi.mocked(chatSessionService.createChatKnowledgeBase).mockResolvedValue(undefined as any);
+
+      act(() => {
+        useAgentStore.setState({ activeAgentId: 'ssn_chat_1' });
+      });
+
+      await act(async () => {
+        await result.current.addKnowledgeBaseToAgent('kb-1');
+      });
+
+      expect(chatSessionService.createChatKnowledgeBase).toHaveBeenCalledWith(
+        'ssn_chat_1',
+        'kb-1',
+        true,
+      );
+      expect(agentService.createAgentKnowledgeBase).not.toHaveBeenCalled();
     });
   });
 
@@ -148,6 +203,23 @@ describe('KnowledgeSlice Actions', () => {
 
       expect(agentService.deleteAgentFile).toHaveBeenCalledWith('agent-1', 'file-1');
     });
+
+    it('should route normal chat file removal through chatSessionService', async () => {
+      const { result } = renderHook(() => useAgentStore());
+
+      vi.mocked(chatSessionService.deleteChatFile).mockResolvedValue(undefined as any);
+
+      act(() => {
+        useAgentStore.setState({ activeAgentId: 'ssn_chat_1' });
+      });
+
+      await act(async () => {
+        await result.current.removeFileFromAgent('file-1');
+      });
+
+      expect(chatSessionService.deleteChatFile).toHaveBeenCalledWith('ssn_chat_1', 'file-1');
+      expect(agentService.deleteAgentFile).not.toHaveBeenCalled();
+    });
   });
 
   describe('removeKnowledgeBaseFromAgent', () => {
@@ -175,6 +247,23 @@ describe('KnowledgeSlice Actions', () => {
       });
 
       expect(agentService.deleteAgentKnowledgeBase).toHaveBeenCalledWith('agent-1', 'kb-1');
+    });
+
+    it('should route normal chat knowledge-base removal through chatSessionService', async () => {
+      const { result } = renderHook(() => useAgentStore());
+
+      vi.mocked(chatSessionService.deleteChatKnowledgeBase).mockResolvedValue(undefined as any);
+
+      act(() => {
+        useAgentStore.setState({ activeAgentId: 'ssn_chat_1' });
+      });
+
+      await act(async () => {
+        await result.current.removeKnowledgeBaseFromAgent('kb-1');
+      });
+
+      expect(chatSessionService.deleteChatKnowledgeBase).toHaveBeenCalledWith('ssn_chat_1', 'kb-1');
+      expect(agentService.deleteAgentKnowledgeBase).not.toHaveBeenCalled();
     });
   });
 
@@ -220,6 +309,23 @@ describe('KnowledgeSlice Actions', () => {
 
       expect(agentService.toggleFile).toHaveBeenCalledWith('agent-1', 'file-1', false);
     });
+
+    it('should route normal chat file toggles through chatSessionService', async () => {
+      const { result } = renderHook(() => useAgentStore());
+
+      vi.mocked(chatSessionService.toggleFile).mockResolvedValue(undefined as any);
+
+      act(() => {
+        useAgentStore.setState({ activeAgentId: 'ssn_chat_1' });
+      });
+
+      await act(async () => {
+        await result.current.toggleFile('file-1', false);
+      });
+
+      expect(chatSessionService.toggleFile).toHaveBeenCalledWith('ssn_chat_1', 'file-1', false);
+      expect(agentService.toggleFile).not.toHaveBeenCalled();
+    });
   });
 
   describe('toggleKnowledgeBase', () => {
@@ -264,6 +370,27 @@ describe('KnowledgeSlice Actions', () => {
 
       expect(agentService.toggleKnowledgeBase).toHaveBeenCalledWith('agent-1', 'kb-1', false);
     });
+
+    it('should route normal chat knowledge-base toggles through chatSessionService', async () => {
+      const { result } = renderHook(() => useAgentStore());
+
+      vi.mocked(chatSessionService.toggleKnowledgeBase).mockResolvedValue(undefined as any);
+
+      act(() => {
+        useAgentStore.setState({ activeAgentId: 'ssn_chat_1' });
+      });
+
+      await act(async () => {
+        await result.current.toggleKnowledgeBase('kb-1', false);
+      });
+
+      expect(chatSessionService.toggleKnowledgeBase).toHaveBeenCalledWith(
+        'ssn_chat_1',
+        'kb-1',
+        false,
+      );
+      expect(agentService.toggleKnowledgeBase).not.toHaveBeenCalled();
+    });
   });
 
   describe('useFetchFilesAndKnowledgeBases', () => {
@@ -306,6 +433,28 @@ describe('KnowledgeSlice Actions', () => {
       );
 
       await waitFor(() => expect(result.current.data).toEqual([]));
+    });
+
+    it('should fetch normal chat knowledge through chatSessionService', async () => {
+      const mockData = [
+        { enabled: true, id: 'file-1', name: 'file1.txt', type: KnowledgeType.File },
+      ];
+
+      vi.mocked(chatSessionService.getKnowledgeBasesAndFiles).mockResolvedValueOnce(
+        mockData as any,
+      );
+
+      const { result } = renderHook(
+        () => useAgentStore().useFetchFilesAndKnowledgeBases('ssn_chat_1'),
+        {
+          wrapper: withSWR,
+        },
+      );
+
+      await waitFor(() => expect(result.current.data).toEqual(mockData));
+
+      expect(chatSessionService.getKnowledgeBasesAndFiles).toHaveBeenCalledWith('ssn_chat_1');
+      expect(agentService.getFilesAndKnowledgeBases).not.toHaveBeenCalled();
     });
   });
 });

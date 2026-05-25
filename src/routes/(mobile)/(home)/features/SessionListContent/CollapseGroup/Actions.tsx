@@ -36,8 +36,8 @@ const Actions = memo<ActionsProps>(
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
     const [isCreatingGroup, setIsCreatingGroup] = useState(false);
 
-    const [createSession, removeSessionGroup] = useSessionStore((s) => [
-      s.createSession,
+    const [createChat, removeSessionGroup] = useSessionStore((s) => [
+      s.createChat,
       s.removeSessionGroup,
     ]);
 
@@ -55,14 +55,14 @@ const Actions = memo<ActionsProps>(
 
     const newAgentPublicItem: MenuItemType = {
       icon: <Icon icon={Plus} />,
-      key: 'newAgent',
-      label: t('newAgent'),
+      key: 'newChat',
+      label: t('newChat'),
       onClick: async ({ domEvent }) => {
         domEvent.stopPropagation();
-        const key = 'createNewAgentInGroup';
+        const key = 'createNewChatInGroup';
         message.loading({ content: t('sessionGroup.creatingAgent'), duration: 0, key });
 
-        await createSession({ group: id, pinned: isPinned });
+        await createChat({ groupId: id });
 
         message.destroy(key);
         message.success({ content: t('sessionGroup.createAgentSuccess') });

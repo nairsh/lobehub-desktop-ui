@@ -5,6 +5,7 @@
   "agentSelection.search": "No matching agents found",
   "project.create": "New project",
   "project.deleteConfirm": "This project will be deleted and can’t be recovered. Confirm to continue.",
+  "project.pinned": "Pinned",
   "starter.createAgent": "Create Agent",
   "starter.createGroup": "Create Group",
   "starter.deepResearch": "Deep Research",

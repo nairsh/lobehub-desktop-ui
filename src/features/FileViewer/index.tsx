@@ -201,6 +201,18 @@ const ARCHIVE_MIME_TYPES = new Set([
   'application/x-xz',
 ]);
 
+const isPdfFile = (fileType?: string, fileName?: string): boolean => {
+  const lowerType = fileType?.toLowerCase();
+  if (lowerType) {
+    if (lowerType === 'pdf' || lowerType === 'application/pdf' || lowerType.endsWith('/pdf')) {
+      return true;
+    }
+    if (lowerType.includes('pdf')) return true;
+  }
+
+  return !!fileName?.toLowerCase().endsWith('.pdf');
+};
+
 interface FileViewerProps extends FileListItem {
   className?: string;
   style?: CSSProperties;
@@ -211,7 +223,7 @@ interface FileViewerProps extends FileListItem {
  */
 const FileViewer = memo<FileViewerProps>(({ id, style, fileType, url, name }) => {
   // PDF files
-  if (fileType?.toLowerCase() === 'pdf' || name?.toLowerCase().endsWith('.pdf')) {
+  if (isPdfFile(fileType, name)) {
     return <PDFViewer fileId={id} url={url} />;
   }
 

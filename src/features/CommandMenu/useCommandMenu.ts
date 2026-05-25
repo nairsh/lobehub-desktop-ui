@@ -20,6 +20,7 @@ import { useGlobalStore } from '@/store/global';
 import { globalHelpers } from '@/store/global/helpers';
 import { useHomeStore } from '@/store/home';
 import { mapRecentTopicToRecentChatItem } from '@/store/home/slices/recent/utils';
+import { useSessionStore } from '@/store/session';
 
 import { useCommandMenuContext } from './CommandMenuContext';
 import { type ThemeMode } from './types';
@@ -52,6 +53,7 @@ export const useCommandMenu = () => {
   const navigate = useNavigate();
   const { setTheme } = useNextThemesTheme();
   const createAgent = useAgentStore((s) => s.createAgent);
+  const storeCreateChat = useSessionStore((s) => s.createChat);
   const refreshAgentList = useHomeStore((s) => s.refreshAgentList);
   const inboxAgentId = useAgentStore(builtinAgentSelectors.inboxAgentId);
   const { openGroupWizard } = useGroupWizard();
@@ -183,16 +185,11 @@ export const useCommandMenu = () => {
   }, [selectedAgent, search, navigate, setSelectedAgent, onClose]);
 
   const handleCreateSession = useCallback(async () => {
-    const result = await createAgent({});
+    const sessionId = await storeCreateChat({}, false);
     await refreshAgentList();
-
-    // Navigate to the newly created agent
-    if (result.agentId) {
-      navigate(`/agent/${result.agentId}`);
-    }
-
+    navigate(`/agent/${sessionId}`);
     onClose();
-  }, [createAgent, refreshAgentList, navigate, onClose]);
+  }, [storeCreateChat, refreshAgentList, navigate, onClose]);
 
   const openNewTopicOrSaveTopic = useChatStore((s) => s.openNewTopicOrSaveTopic);
 

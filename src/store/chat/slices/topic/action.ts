@@ -34,6 +34,9 @@ const n = setNamespace('t');
 
 const SWR_USE_FETCH_TOPIC = 'SWR_USE_FETCH_TOPIC';
 const SWR_USE_SEARCH_TOPIC = 'SWR_USE_SEARCH_TOPIC';
+
+const isSessionOwnedChatId = (id?: string | null) =>
+  !!id && (id === 'inbox' || id.startsWith('ssn_'));
 type CronTopicsGroupWithJobInfo = {
   cronJob: unknown;
   cronJobId: string;
@@ -96,7 +99,7 @@ export class ChatTopicActionImpl {
   };
 
   createTopic = async (sessionId?: string): Promise<string | undefined> => {
-    const { activeAgentId, internal_createTopic } = this.#get();
+    const { activeGroupAgentId, activeSessionId, internal_createTopic } = this.#get();
 
     const messages = displayMessageSelectors.activeDisplayMessages(this.#get());
 
@@ -104,7 +107,7 @@ export class ChatTopicActionImpl {
     const topicId = await internal_createTopic({
       title: t('defaultTitle', { ns: 'topic' }),
       messages: messages.map((m) => m.id),
-      sessionId: sessionId || activeAgentId,
+      sessionId: sessionId || activeSessionId || activeGroupAgentId,
     });
     this.#set({ creatingTopic: false }, false, n('creatingTopic/end'));
 
@@ -116,13 +119,14 @@ export class ChatTopicActionImpl {
     const messages = displayMessageSelectors.activeDisplayMessages(this.#get());
     if (messages.length === 0) return;
 
-    const { activeAgentId, summaryTopicTitle, internal_createTopic } = this.#get();
+    const { activeGroupAgentId, activeSessionId, summaryTopicTitle, internal_createTopic } =
+      this.#get();
 
     // 1. create topic and bind these messages
     const topicId = await internal_createTopic({
       title: t('defaultTitle', { ns: 'topic' }),
       messages: messages.map((m) => m.id),
-      sessionId: sessionId || activeAgentId,
+      sessionId: sessionId || activeSessionId || activeGroupAgentId,
     });
 
     this.#get().internal_updateTopicLoading(topicId, true);
@@ -156,7 +160,9 @@ export class ChatTopicActionImpl {
   };
 
   importTopic = async (data: string): Promise<string | undefined> => {
-    const { activeAgentId, activeGroupId, refreshTopic, switchTopic } = this.#get();
+    const { activeGroupAgentId, activeGroupId, activeSessionId, refreshTopic, switchTopic } =
+      this.#get();
+    const activeAgentId = activeGroupAgentId || activeSessionId;
 
     if (!activeAgentId) return;
 
@@ -168,7 +174,7 @@ export class ChatTopicActionImpl {
 
     try {
       const result = await topicService.importTopic({
-        agentId: activeAgentId,
+        agentId: activeSessionId || activeGroupAgentId,
         data,
         groupId: activeGroupId,
       });
@@ -235,7 +241,7 @@ export class ChatTopicActionImpl {
   };
 
   favoriteTopic = async (id: string, favorite: boolean): Promise<void> => {
-    const { activeAgentId } = this.#get();
+    const activeAgentId = this.#get().activeGroupAgentId || this.#get().activeSessionId;
     await this.#get().internal_updateTopic(id, { favorite });
 
     if (!activeAgentId) return;
@@ -290,7 +296,8 @@ export class ChatTopicActionImpl {
   };
 
   autoRenameTopicTitle = async (id: string): Promise<void> => {
-    const { activeAgentId: agentId, summaryTopicTitle, internal_updateTopicLoading } = this.#get();
+    const agentId = this.#get().activeGroupAgentId || this.#get().activeSessionId;
+    const { summaryTopicTitle, internal_updateTopicLoading } = this.#get();
 
     internal_updateTopicLoading(id, true);
     const messages = await messageService.getMessages({ agentId, topicId: id });
@@ -307,12 +314,14 @@ export class ChatTopicActionImpl {
       groupId,
       pageSize: customPageSize,
       isInbox,
+      sessionId,
     }: {
       agentId?: string;
       excludeTriggers?: string[];
       groupId?: string;
       isInbox?: boolean;
       pageSize?: number;
+      sessionId?: string;
     } = {},
   ): SWRResponse<{ items: ChatTopic[]; total: number }> => {
     const pageSize = customPageSize || 20;
@@ -331,6 +340,7 @@ export class ChatTopicActionImpl {
               isInbox,
               pageSize,
               ...(effectiveExcludeTriggers ? { excludeTriggers: effectiveExcludeTriggers } : {}),
+              ...(sessionId ? { sessionId } : {}),
             },
           ]
         : null,
@@ -357,6 +367,7 @@ export class ChatTopicActionImpl {
           groupId,
           isInbox,
           pageSize,
+          sessionId,
         });
 
         // Reset expanding state after fetch completes
@@ -403,7 +414,8 @@ export class ChatTopicActionImpl {
   };
 
   loadMoreTopics = async (): Promise<void> => {
-    const { activeAgentId, activeGroupId, topicDataMap } = this.#get();
+    const { activeGroupAgentId, activeGroupId, activeSessionId, topicDataMap } = this.#get();
+    const activeAgentId = activeGroupAgentId || activeSessionId;
     const key = topicMapKey({ agentId: activeAgentId, groupId: activeGroupId });
     const currentData = topicDataMap[key];
 
@@ -432,6 +444,7 @@ export class ChatTopicActionImpl {
         excludeTriggers,
         groupId: activeGroupId,
         pageSize,
+        sessionId: activeGroupId ? undefined : activeSessionId,
       });
 
       const currentTopics = currentData?.items || [];
@@ -474,15 +487,22 @@ export class ChatTopicActionImpl {
     {
       agentId,
       groupId,
+      sessionId,
     }: {
       agentId?: string;
       groupId?: string;
+      sessionId?: string;
     } = {},
   ): SWRResponse<ChatTopic[]> => {
     return useSWR<ChatTopic[]>(
-      keywords ? [SWR_USE_SEARCH_TOPIC, keywords, agentId, groupId] : null,
-      ([, keywords, agentId, groupId]: [string, string, string | undefined, string | undefined]) =>
-        topicService.searchTopics(keywords, agentId, groupId),
+      keywords ? [SWR_USE_SEARCH_TOPIC, keywords, agentId, groupId, sessionId] : null,
+      ([, keywords, agentId, groupId, sessionId]: [
+        string,
+        string,
+        string | undefined,
+        string | undefined,
+        string | undefined,
+      ]) => topicService.searchTopics(keywords, agentId, groupId, sessionId),
       {
         onSuccess: (data) => {
           this.#set(
@@ -498,7 +518,8 @@ export class ChatTopicActionImpl {
   switchTopic = async (id?: string | null, options?: SwitchTopicOptions): Promise<void> => {
     const opts = options ?? {};
 
-    const { activeAgentId, activeGroupId } = this.#get();
+    const { activeGroupAgentId, activeGroupId, activeSessionId } = this.#get();
+    const activeAgentId = activeGroupAgentId || activeSessionId;
 
     // Clear the _new key data in the following cases:
     // 1. When id is null or undefined (switching to empty topic state)
@@ -541,10 +562,16 @@ export class ChatTopicActionImpl {
   };
 
   removeSessionTopics = async (): Promise<void> => {
-    const { switchTopic, activeAgentId, refreshTopic } = this.#get();
-    if (!activeAgentId) return;
+    const { switchTopic, activeGroupAgentId, activeSessionId, refreshTopic } = this.#get();
+    const sessionId = activeSessionId || activeGroupAgentId;
+    if (!sessionId) return;
 
-    await topicService.removeTopicsByAgentId(activeAgentId);
+    if (isSessionOwnedChatId(sessionId)) {
+      await topicService.removeTopics(sessionId);
+    } else {
+      if (!activeGroupAgentId) return;
+      await topicService.removeTopicsByAgentId(activeGroupAgentId);
+    }
     await refreshTopic();
 
     // switch to default topic
@@ -577,7 +604,15 @@ export class ChatTopicActionImpl {
   };
 
   removeTopic = async (id: string): Promise<void> => {
-    const { activeAgentId, activeGroupId, activeTopicId, switchTopic, refreshTopic } = this.#get();
+    const {
+      activeGroupAgentId,
+      activeSessionId,
+      activeGroupId,
+      activeTopicId,
+      switchTopic,
+      refreshTopic,
+    } = this.#get();
+    const activeAgentId = activeGroupAgentId || activeSessionId;
     // Allow deletion when either agentId or groupId is active
     if (!activeAgentId && !activeGroupId) return;
 
@@ -608,10 +643,13 @@ export class ChatTopicActionImpl {
   };
 
   refreshTopic = async (): Promise<void> => {
-    const { activeAgentId, activeGroupId } = this.#get();
+    const { activeGroupAgentId, activeGroupId, activeSessionId } = this.#get();
     // Use topicMapKey to generate the same key used in useFetchTopics
     // Key format: [SWR_USE_FETCH_TOPIC, containerKey, { isInbox, pageSize }]
-    const containerKey = topicMapKey({ agentId: activeAgentId, groupId: activeGroupId });
+    const containerKey = topicMapKey({
+      agentId: activeSessionId || activeGroupAgentId,
+      groupId: activeGroupId,
+    });
     await mutate(
       (key) => Array.isArray(key) && key[0] === SWR_USE_FETCH_TOPIC && key[1] === containerKey,
     );
@@ -657,8 +695,11 @@ export class ChatTopicActionImpl {
   };
 
   internal_dispatchTopic = (payload: ChatTopicDispatch, action?: any): void => {
-    const { activeAgentId, activeGroupId } = this.#get();
-    const key = topicMapKey({ agentId: activeAgentId, groupId: activeGroupId });
+    const { activeGroupAgentId, activeGroupId, activeSessionId } = this.#get();
+    const key = topicMapKey({
+      agentId: activeGroupAgentId || activeSessionId,
+      groupId: activeGroupId,
+    });
     const currentData = this.#get().topicDataMap[key];
     const nextItems = topicReducer(currentData?.items, payload);
 

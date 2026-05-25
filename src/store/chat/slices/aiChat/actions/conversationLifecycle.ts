@@ -379,7 +379,11 @@ export class ConversationLifecycleActionImpl {
     // ── Client mode: send via server API then run agent locally ──
     let data: SendMessageServerResponse | undefined;
     try {
-      const { model, provider } = agentSelectors.getAgentConfigById(agentId)(getAgentStoreState());
+      const agentConfig = agentSelectors.getAgentConfigById(agentId)(getAgentStoreState());
+      // For agent-free sessions (ssn_ prefix) the agentMap may not be populated yet.
+      // Empty strings are stripped by cleanObject so the server falls through to session_configs.
+      const model = agentConfig?.model ?? '';
+      const provider = agentConfig?.provider ?? '';
 
       const topicId = operationContext.topicId;
 
@@ -732,7 +736,9 @@ export class ConversationLifecycleActionImpl {
     const message = dbMessageSelectors.getDbMessageById(id)(this.#get());
     if (!message) return;
 
-    const { activeAgentId, activeTopicId, activeThreadId, activeGroupId } = this.#get();
+    const { activeGroupAgentId, activeSessionId, activeTopicId, activeThreadId, activeGroupId } =
+      this.#get();
+    const activeAgentId = activeGroupAgentId || activeSessionId;
 
     // Create base context for continue operation (using global state)
     const continueContext = {
@@ -823,7 +829,9 @@ export class ConversationLifecycleActionImpl {
       this.#get().associateMessageWithOperation(messageGroupId, operationId);
 
       // 2. Generate summary via LLM
-      const { model, provider } = agentSelectors.getAgentConfigById(agentId)(getAgentStoreState());
+      const _agentCfg = agentSelectors.getAgentConfigById(agentId)(getAgentStoreState());
+      const model = _agentCfg?.model ?? '';
+      const provider = _agentCfg?.provider ?? '';
       const compressionPayload = chainCompressContext(messagesToSummarize);
       let summaryContent = '';
 

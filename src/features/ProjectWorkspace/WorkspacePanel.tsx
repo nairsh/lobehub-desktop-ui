@@ -1,14 +1,35 @@
 'use client';
 
-import { ActionIcon, Button, createModal, Flexbox, Text, useModalContext } from '@lobehub/ui';
+import {
+  ActionIcon,
+  Block,
+  Button,
+  createModal,
+  DropdownMenu,
+  Flexbox,
+  Icon,
+  Text,
+  useModalContext,
+} from '@lobehub/ui';
 import type { UploadFile } from 'antd';
-import { Input, Upload } from 'antd';
-import { PaperclipIcon, PlusIcon, UploadIcon } from 'lucide-react';
-import { memo, Suspense, useCallback, useState } from 'react';
+import { Input, message, Upload } from 'antd';
+import {
+  EditIcon,
+  FileIcon as FileIconLucide,
+  MoreHorizontalIcon,
+  PaperclipIcon,
+  PlusIcon,
+  TrashIcon,
+  UploadIcon,
+} from 'lucide-react';
+import { memo, Suspense, useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import FileViewer from '@/features/FileViewer';
+import { fileService } from '@/services/file';
 import { useFileStore } from '@/store/file';
 import { useProjectStore } from '@/store/project';
+import type { FileListItem } from '@/types/files';
 import type { ProjectItem } from '@/types/project';
 
 import { styles } from './style';
@@ -58,15 +79,17 @@ const FilesModalContent = memo<{ knowledgeBaseId: string }>(({ knowledgeBaseId }
   const { close } = useModalContext();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [loading, setLoading] = useState(false);
-  const uploadWithProgress = useFileStore((s) => s.uploadWithProgress);
+  const pushDockFileList = useFileStore((s) => s.pushDockFileList);
 
   const handleUpload = async () => {
     setLoading(true);
     try {
-      await Promise.all(
-        fileList.map((f) => uploadWithProgress({ file: f.originFileObj as File, knowledgeBaseId })),
-      );
+      const files = fileList.map((f) => f.originFileObj as File).filter(Boolean);
+      await pushDockFileList(files, knowledgeBaseId);
       close();
+    } catch (e: any) {
+      const msg: string = e?.shape?.message || e?.data?.message || e?.message || String(e);
+      message.error(msg);
     } finally {
       setLoading(false);
     }
@@ -110,17 +133,50 @@ const FilesModalContent = memo<{ knowledgeBaseId: string }>(({ knowledgeBaseId }
 });
 FilesModalContent.displayName = 'FilesModalContent';
 
+// ── File preview modal ─────────────────────────────────────────────────────
+
+const FilePreviewModalContent = memo<{
+  fileId: string;
+  initialFile?: FileListItem;
+}>(({ fileId, initialFile }) => {
+  const useFetchKnowledgeItem = useFileStore((s) => s.useFetchKnowledgeItem);
+  const { data } = useFetchKnowledgeItem(fileId);
+  const file = data || initialFile;
+
+  if (!file) return null;
+
+  return (
+    <Flexbox height={'100%'} width={'100%'}>
+      <Flexbox flex={1} height={'100%'} style={{ overflow: 'auto' }}>
+        <FileViewer {...file} />
+      </Flexbox>
+    </Flexbox>
+  );
+});
+FilePreviewModalContent.displayName = 'FilePreviewModalContent';
+
 // ── WorkspacePanel ─────────────────────────────────────────────────────────
 
 interface WorkspacePanelProps {
   knowledgeBaseId: string;
   project: ProjectItem | null;
+  projectId: string;
 }
 
-const WorkspacePanel = memo<WorkspacePanelProps>(({ knowledgeBaseId, project }) => {
+const WorkspacePanel = memo<WorkspacePanelProps>(({ knowledgeBaseId, project, projectId }) => {
   const { t } = useTranslation('project');
   const updateProject = useProjectStore((s) => s.updateProject);
   const currentInstructions = project?.settings?.defaultSystemPrompt ?? '';
+
+  const useFetchKnowledgeItems = useFileStore((s) => s.useFetchKnowledgeItems);
+  const { data: kbFiles, mutate: reloadFiles } = useFetchKnowledgeItems({
+    knowledgeBaseId,
+    showFilesInKnowledgeBase: true,
+  });
+
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const renameInputRef = useRef<any>(null);
 
   const openInstructions = useCallback(() => {
     createModal({
@@ -129,7 +185,7 @@ const WorkspacePanel = memo<WorkspacePanelProps>(({ knowledgeBaseId, project }) 
           <InstructionsModalContent
             initialValue={currentInstructions}
             onSave={async (value) => {
-              await updateProject(knowledgeBaseId, {
+              await updateProject(projectId, {
                 settings: { ...project?.settings, defaultSystemPrompt: value },
               });
             }}
@@ -140,7 +196,7 @@ const WorkspacePanel = memo<WorkspacePanelProps>(({ knowledgeBaseId, project }) 
       title: t('instructions', { defaultValue: 'Instructions' }),
       width: 480,
     });
-  }, [currentInstructions, knowledgeBaseId, project?.settings, t, updateProject]);
+  }, [currentInstructions, projectId, project?.settings, t, updateProject]);
 
   const openFiles = useCallback(() => {
     createModal({
@@ -154,6 +210,68 @@ const WorkspacePanel = memo<WorkspacePanelProps>(({ knowledgeBaseId, project }) 
       width: 480,
     });
   }, [knowledgeBaseId, t]);
+
+  const openFilePreview = useCallback((file: FileListItem) => {
+    createModal({
+      allowFullscreen: true,
+      centered: true,
+      children: (
+        <Suspense fallback={<div style={{ minHeight: 120 }} />}>
+          <FilePreviewModalContent fileId={file.id} initialFile={file} />
+        </Suspense>
+      ),
+      destroyOnHidden: true,
+      footer: null,
+      height: '80vh',
+      styles: {
+        body: {
+          height: '80vh',
+          overflow: 'auto',
+          padding: 0,
+        },
+      },
+      title: file.name,
+      width: 'min(90vw, 1024px)',
+    });
+  }, []);
+
+  const startRename = useCallback((file: FileListItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRenamingId(file.id);
+    setRenameValue(file.name);
+    setTimeout(() => renameInputRef.current?.focus(), 0);
+  }, []);
+
+  const commitRename = useCallback(
+    async (id: string) => {
+      const name = renameValue.trim();
+      if (name) {
+        try {
+          await fileService.updateFile(id, { name });
+          await reloadFiles();
+        } catch (e: any) {
+          const msg: string = e?.shape?.message || e?.data?.message || e?.message || String(e);
+          message.error(msg);
+        }
+      }
+      setRenamingId(null);
+    },
+    [renameValue, reloadFiles],
+  );
+
+  const deleteFile = useCallback(
+    async (id: string, e?: React.MouseEvent) => {
+      e?.stopPropagation();
+      try {
+        await fileService.removeFile(id);
+        await reloadFiles();
+      } catch (e: any) {
+        const msg: string = e?.shape?.message || e?.data?.message || e?.message || String(e);
+        message.error(msg);
+      }
+    },
+    [reloadFiles],
+  );
 
   return (
     <Flexbox className={styles.panel} height={'100%'}>
@@ -199,13 +317,84 @@ const WorkspacePanel = memo<WorkspacePanelProps>(({ knowledgeBaseId, project }) 
               onClick={openFiles}
             />
           </Flexbox>
-          <Flexbox className={styles.panelCardBody} gap={10}>
-            <Text style={{ fontSize: 13 }} type={'secondary'}>
-              {t('noFilesYet', { defaultValue: 'No files added yet.' })}
-            </Text>
-            <Button block size={'small'} onClick={openFiles}>
-              {t('addFiles', { defaultValue: 'Add files' })}
-            </Button>
+          <Flexbox className={styles.panelCardBody} gap={6}>
+            {kbFiles && kbFiles.length > 0 ? (
+              <>
+                <Flexbox gap={2}>
+                  {kbFiles.map((file) => (
+                    <Block
+                      clickable
+                      horizontal
+                      align={'center'}
+                      gap={8}
+                      height={32}
+                      key={file.id}
+                      paddingInline={6}
+                      variant={'borderless'}
+                      onClick={() => renamingId !== file.id && openFilePreview(file)}
+                    >
+                      <Icon flex={'none'} icon={FileIconLucide} opacity={0.5} size={'small'} />
+                      {renamingId === file.id ? (
+                        <Input
+                          ref={renameInputRef}
+                          size={'small'}
+                          style={{ flex: 1, fontSize: 12 }}
+                          value={renameValue}
+                          onBlur={() => commitRename(file.id)}
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') commitRename(file.id);
+                            if (e.key === 'Escape') setRenamingId(null);
+                          }}
+                        />
+                      ) : (
+                        <Text ellipsis style={{ flex: 1, fontSize: 12 }}>
+                          {file.name}
+                        </Text>
+                      )}
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >
+                        <DropdownMenu
+                          items={[
+                            {
+                              icon: <EditIcon size={14} />,
+                              key: 'rename',
+                              label: t('rename', { defaultValue: 'Rename', ns: 'common' }),
+                              onClick: ({ domEvent }) => startRename(file, domEvent as any),
+                            },
+                            {
+                              danger: true,
+                              icon: <TrashIcon size={14} />,
+                              key: 'delete',
+                              label: t('delete', { defaultValue: 'Delete', ns: 'common' }),
+                              onClick: ({ domEvent }) =>
+                                deleteFile(file.fileId ?? file.id, domEvent as any),
+                            },
+                          ]}
+                        >
+                          <ActionIcon icon={MoreHorizontalIcon} size={'small'} />
+                        </DropdownMenu>
+                      </div>
+                    </Block>
+                  ))}
+                </Flexbox>
+                <Button block size={'small'} onClick={openFiles}>
+                  {t('addFiles', { defaultValue: 'Add files' })}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Text style={{ fontSize: 13 }} type={'secondary'}>
+                  {t('noFilesYet', { defaultValue: 'No files added yet.' })}
+                </Text>
+                <Button block size={'small'} onClick={openFiles}>
+                  {t('addFiles', { defaultValue: 'Add files' })}
+                </Button>
+              </>
+            )}
           </Flexbox>
         </Flexbox>
       </Flexbox>

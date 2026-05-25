@@ -1,10 +1,13 @@
+import { savePinnedIds } from '@/store/project/initialState';
 import type { ProjectStore } from '@/store/project/store';
 import type { StoreSetter } from '@/store/types';
 
 export interface ProjectActiveAction {
   addTopicToProject: (projectId: string, topicId: string) => void;
   clearActiveProject: () => void;
+  removeTopicFromProject: (projectId: string, topicId: string) => void;
   setActiveProject: (id: string | null) => void;
+  setPendingProjectForAgent: (agentId: string, projectId: string | null) => void;
   togglePinProject: (id: string) => void;
 }
 
@@ -33,17 +36,41 @@ export class ProjectActiveActionImpl implements ProjectActiveAction {
     this.#set({ activeProjectId: null });
   };
 
+  removeTopicFromProject = (projectId: string, topicId: string): void => {
+    const { topicIdsByProject } = this.#get();
+    const existing = topicIdsByProject[projectId] ?? [];
+    this.#set({
+      topicIdsByProject: {
+        ...topicIdsByProject,
+        [projectId]: existing.filter((id) => id !== topicId),
+      },
+    });
+  };
+
   setActiveProject = (id: string | null): void => {
     this.#set({ activeProjectId: id });
+  };
+
+  setPendingProjectForAgent = (agentId: string, projectId: string | null): void => {
+    const { pendingProjectIdByAgentId } = this.#get();
+    if (projectId === null) {
+      const next = { ...pendingProjectIdByAgentId };
+      delete next[agentId];
+      this.#set({ pendingProjectIdByAgentId: next });
+    } else {
+      this.#set({
+        pendingProjectIdByAgentId: { ...pendingProjectIdByAgentId, [agentId]: projectId },
+      });
+    }
   };
 
   togglePinProject = (id: string): void => {
     const { pinnedProjectIds } = this.#get();
     const alreadyPinned = pinnedProjectIds.includes(id);
-    this.#set({
-      pinnedProjectIds: alreadyPinned
-        ? pinnedProjectIds.filter((p) => p !== id)
-        : [...pinnedProjectIds, id],
-    });
+    const next = alreadyPinned
+      ? pinnedProjectIds.filter((p) => p !== id)
+      : [...pinnedProjectIds, id];
+    this.#set({ pinnedProjectIds: next });
+    savePinnedIds(next);
   };
 }

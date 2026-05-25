@@ -7,6 +7,7 @@ import { fileService } from '@/services/file';
 import { ragService } from '@/services/rag';
 import { agentSelectors } from '@/store/agent/selectors';
 import { getAgentStoreState } from '@/store/agent/store';
+import { getActiveProjectKnowledgeBaseId } from '@/store/project/projectContext';
 
 import type {
   AddFilesArgs,
@@ -158,7 +159,11 @@ class KnowledgeBaseExecutor extends BaseExecutor<typeof KnowledgeBaseApiName> {
 
       const agentState = getAgentStoreState();
       const knowledgeIds = agentSelectors.currentKnowledgeIds(agentState);
-      const knowledgeBaseIds = knowledgeIds.knowledgeBaseIds;
+      const projectKbId = getActiveProjectKnowledgeBaseId();
+      const knowledgeBaseIds = [
+        ...knowledgeIds.knowledgeBaseIds,
+        ...(projectKbId ? [projectKbId] : []),
+      ];
 
       const { chunks, fileResults } = await ragService.semanticSearchForChatWithFallback(
         { knowledgeIds: knowledgeBaseIds, query, topK },

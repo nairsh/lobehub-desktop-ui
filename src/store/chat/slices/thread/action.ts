@@ -51,8 +51,15 @@ export class ChatThreadActionImpl {
   };
 
   openThreadCreator = (messageId: string): void => {
-    const { activeAgentId, activeGroupId, activeTopicId, newThreadMode, replaceMessages } =
-      this.#get();
+    const {
+      activeGroupAgentId,
+      activeSessionId,
+      activeGroupId,
+      activeTopicId,
+      newThreadMode,
+      replaceMessages,
+    } = this.#get();
+    const activeAgentId = activeGroupAgentId || activeSessionId;
 
     // Always use main scope key to get messages, not activeDisplayMessages,
     // because activeDisplayMessages includes activeThreadId in the key.

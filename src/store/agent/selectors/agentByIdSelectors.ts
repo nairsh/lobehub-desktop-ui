@@ -90,11 +90,13 @@ const getAgentRuntimeEnvConfigById =
  */
 const getAgentWorkingDirectoryById =
   (agentId: string) =>
-  (_s: AgentStoreState): string | undefined => {
+  (s: AgentStoreState): string | undefined => {
     if (!isDesktop) return;
 
     return (
-      getLocalAgentWorkingDirectory(agentId) ?? globalAgentContextManager.getContext().homePath
+      getAgentRuntimeEnvConfigById(agentId)(s)?.workingDirectory ??
+      getLocalAgentWorkingDirectory(agentId) ??
+      globalAgentContextManager.getContext().homePath
     );
   };
 

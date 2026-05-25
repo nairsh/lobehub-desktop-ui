@@ -14,11 +14,12 @@ const AddButton = memo(() => {
 
   // Create menu items
   const {
+    createChat,
+    createChatMenuItem,
     createAgentMenuItem,
     createGroupChatMenuItem,
     createPageMenuItem,
-    openCreateModal,
-    isMutatingAgent,
+    isMutatingChat,
     isCreatingGroup,
   } = useCreateMenuItems();
 
@@ -26,22 +27,27 @@ const AddButton = memo(() => {
     (e: React.MouseEvent) => {
       e.stopPropagation();
       e.preventDefault();
-      openCreateModal?.('agent');
+      createChat();
     },
-    [openCreateModal],
+    [createChat],
   );
 
   const dropdownItems = useMemo(() => {
-    return [createAgentMenuItem(), createGroupChatMenuItem(), createPageMenuItem()];
-  }, [createAgentMenuItem, createGroupChatMenuItem, createPageMenuItem]);
+    return [
+      createChatMenuItem(),
+      createAgentMenuItem(),
+      createGroupChatMenuItem(),
+      createPageMenuItem(),
+    ];
+  }, [createChatMenuItem, createAgentMenuItem, createGroupChatMenuItem, createPageMenuItem]);
 
   return (
     <Flexbox horizontal>
       <ActionIcon
         icon={CreateBotIcon}
-        loading={isMutatingAgent || isCreatingGroup}
+        loading={isMutatingChat || isCreatingGroup}
         size={DESKTOP_HEADER_ICON_SIZE}
-        title={tChat('newAgent')}
+        title={tChat('newChat')}
         onClick={handleMainIconClick}
       />
       <DropdownMenu items={dropdownItems}>

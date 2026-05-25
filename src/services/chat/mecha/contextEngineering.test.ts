@@ -3,6 +3,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import * as isCanUseFCModule from '@/helpers/isCanUseFC';
 import { agentDocumentService } from '@/services/agentDocument';
+import * as agentStoreModule from '@/store/agent';
+import { agentChatConfigSelectors, agentSelectors } from '@/store/agent/selectors';
+import * as sessionStoreModule from '@/store/session';
 
 import * as helpers from '../helper';
 import { contextEngineering } from './contextEngineering';
@@ -54,6 +57,7 @@ vi.mock('@lobechat/const', async (importOriginal) => {
 afterEach(() => {
   vi.resetModules();
   vi.clearAllMocks();
+  vi.restoreAllMocks();
   localStorageMock.getItem.mockClear();
   localStorageMock.removeItem.mockClear();
   localStorageMock.setItem.mockClear();
@@ -675,6 +679,80 @@ describe('contextEngineering', () => {
         role: 'system',
       });
       expect(result[1].content).toBe('Hello TestUser, missing: {{missing_var}}');
+    });
+
+    it('should resolve agent identity placeholders from session metadata for session-owned chats', async () => {
+      vi.spyOn(agentStoreModule, 'getAgentStoreState').mockReturnValue({} as any);
+      vi.spyOn(sessionStoreModule, 'getSessionStoreState').mockReturnValue({
+        sessions: [
+          {
+            id: 'ssn_identity-chat',
+            meta: { description: 'Session-owned description', title: 'Session-owned title' },
+          },
+        ],
+      } as any);
+      vi.spyOn(agentSelectors, 'getAgentMetaById').mockReturnValue(
+        () => ({ description: 'Legacy agent description', title: 'Legacy agent title' }) as any,
+      );
+      vi.spyOn(agentSelectors, 'currentAgentFiles').mockReturnValue([]);
+      vi.spyOn(agentSelectors, 'currentAgentKnowledgeBases').mockReturnValue([]);
+      vi.spyOn(agentChatConfigSelectors, 'skillActivateMode').mockReturnValue('manual');
+      vi.spyOn(agentChatConfigSelectors, 'currentChatConfig').mockReturnValue({
+        enableAgentMode: false,
+      } as any);
+
+      const result = await contextEngineering({
+        agentId: 'ssn_identity-chat',
+        messages: [
+          {
+            content: '{{agent_id}}|{{agent_title}}|{{agent_description}}',
+            role: 'user',
+          },
+        ] as UIChatMessage[],
+        model: 'gpt-4',
+        provider: 'openai',
+        sessionId: 'ssn_identity-chat',
+      });
+
+      expect(result[1].content).toBe(
+        'ssn_identity-chat|Session-owned title|Session-owned description',
+      );
+    });
+
+    it('should keep agent identity placeholders agent-backed for non-session-owned chats', async () => {
+      vi.spyOn(agentStoreModule, 'getAgentStoreState').mockReturnValue({} as any);
+      vi.spyOn(sessionStoreModule, 'getSessionStoreState').mockReturnValue({
+        sessions: [
+          {
+            id: 'session_123',
+            meta: { description: 'Session title should not win', title: 'Wrong title' },
+          },
+        ],
+      } as any);
+      vi.spyOn(agentSelectors, 'getAgentMetaById').mockReturnValue(
+        () => ({ description: 'Real agent description', title: 'Real agent title' }) as any,
+      );
+      vi.spyOn(agentSelectors, 'currentAgentFiles').mockReturnValue([]);
+      vi.spyOn(agentSelectors, 'currentAgentKnowledgeBases').mockReturnValue([]);
+      vi.spyOn(agentChatConfigSelectors, 'skillActivateMode').mockReturnValue('manual');
+      vi.spyOn(agentChatConfigSelectors, 'currentChatConfig').mockReturnValue({
+        enableAgentMode: false,
+      } as any);
+
+      const result = await contextEngineering({
+        agentId: 'agt_identity',
+        messages: [
+          {
+            content: '{{agent_id}}|{{agent_title}}|{{agent_description}}',
+            role: 'user',
+          },
+        ] as UIChatMessage[],
+        model: 'gpt-4',
+        provider: 'openai',
+        sessionId: 'session_123',
+      });
+
+      expect(result[1].content).toBe('agt_identity|Real agent title|Real agent description');
     });
 
     it('should not modify messages without placeholder variables', async () => {

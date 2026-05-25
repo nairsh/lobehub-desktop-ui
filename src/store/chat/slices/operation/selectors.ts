@@ -16,7 +16,8 @@ const getAllOperations = (s: ChatStoreState): Operation[] => {
  * Get operations for current context (active agent and topic)
  */
 const getCurrentContextOperations = (s: ChatStoreState): Operation[] => {
-  const { activeAgentId, activeTopicId } = s;
+  const activeAgentId = s.activeGroupAgentId || s.activeSessionId;
+  const { activeTopicId } = s;
   if (!activeAgentId) return [];
 
   const contextKey = messageMapKey({ agentId: activeAgentId, topicId: activeTopicId });
@@ -342,7 +343,7 @@ const isMainWindowAgentRuntimeRunning = (s: ChatStoreState): boolean => {
       }
 
       // Agent must match
-      if (s.activeAgentId !== op.context.agentId) return false;
+      if ((s.activeGroupAgentId || s.activeSessionId) !== op.context.agentId) return false;
 
       // Topic comparison: normalize null/undefined (both mean "default topic")
       // activeTopicId can be null (initial state) or undefined (after topic operations)

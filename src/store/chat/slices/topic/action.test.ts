@@ -1,3 +1,5 @@
+import '../../../session/slices/session/testSetup';
+
 import { type UIChatMessage } from '@lobechat/types';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { type Mock } from 'vitest';
@@ -70,7 +72,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   useChatStore.setState(
     {
-      activeAgentId: undefined,
+      activeGroupId: undefined,
+      activeGroupAgentId: undefined,
+      activeSessionId: undefined,
       activeTopicId: undefined,
       // ... initial state
     },
@@ -133,7 +137,7 @@ describe('topic action', () => {
           messagesMap: {
             [messageMapKey({ agentId: 'session' })]: [],
           },
-          activeAgentId: 'session',
+          activeSessionId: 'session',
         });
       });
 
@@ -153,7 +157,7 @@ describe('topic action', () => {
           messagesMap: {
             [messageMapKey({ agentId: 'session-id' })]: messages,
           },
-          activeAgentId: 'session-id',
+          activeSessionId: 'session-id',
         });
       });
 
@@ -192,7 +196,7 @@ describe('topic action', () => {
       const activeAgentId = 'test-session-id';
 
       act(() => {
-        useChatStore.setState({ activeAgentId });
+        useChatStore.setState({ activeSessionId: activeAgentId });
       });
       // Mock the mutate function to resolve immediately
 
@@ -227,7 +231,7 @@ describe('topic action', () => {
       const activeAgentId = 'test-session-id';
 
       act(() => {
-        useChatStore.setState({ activeAgentId });
+        useChatStore.setState({ activeSessionId: activeAgentId });
       });
       // Mock the mutate function to throw an error
       // 设置模拟错误
@@ -273,7 +277,7 @@ describe('topic action', () => {
       const activeAgentId = 'test-agent';
 
       await act(async () => {
-        useChatStore.setState({ activeAgentId });
+        useChatStore.setState({ activeSessionId: activeAgentId });
       });
 
       const updateFavoriteSpy = vi
@@ -315,7 +319,7 @@ describe('topic action', () => {
       const activeAgentId = 'test-agent';
 
       await act(async () => {
-        useChatStore.setState({ activeAgentId });
+        useChatStore.setState({ activeSessionId: activeAgentId });
       });
 
       const updateFavoriteSpy = vi
@@ -372,7 +376,7 @@ describe('topic action', () => {
       const activeAgentId = 'test-agent';
 
       await act(async () => {
-        useChatStore.setState({ activeAgentId });
+        useChatStore.setState({ activeSessionId: activeAgentId });
       });
 
       const updateFavoriteSpy = vi
@@ -421,7 +425,7 @@ describe('topic action', () => {
       const activeAgentId = 'test-agent';
 
       await act(async () => {
-        useChatStore.setState({ activeAgentId });
+        useChatStore.setState({ activeSessionId: activeAgentId });
       });
 
       const updateFavoriteSpy = vi
@@ -457,7 +461,7 @@ describe('topic action', () => {
   });
   describe('useFetchTopics', () => {
     it('should fetch topics for a given session id', async () => {
-      const sessionId = 'test-session-id';
+      const sessionId = 'ssn_test-session-id';
       const topics = [{ id: 'topic-id', title: 'Test Topic' }];
 
       // Mock the topicService.getTopics to resolve with paginated result
@@ -465,7 +469,7 @@ describe('topic action', () => {
 
       // Use the hook with the session id
       const { result } = renderHook(() =>
-        useChatStore().useFetchTopics(true, { agentId: sessionId }),
+        useChatStore().useFetchTopics(true, { agentId: sessionId, sessionId }),
       );
 
       // Wait for the hook to resolve and update the state
@@ -476,6 +480,9 @@ describe('topic action', () => {
       expect(
         useChatStore.getState().topicDataMap[topicMapKey({ agentId: sessionId })]?.items,
       ).toEqual(topics);
+      expect(topicService.getTopics).toHaveBeenCalledWith(
+        expect.objectContaining({ agentId: sessionId, sessionId }),
+      );
     });
   });
   describe('useSearchTopics', () => {
@@ -562,7 +569,7 @@ describe('topic action', () => {
       // Setup initial state with some messages in the new key
       await act(async () => {
         useChatStore.setState({
-          activeAgentId,
+          activeSessionId: activeAgentId,
           activeTopicId: 'existing-topic',
           dbMessagesMap: {
             [newKey]: [{ id: 'msg-1' }, { id: 'msg-2' }] as any,
@@ -607,7 +614,7 @@ describe('topic action', () => {
       // Setup initial state with group context
       await act(async () => {
         useChatStore.setState({
-          activeAgentId,
+          activeGroupAgentId: activeAgentId,
           activeGroupId,
           activeTopicId: 'existing-topic',
         });
@@ -638,7 +645,7 @@ describe('topic action', () => {
 
       await act(async () => {
         useChatStore.setState({
-          activeAgentId,
+          activeSessionId: activeAgentId,
           activeTopicId: 'existing-topic',
         });
       });
@@ -665,7 +672,7 @@ describe('topic action', () => {
 
       await act(async () => {
         useChatStore.setState({
-          activeAgentId,
+          activeSessionId: activeAgentId,
           activeTopicId: 'existing-topic',
         });
       });
@@ -693,7 +700,7 @@ describe('topic action', () => {
 
       await act(async () => {
         useChatStore.setState({
-          activeAgentId,
+          activeSessionId: activeAgentId,
           activeTopicId: undefined,
         });
       });
@@ -717,7 +724,7 @@ describe('topic action', () => {
       // Setup initial state with some messages in the new key
       await act(async () => {
         useChatStore.setState({
-          activeAgentId,
+          activeSessionId: activeAgentId,
           activeTopicId: undefined,
           dbMessagesMap: {
             [newKey]: [{ id: 'msg-1' }, { id: 'msg-2' }] as any,
@@ -756,9 +763,9 @@ describe('topic action', () => {
   describe('removeSessionTopics', () => {
     it('should remove all topics from the current session and refresh the topic list', async () => {
       const { result } = renderHook(() => useChatStore());
-      const activeAgentId = 'test-session-id';
+      const activeAgentId = 'ssn_test-session-id';
       await act(async () => {
-        useChatStore.setState({ activeAgentId });
+        useChatStore.setState({ activeSessionId: activeAgentId });
       });
       const refreshTopicSpy = vi.spyOn(result.current, 'refreshTopic');
       const switchTopicSpy = vi.spyOn(result.current, 'switchTopic');
@@ -767,7 +774,7 @@ describe('topic action', () => {
         await result.current.removeSessionTopics();
       });
 
-      expect(topicService.removeTopicsByAgentId).toHaveBeenCalledWith(activeAgentId);
+      expect(topicService.removeTopics).toHaveBeenCalledWith(activeAgentId);
       expect(refreshTopicSpy).toHaveBeenCalled();
       expect(switchTopicSpy).toHaveBeenCalled();
     });
@@ -830,7 +837,7 @@ describe('topic action', () => {
       const activeAgentId = 'test-session-id';
 
       await act(async () => {
-        useChatStore.setState({ activeAgentId, activeTopicId: topicId });
+        useChatStore.setState({ activeSessionId: activeAgentId, activeTopicId: topicId });
       });
 
       const refreshTopicSpy = vi.spyOn(result.current, 'refreshTopic');
@@ -850,7 +857,7 @@ describe('topic action', () => {
       const activeAgentId = 'test-session-id';
 
       await act(async () => {
-        useChatStore.setState({ activeAgentId });
+        useChatStore.setState({ activeSessionId: activeAgentId });
       });
 
       const refreshTopicSpy = vi.spyOn(result.current, 'refreshTopic');
@@ -891,7 +898,11 @@ describe('topic action', () => {
       const { result } = renderHook(() => useChatStore());
 
       await act(async () => {
-        useChatStore.setState({ activeAgentId: undefined, activeGroupId: undefined });
+        useChatStore.setState({
+          activeGroupAgentId: undefined,
+          activeGroupId: undefined,
+          activeSessionId: undefined,
+        });
       });
 
       const refreshTopicSpy = vi.spyOn(result.current, 'refreshTopic');
@@ -915,7 +926,7 @@ describe('topic action', () => {
       // Set up mock state with unstarred topics
       await act(async () => {
         useChatStore.setState({
-          activeAgentId: 'abc',
+          activeSessionId: 'abc',
           topicDataMap: {
             [topicMapKey({ agentId: 'abc' })]: {
               items: topics,
@@ -973,7 +984,7 @@ describe('topic action', () => {
               pageSize: 20,
             },
           },
-          activeAgentId: 'test',
+          activeSessionId: 'test',
         });
       });
 
@@ -1006,13 +1017,13 @@ describe('topic action', () => {
   describe('createTopic', () => {
     it('should create a new topic and update the store', async () => {
       const { result } = renderHook(() => useChatStore());
-      const activeAgentId = 'test-session-id';
+      const activeAgentId = 'ssn_test-session-id';
       const newTopicId = 'new-topic-id';
       const messages = [{ id: 'message-1' }, { id: 'message-2' }] as UIChatMessage[];
 
       await act(async () => {
         useChatStore.setState({
-          activeAgentId,
+          activeSessionId: activeAgentId,
           messagesMap: {
             [messageMapKey({ agentId: activeAgentId })]: messages,
           },
@@ -1044,7 +1055,7 @@ describe('topic action', () => {
 
       await act(async () => {
         useChatStore.setState({
-          activeAgentId: 'abc',
+          activeSessionId: 'abc',
           topicDataMap: {
             [topicMapKey({ agentId: 'abc' })]: {
               items: topics,
@@ -1078,7 +1089,7 @@ describe('topic action', () => {
       const messages = [{ id: 'message-1', content: 'Hello' }] as UIChatMessage[];
 
       await act(async () => {
-        useChatStore.setState({ activeAgentId });
+        useChatStore.setState({ activeSessionId: activeAgentId });
       });
 
       const getMessagesSpy = vi.spyOn(messageService, 'getMessages').mockResolvedValue(messages);

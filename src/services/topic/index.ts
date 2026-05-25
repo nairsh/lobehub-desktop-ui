@@ -41,6 +41,7 @@ export class TopicService {
       groupId: params.groupId,
       isInbox: params.isInbox,
       pageSize: params.pageSize,
+      sessionId: this.toDbSessionId(params.sessionId),
     }) as any;
   };
 
@@ -66,11 +67,17 @@ export class TopicService {
     return lambdaClient.topic.recentTopics.query({ limit });
   };
 
-  searchTopics = (keywords: string, agentId?: string, groupId?: string): Promise<ChatTopic[]> => {
+  searchTopics = (
+    keywords: string,
+    agentId?: string,
+    groupId?: string,
+    sessionId?: string | null,
+  ): Promise<ChatTopic[]> => {
     return lambdaClient.topic.searchTopics.query({
       agentId,
       groupId,
       keywords,
+      sessionId: this.toDbSessionId(sessionId),
     }) as any;
   };
 

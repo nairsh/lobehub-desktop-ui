@@ -41,6 +41,9 @@ import { agentGroupSelectors } from '@/store/agentGroup/selectors';
 import { getAiInfraStoreState } from '@/store/aiInfra';
 import { getChatStoreState } from '@/store/chat';
 import { topicSelectors } from '@/store/chat/selectors';
+import { getActiveProjectKnowledgeBaseId } from '@/store/project/projectContext';
+import { getSessionStoreState } from '@/store/session';
+import { sessionMetaSelectors } from '@/store/session/selectors';
 import { getToolStoreState } from '@/store/tool';
 import {
   builtinToolSelectors,
@@ -56,6 +59,7 @@ import { resolveClientSkills } from './skillEngineering';
 const log = debug('context-engine:contextEngineering');
 const MEMORY_DISABLED_SYSTEM_ROLE =
   'Memory is not enabled in this conversation. Do not claim that you have a memory tool, can save memories, or can recall information across conversations. If asked, say that memory is currently unavailable in this chat.';
+const isSessionOwnedChatId = (id?: string) => !!id && (id === 'inbox' || id.startsWith('ssn_'));
 
 interface ContextEngineeringContext {
   /** Agent Builder context for injecting current agent info */
@@ -115,6 +119,7 @@ export const contextEngineering = async ({
   groupId,
   initialContext,
   plugins,
+  sessionId,
   stepContext,
   topicId,
   memoryContext,
@@ -181,6 +186,10 @@ export const contextEngineering = async ({
 
   // Get agent store state (used for both group agent builder context and file/knowledge base)
   const agentStoreState = getAgentStoreState();
+  const agentMeta = agentId ? agentSelectors.getAgentMetaById(agentId)(agentStoreState) : undefined;
+  const currentSession = isSessionOwnedChatId(sessionId)
+    ? getSessionStoreState().sessions.find((session) => session.id === sessionId)
+    : undefined;
 
   // Build group agent builder context if Group Agent Builder is enabled
   // Note: Uses activeGroupId from chatStore to get the group being edited
@@ -303,9 +312,15 @@ export const contextEngineering = async ({
     .filter((file) => file.enabled && file.content)
     .map((file) => ({ content: file.content!, fileId: file.id, filename: file.name }));
 
-  const knowledgeBases = agentKnowledgeBases
-    .filter((kb) => kb.enabled)
-    .map((kb) => ({ description: kb.description, id: kb.id, name: kb.name }));
+  const projectKbId = getActiveProjectKnowledgeBaseId();
+  const knowledgeBases = [
+    ...agentKnowledgeBases
+      .filter((kb) => kb.enabled)
+      .map((kb) => ({ description: kb.description, id: kb.id, name: kb.name })),
+    ...(projectKbId
+      ? [{ description: 'Project files', id: projectKbId, name: 'Project Files' }]
+      : []),
+  ];
 
   // Resolve user memories: topic memories and user persona are independent layers
   // Both functions now read from cache only (no network requests) to avoid blocking sendMessage
@@ -699,11 +714,11 @@ export const contextEngineering = async ({
       // when the placeholder actually appears in a rendered message.
       agent_id: () => agentId ?? '',
       agent_title: () =>
-        agentId ? (agentSelectors.getAgentMetaById(agentId)(agentStoreState)?.title ?? '') : '',
+        currentSession
+          ? sessionMetaSelectors.getTitle(currentSession.meta)
+          : (agentMeta?.title ?? ''),
       agent_description: () =>
-        agentId
-          ? (agentSelectors.getAgentMetaById(agentId)(agentStoreState)?.description ?? '')
-          : '',
+        currentSession ? (currentSession.meta?.description ?? '') : (agentMeta?.description ?? ''),
       topic_id: () => topicId ?? '',
       topic_title: () => {
         if (!topicId) return '';

@@ -58,6 +58,9 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
     border: none;
     border-radius: 0 !important;
   `,
+  inputRounded: css`
+    border-radius: 14px !important;
+  `,
 }));
 
 interface DesktopChatInputProps extends ActionToolbarProps {
@@ -119,8 +122,8 @@ const DesktopChatInput = memo<DesktopChatInputProps>(
     const content = (
       <Flexbox
         className={cx(styles.container, expand && styles.fullscreen)}
-        gap={8}
-        paddingBlock={expand ? 0 : showFootnote ? '0 12px' : '0 8px'}
+        gap={4}
+        paddingBlock={expand ? 0 : showFootnote ? '0 8px' : '0 4px'}
       >
         <ChatInput
           data-testid="chat-input"
@@ -166,7 +169,11 @@ const DesktopChatInput = memo<DesktopChatInputProps>(
             updateSystemStatus({ chatInputHeight: height });
           }}
           {...inputContainerProps}
-          className={cx(expand && styles.inputFullscreen, inputContainerProps?.className)}
+          className={cx(
+            styles.inputRounded,
+            expand && styles.inputFullscreen,
+            inputContainerProps?.className,
+          )}
         >
           <InputEditor placeholder={placeholder} />
         </ChatInput>

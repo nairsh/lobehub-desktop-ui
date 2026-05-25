@@ -15,6 +15,17 @@ export const projectSelectors = {
 
   projectTopicIds: (projectId: string) => (s: ProjectStore) => s.topicIdsByProject[projectId] ?? [],
 
+  pendingProjectIdByAgentId: (agentId: string | null | undefined) => (s: ProjectStore) =>
+    agentId ? (s.pendingProjectIdByAgentId[agentId] ?? null) : null,
+
+  projectIdByTopicId: (topicId: string | null | undefined) => (s: ProjectStore) => {
+    if (!topicId) return null;
+    for (const [projectId, topicIds] of Object.entries(s.topicIdsByProject)) {
+      if (topicIds.includes(topicId)) return projectId;
+    }
+    return null;
+  },
+
   projectList: (s: ProjectStore) => s.projectList,
 
   sortedProjectList: (s: ProjectStore) => {

@@ -15,7 +15,7 @@ import { mobileHeaderSticky } from '@/styles/mobileHeader';
 import { styles } from './SessionHeader/style';
 
 const Header = memo(() => {
-  const [createSession] = useSessionStore((s) => [s.createSession]);
+  const [createChat] = useSessionStore((s) => [s.createChat]);
   const navigate = useNavigate();
 
   return (
@@ -31,7 +31,7 @@ const Header = memo(() => {
         <ActionIcon
           icon={MessageSquarePlus}
           size={MOBILE_HEADER_ICON_SIZE}
-          onClick={() => createSession()}
+          onClick={() => createChat()}
         />
       }
     />

@@ -9,10 +9,10 @@ import { useSessionStore } from '@/store/session';
 
 const AddButton = memo<{ groupId?: string }>(({ groupId }) => {
   const { t } = useTranslation('chat');
-  const createSession = useSessionStore((s) => s.createSession);
+  const createChat = useSessionStore((s) => s.createChat);
   const mobile = useServerConfigStore((s) => s.isMobile);
-  const { mutate, isValidating } = useActionSWR(['session.createSession', groupId], () => {
-    return createSession({ group: groupId });
+  const { mutate, isValidating } = useActionSWR(['chat.createChat', groupId], () => {
+    return createChat({ groupId });
   });
 
   return (
@@ -27,7 +27,7 @@ const AddButton = memo<{ groupId?: string }>(({ groupId }) => {
         }}
         onClick={() => mutate()}
       >
-        {t('newAgent')}
+        {t('newChat')}
       </Button>
     </Flexbox>
   );

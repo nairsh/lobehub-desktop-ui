@@ -2,7 +2,13 @@ import { Icon } from '@lobehub/ui';
 import { GroupBotSquareIcon } from '@lobehub/ui/icons';
 import { App } from 'antd';
 import { type ItemType } from 'antd/es/menu/interface';
-import { BotIcon, FileTextIcon, FolderCogIcon, FolderPlus } from 'lucide-react';
+import {
+  BotIcon,
+  FileTextIcon,
+  FolderCogIcon,
+  FolderPlus,
+  MessageSquarePlusIcon,
+} from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -18,6 +24,7 @@ import { useAgentStore } from '@/store/agent';
 import { useAgentGroupStore } from '@/store/agentGroup';
 import { useHomeStore } from '@/store/home';
 import { usePageStore } from '@/store/page';
+import { useSessionStore } from '@/store/session';
 
 interface CreateAgentOptions {
   groupId?: string;
@@ -37,6 +44,7 @@ export const useCreateMenuItems = () => {
   const groupTemplates = useGroupTemplates();
 
   const [storeCreateAgent] = useAgentStore((s) => [s.createAgent]);
+  const storeCreateChat = useSessionStore((s) => s.createChat);
   const [addGroup, refreshAgentList, switchToGroup] = useHomeStore((s) => [
     s.addGroup,
     s.refreshAgentList,
@@ -59,6 +67,20 @@ export const useCreateMenuItems = () => {
       onSuccess: async (result) => {
         navigate(`/agent/${result.agentId}/profile`);
         await refreshAgentList();
+      },
+    },
+  );
+
+  // SWR-based chat creation — no agent record created
+  const { trigger: mutateChat, isMutating: isMutatingChat } = useSWRMutation(
+    'chat.createChat',
+    async (_key: string, { arg }: { arg?: { groupId?: string } }) => {
+      return storeCreateChat({ groupId: arg?.groupId }, false);
+    },
+    {
+      onSuccess: async (sessionId) => {
+        navigate(`/agent/${sessionId}`);
+        // Sessions are already refreshed inside storeCreateChat; no agent list refresh needed.
       },
     },
   );
@@ -196,6 +218,33 @@ export const useCreateMenuItems = () => {
   const openCreateModal = agentModal?.openCreateModal;
 
   /**
+   * Create a normal chat (no agent record).
+   */
+  const createChat = useCallback(
+    async (options?: { groupId?: string; onSuccess?: () => void }) => {
+      await mutateChat({ groupId: options?.groupId });
+      options?.onSuccess?.();
+    },
+    [mutateChat],
+  );
+
+  /**
+   * New Chat menu item — the primary action for starting a conversation.
+   */
+  const createChatMenuItem = useCallback(
+    (options?: { groupId?: string }): ItemType => ({
+      icon: <Icon icon={MessageSquarePlusIcon} />,
+      key: 'newChat',
+      label: t('newChat'),
+      onClick: async (info) => {
+        info.domEvent?.stopPropagation();
+        await createChat(options);
+      },
+    }),
+    [t, createChat],
+  );
+
+  /**
    * Create agent menu item
    */
   const createAgentMenuItem = useCallback(
@@ -284,9 +333,9 @@ export const useCreateMenuItems = () => {
       navigate(`/page/${newPageId}`);
     } catch (error) {
       console.error('Failed to create page:', error);
-      message.error('Failed to create page');
+      message.error(t('createPageFailed'));
     }
-  }, [createNewPage, tFile, navigate, message]);
+  }, [createNewPage, t, tFile, navigate, message]);
 
   /**
    * Create page menu item
@@ -308,6 +357,8 @@ export const useCreateMenuItems = () => {
     configMenuItem,
     createAgent,
     createAgentMenuItem,
+    createChat,
+    createChatMenuItem,
     createEmptyGroup,
     createGroupChatMenuItem,
     createGroupFromTemplate,
@@ -320,7 +371,13 @@ export const useCreateMenuItems = () => {
     // Loading states
     isCreatingGroup,
     isCreatingSessionGroup,
-    isLoading: isMutatingAgent || isMutatingGroup || isCreatingGroup || isCreatingSessionGroup,
+    isMutatingChat,
+    isLoading:
+      isMutatingAgent ||
+      isMutatingChat ||
+      isMutatingGroup ||
+      isCreatingGroup ||
+      isCreatingSessionGroup,
     isMutatingAgent,
   };
 };

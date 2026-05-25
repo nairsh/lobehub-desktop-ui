@@ -309,20 +309,21 @@ export const store: StateCreator<Store, [['zustand/devtools', never]]> = (set, g
   setAgentMeta: async (meta) => {
     const { dispatchMeta, id, meta: currentMeta } = get();
     const mergedMeta = merge(currentMeta, meta);
+    const isSessionScopedMeta = id === 'inbox' || id.startsWith('ssn_');
 
     try {
       const analytics = getSingletonAnalyticsOptional();
       if (analytics) {
         analytics.track({
-          name: 'agent_meta_updated',
+          name: isSessionScopedMeta ? 'session_meta_updated' : 'agent_meta_updated',
           properties: {
-            assistant_avatar: mergedMeta.avatar,
-            assistant_background_color: mergedMeta.backgroundColor,
-            assistant_description: mergedMeta.description,
-            assistant_name: mergedMeta.title,
-            assistant_tags: mergedMeta.tags,
             is_inbox: id === 'inbox',
             session_id: id || 'unknown',
+            session_avatar: mergedMeta.avatar,
+            session_background_color: mergedMeta.backgroundColor,
+            session_description: mergedMeta.description,
+            session_tags: mergedMeta.tags,
+            session_title: mergedMeta.title,
             timestamp: Date.now(),
             user_id: useUserStore.getState().user?.id || 'anonymous',
           },

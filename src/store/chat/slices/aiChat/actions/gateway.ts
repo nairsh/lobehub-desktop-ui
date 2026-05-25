@@ -394,7 +394,7 @@ export class GatewayActionImpl {
     // Get a fresh JWT token (original expired after 5 min)
     const { token } = await aiAgentService.refreshGatewayToken(topicId);
 
-    const agentId = this.#get().activeAgentId;
+    const agentId = this.#get().activeGroupAgentId || this.#get().activeSessionId;
     const context = {
       agentId,
       scope: (scope ?? 'main') as ConversationContext['scope'],

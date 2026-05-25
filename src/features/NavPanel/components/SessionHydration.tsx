@@ -8,6 +8,8 @@ import { useChatStore } from '@/store/chat';
 import { useSessionStore } from '@/store/session';
 
 const THROTTLE_DELAY = 50;
+const getActiveSessionId = (id?: string) =>
+  id && (id === 'inbox' || id.startsWith('ssn_')) ? id : undefined;
 
 // sync outside state to useSessionStore
 const SessionHydration = memo(() => {
@@ -23,6 +25,7 @@ const SessionHydration = memo(() => {
 
   useStoreUpdater('activeId', session);
   useChatStoreUpdater('activeAgentId', session);
+  useChatStoreUpdater('activeSessionId', getActiveSessionId(session));
 
   useEffect(() => {
     const unsubscribe = useSessionStore.subscribe(

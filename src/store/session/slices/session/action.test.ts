@@ -1,13 +1,18 @@
+import './testSetup';
+
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { message } from '@/components/AntdStaticMethods';
 import { chatGroupService } from '@/services/chatGroup';
+import { chatSessionService } from '@/services/chatSession';
 import { sessionService } from '@/services/session';
 import { useSessionStore } from '@/store/session';
 import { LobeSessionType } from '@/types/session';
 
 import { sessionSelectors } from './selectors';
+
+const mockAnalyticsTrack = vi.fn();
 
 // Mock sessionService 和其他依赖项
 vi.mock('@/services/session', () => ({
@@ -25,6 +30,12 @@ vi.mock('@/services/session', () => ({
   },
 }));
 
+vi.mock('@/services/chatSession', () => ({
+  chatSessionService: {
+    createChat: vi.fn(),
+  },
+}));
+
 vi.mock('@/services/chatGroup', () => ({
   chatGroupService: {
     updateGroup: vi.fn(),
@@ -38,6 +49,12 @@ vi.mock('@/components/AntdStaticMethods', () => ({
     error: vi.fn(),
     destroy: vi.fn(),
   },
+}));
+
+vi.mock('@lobehub/analytics', () => ({
+  getSingletonAnalyticsOptional: () => ({
+    track: mockAnalyticsTrack,
+  }),
 }));
 
 const mockRefresh = vi.fn();
@@ -109,6 +126,37 @@ describe('SessionAction', () => {
     });
   });
 
+  describe('createChat', () => {
+    it('should create a normal chat, track analytics, and switch to it', async () => {
+      const { result } = renderHook(() => useSessionStore());
+      const newSessionId = 'ssn_new-chat-id';
+      vi.mocked(chatSessionService.createChat).mockResolvedValue({ sessionId: newSessionId });
+
+      let createdSessionId;
+
+      await act(async () => {
+        createdSessionId = await result.current.createChat({
+          meta: { title: 'New Chat' },
+        });
+      });
+
+      expect(chatSessionService.createChat).toHaveBeenCalledWith({
+        meta: { title: 'New Chat' },
+      });
+      expect(mockRefresh).toHaveBeenCalled();
+      expect(mockAnalyticsTrack).toHaveBeenCalledWith({
+        name: 'new_chat_created',
+        properties: expect.objectContaining({
+          session_id: newSessionId,
+          user_id: 'anonymous',
+        }),
+      });
+      expect(createdSessionId).toBe(newSessionId);
+      expect(result.current.activeId).toBe(newSessionId);
+      expect(result.current.activeSessionId).toBe(newSessionId);
+    });
+  });
+
   describe('cloneSession', () => {
     it('should duplicate a session and switch to the new one', async () => {
       const { result } = renderHook(() => useSessionStore());
@@ -149,7 +197,8 @@ describe('SessionAction', () => {
         result.current.switchSession(sessionId);
       });
 
-      expect(result.current.activeAgentId).toBe(sessionId);
+      expect(result.current.activeId).toBe(sessionId);
+      expect(result.current.activeSessionId).toBe(sessionId);
     });
   });
 

@@ -65,11 +65,11 @@ const SessionList = memo<SessionListProps>(({ dataSource, groupId, showAddButton
                 analytics?.track({
                   name: 'switch_session',
                   properties: {
-                    assistant_name: session.meta?.title || 'Untitled Agent',
-                    assistant_tags: session.meta?.tags || [],
                     group_id: sessionGroupId,
                     group_name: groupName,
                     session_id: id,
+                    session_tags: session.meta?.tags || [],
+                    session_title: session.meta?.title || 'Untitled Chat',
                     spm: 'homepage.chat.session_list_item.click',
                     user_id: userId || 'anonymous',
                   },

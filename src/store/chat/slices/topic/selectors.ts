@@ -16,7 +16,7 @@ import { type TopicData } from './initialState';
 // Helper selector: get current topic data based on session context
 const currentTopicData = (s: ChatStoreState): TopicData | undefined => {
   const key = topicMapKey({
-    agentId: s.activeAgentId,
+    agentId: s.activeGroupAgentId || s.activeSessionId,
     groupId: s.activeGroupId,
   });
   return s.topicDataMap[key];

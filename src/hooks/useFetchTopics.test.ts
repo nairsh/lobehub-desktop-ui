@@ -45,11 +45,12 @@ describe('useFetchTopics', () => {
   });
 
   it('should fetch topics with agentId when no groupId is active', () => {
-    const activeAgentId = 'agent-123';
+    const activeAgentId = 'ssn_chat_123';
 
     mockUseChatStore.mockImplementation((selector) =>
       selector({
         activeAgentId,
+        activeSessionId: activeAgentId,
         activeGroupId: undefined,
         useFetchTopics: mockUseFetchTopicsFn,
       }),
@@ -62,6 +63,7 @@ describe('useFetchTopics', () => {
       groupId: undefined,
       isInbox: false,
       pageSize: 20,
+      sessionId: activeAgentId,
     });
   });
 
@@ -72,6 +74,7 @@ describe('useFetchTopics', () => {
     mockUseChatStore.mockImplementation((selector) =>
       selector({
         activeAgentId,
+        activeSessionId: undefined,
         activeGroupId,
         useFetchTopics: mockUseFetchTopicsFn,
       }),
@@ -96,6 +99,7 @@ describe('useFetchTopics', () => {
     mockUseChatStore.mockImplementation((selector) =>
       selector({
         activeAgentId: INBOX_SESSION_ID,
+        activeSessionId: INBOX_SESSION_ID,
         activeGroupId,
         useFetchTopics: mockUseFetchTopicsFn,
       }),
@@ -108,6 +112,7 @@ describe('useFetchTopics', () => {
       groupId: activeGroupId,
       isInbox: false,
       pageSize: 20,
+      sessionId: undefined,
     });
   });
 
@@ -118,6 +123,7 @@ describe('useFetchTopics', () => {
     mockUseChatStore.mockImplementation((selector) =>
       selector({
         activeAgentId: INBOX_SESSION_ID,
+        activeSessionId: INBOX_SESSION_ID,
         activeGroupId: undefined,
         useFetchTopics: mockUseFetchTopicsFn,
       }),
@@ -130,6 +136,7 @@ describe('useFetchTopics', () => {
       groupId: undefined,
       isInbox: true,
       pageSize: 20,
+      sessionId: INBOX_SESSION_ID,
     });
   });
 
@@ -139,6 +146,7 @@ describe('useFetchTopics', () => {
     mockUseChatStore.mockImplementation((selector) =>
       selector({
         activeAgentId: 'agent-1',
+        activeSessionId: undefined,
         activeGroupId: undefined,
         useFetchTopics: mockUseFetchTopicsFn,
       }),
@@ -154,6 +162,7 @@ describe('useFetchTopics', () => {
       groupId: undefined,
       isInbox: false,
       pageSize: customPageSize,
+      sessionId: undefined,
     });
   });
 });

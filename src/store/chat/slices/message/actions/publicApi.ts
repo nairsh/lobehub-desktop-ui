@@ -13,6 +13,8 @@ import { toggleBooleanList } from '../../../utils';
 import { type OptimisticUpdateContext } from './optimisticUpdate';
 
 const n = setNamespace('m');
+const isSessionOwnedChatId = (id?: string | null) =>
+  !!id && (id === 'inbox' || id.startsWith('ssn_'));
 
 /**
  * Public API for components
@@ -38,11 +40,13 @@ export class MessagePublicApiActionImpl {
       optimisticCreateMessage,
       updateMessageInput,
       activeTopicId,
-      activeAgentId,
+      activeGroupAgentId,
+      activeSessionId,
       activeThreadId,
       activeGroupId,
       inputMessage,
     } = this.#get();
+    const activeAgentId = activeGroupAgentId || activeSessionId;
     if (!activeAgentId) return;
 
     const parentId = displayMessageSelectors.lastDisplayMessageId(this.#get());
@@ -51,6 +55,8 @@ export class MessagePublicApiActionImpl {
       content: inputMessage,
       role: 'assistant',
       agentId: activeAgentId,
+      sessionId:
+        !activeGroupId && isSessionOwnedChatId(activeSessionId) ? activeSessionId : undefined,
       topicId: activeTopicId,
       threadId: activeThreadId,
       groupId: activeGroupId,
@@ -73,10 +79,12 @@ export class MessagePublicApiActionImpl {
       optimisticCreateMessage,
       updateMessageInput,
       activeTopicId,
-      activeAgentId,
+      activeGroupAgentId,
+      activeSessionId,
       activeThreadId,
       activeGroupId,
     } = this.#get();
+    const activeAgentId = activeGroupAgentId || activeSessionId;
     if (!activeAgentId) return;
 
     const parentId = displayMessageSelectors.lastDisplayMessageId(this.#get());
@@ -86,6 +94,8 @@ export class MessagePublicApiActionImpl {
       files: fileList,
       role: 'user',
       agentId: activeAgentId,
+      sessionId:
+        !activeGroupId && isSessionOwnedChatId(activeSessionId) ? activeSessionId : undefined,
       topicId: activeTopicId,
       threadId: activeThreadId,
       groupId: activeGroupId,
@@ -180,16 +190,23 @@ export class MessagePublicApiActionImpl {
   };
 
   clearMessage = async (): Promise<void> => {
-    const { activeAgentId, activeTopicId, activeGroupId, refreshTopic, switchTopic } = this.#get();
+    const {
+      activeGroupAgentId,
+      activeSessionId,
+      activeTopicId,
+      activeGroupId,
+      refreshTopic,
+      switchTopic,
+    } = this.#get();
+    const sessionId = activeSessionId || activeGroupAgentId;
 
     // For group sessions, we need to clear group messages using groupId
     // For regular sessions, we clear session messages using agentId
     if (activeGroupId) {
       // For group chat, activeGroupId is the groupId
       await messageService.removeMessagesByGroup(activeGroupId, activeTopicId);
-    } else {
-      // For regular session, activeAgentId is the agentId
-      await messageService.removeMessagesByAssistant(activeAgentId, activeTopicId);
+    } else if (sessionId) {
+      await messageService.removeMessagesByAssistant(sessionId, activeTopicId);
     }
 
     if (activeTopicId) {

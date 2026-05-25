@@ -18,6 +18,7 @@ import { prefetchRoute } from '@/utils/router';
 
 import Agent from './Agent';
 import { CustomizeSidebarModal, openCustomizeSidebarModal } from './CustomizeSidebarModal';
+import PinnedProjects from './PinnedProjects';
 
 export enum GroupKey {
   Agent = 'agent',
@@ -164,6 +165,7 @@ const Body = memo(() => {
 
   return (
     <Flexbox flex={1} gap={4} paddingInline={4}>
+      <PinnedProjects />
       {content}
       <CustomizeSidebarModal />
     </Flexbox>

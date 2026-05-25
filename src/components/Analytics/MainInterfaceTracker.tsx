@@ -20,11 +20,11 @@ const MainInterfaceTracker = memo(() => {
     const showRightPanel = systemStatusSelectors.showRightPanel(useGlobalStore.getState());
     const messages = displayMessageSelectors.activeDisplayMessages(getChatStoreState());
     return {
-      active_assistant: activeSessionId === 'inbox' ? null : currentSession?.meta?.title || null,
+      active_chat_title: activeSessionId === 'inbox' ? null : currentSession?.meta?.title || null,
       has_chat_history: messages.length > 0,
       session_id: activeSessionId ? activeSessionId : 'inbox',
       sidebar_state: showRightPanel ? 'expanded' : 'collapsed',
-      visible_assistants_count: defaultSessions.length,
+      visible_sessions_count: defaultSessions.length,
     };
   }, []);
 

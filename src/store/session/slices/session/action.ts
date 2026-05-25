@@ -9,6 +9,7 @@ import { message } from '@/components/AntdStaticMethods';
 import { DEFAULT_AGENT_LOBE_SESSION, INBOX_SESSION_ID } from '@/const/session';
 import { mutate, useClientDataSWR } from '@/libs/swr';
 import { chatGroupService } from '@/services/chatGroup';
+import { chatSessionService, type CreateChatParams } from '@/services/chatSession';
 import { sessionService } from '@/services/session';
 import { getChatGroupStoreState } from '@/store/agentGroup';
 import { getProjectStoreState } from '@/store/project';
@@ -51,6 +52,38 @@ export class SessionActionImpl {
     this.#get = get;
   }
 
+  /**
+   * Create a new normal chat session without a dedicated agent record.
+   * This is the Phase 1 replacement for the deprecated createSession path.
+   */
+  createChat = async (
+    params: CreateChatParams = {},
+    isSwitchSession: boolean = true,
+  ): Promise<string> => {
+    const { switchSession, refreshSessions } = this.#get();
+
+    const { sessionId } = await chatSessionService.createChat(params);
+    await refreshSessions();
+
+    const analytics = getSingletonAnalyticsOptional();
+    if (analytics) {
+      const userStore = getUserStoreState();
+      const userId = userProfileSelectors.userId(userStore);
+
+      analytics.track({
+        name: 'new_chat_created',
+        properties: {
+          session_id: sessionId,
+          user_id: userId || 'anonymous',
+        },
+      });
+    }
+
+    if (isSwitchSession) switchSession(sessionId);
+
+    return sessionId;
+  };
+
   clearSessions = async (): Promise<void> => {
     await sessionService.removeAllSessions();
     await this.#get().refreshSessions();
@@ -82,23 +115,6 @@ export class SessionActionImpl {
       activeProjectId,
     );
     await refreshSessions();
-
-    // Track new agent creation analytics
-    const analytics = getSingletonAnalyticsOptional();
-    if (analytics) {
-      const userStore = getUserStoreState();
-      const userId = userProfileSelectors.userId(userStore);
-
-      analytics.track({
-        name: 'new_agent_created',
-        properties: {
-          assistant_name: newSession.meta?.title || 'Untitled Agent',
-          assistant_tags: newSession.meta?.tags || [],
-          session_id: id,
-          user_id: userId || 'anonymous',
-        },
-      });
-    }
 
     // Whether to goto  to the new session after creation, the default is to switch to
     if (isSwitchSession) switchSession(id);
@@ -168,9 +184,16 @@ export class SessionActionImpl {
   };
 
   switchSession = (sessionId: string): void => {
-    if (this.#get().activeAgentId === sessionId) return;
+    if (this.#get().activeSessionId === sessionId) return;
 
-    this.#set({ activeAgentId: sessionId }, false, n(`activeSession/${sessionId}`));
+    this.#set(
+      {
+        activeId: sessionId,
+        activeSessionId: sessionId,
+      },
+      false,
+      n(`activeSession/${sessionId}`),
+    );
   };
 
   toggleAgentPinned = (): void => {

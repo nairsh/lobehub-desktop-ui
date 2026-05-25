@@ -26,6 +26,7 @@ import { abortableRequest } from '../utils/abortableRequest';
 export interface MessageQueryContext {
   agentId?: string;
   groupId?: string;
+  sessionId?: string;
   threadId?: string | null;
   topicId?: string | null;
   topicShareId?: string;

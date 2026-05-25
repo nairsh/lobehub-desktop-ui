@@ -13,19 +13,24 @@ import { useCreateMenuItems } from '../hooks';
 
 const NewAgentButton = memo(() => {
   const { t } = useTranslation('chat');
-  const { createAgentMenuItem, createGroupChatMenuItem, isMutatingAgent, openCreateModal } =
-    useCreateMenuItems();
+  const {
+    createChat,
+    createChatMenuItem,
+    createAgentMenuItem,
+    createGroupChatMenuItem,
+    isMutatingChat,
+  } = useCreateMenuItems();
 
   const dropdownItems = useMemo(
-    () => [createAgentMenuItem(), createGroupChatMenuItem()],
-    [createAgentMenuItem, createGroupChatMenuItem],
+    () => [createChatMenuItem(), createAgentMenuItem(), createGroupChatMenuItem()],
+    [createChatMenuItem, createAgentMenuItem, createGroupChatMenuItem],
   );
 
   return (
     <NavItem
       icon={CreateBotIcon}
-      loading={isMutatingAgent}
-      title={t('newAgent')}
+      loading={isMutatingChat}
+      title={t('newChat')}
       actions={
         <DropdownMenu items={dropdownItems} nativeButton={false}>
           <ActionIcon
@@ -36,7 +41,7 @@ const NewAgentButton = memo(() => {
           />
         </DropdownMenu>
       }
-      onClick={() => openCreateModal?.('agent')}
+      onClick={() => createChat()}
     />
   );
 });

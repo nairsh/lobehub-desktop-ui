@@ -65,8 +65,8 @@ const Action = memo<ActionProps>(
         style={{ borderRadius, ...style }}
         size={
           actionSize ?? {
-            blockSize: 36,
-            size: 20,
+            blockSize: 28,
+            size: 16,
           }
         }
       />

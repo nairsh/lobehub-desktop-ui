@@ -12,6 +12,8 @@ import { type MessageMapKeyInput } from '../../../utils/messageMapKey';
 import { messageMapKey } from '../../../utils/messageMapKey';
 
 const SWR_USE_FETCH_MESSAGES = 'SWR_USE_FETCH_MESSAGES';
+const isSessionOwnedChatId = (id?: string | null) =>
+  !!id && (id === 'inbox' || id.startsWith('ssn_'));
 
 /**
  * Data query and synchronization actions
@@ -33,10 +35,15 @@ export class MessageQueryActionImpl {
   }
 
   refreshMessages = async (context?: Partial<ConversationContext>): Promise<void> => {
-    const agentId = context?.agentId ?? this.#get().activeAgentId;
+    const agentId =
+      context?.agentId ?? (this.#get().activeGroupAgentId || this.#get().activeSessionId);
+    const activeSessionId = this.#get().activeSessionId;
+    const sessionId =
+      context?.sessionId ??
+      (!context?.groupId && isSessionOwnedChatId(activeSessionId) ? activeSessionId : undefined);
     const topicId = context?.topicId !== undefined ? context.topicId : this.#get().activeTopicId;
     // TODO: Support threadId refresh when needed
-    await mutate([SWR_USE_FETCH_MESSAGES, agentId, topicId, 'session']);
+    await mutate([SWR_USE_FETCH_MESSAGES, agentId, sessionId, topicId, 'session']);
     await mutate([SWR_USE_FETCH_MESSAGES, agentId, topicId, 'group']);
   };
 
@@ -55,13 +62,15 @@ export class MessageQueryActionImpl {
     // Priority 1: Use explicit context if provided (preserving scope)
     if (params?.context) {
       ctx = {
-        agentId: params.context.agentId ?? this.#get().activeAgentId,
+        agentId:
+          params.context.agentId ?? (this.#get().activeGroupAgentId || this.#get().activeSessionId),
         // Preserve groupId from context
         groupId: params.context.groupId,
         // Preserve scope from context
         isNew: params.context.isNew,
 
         scope: params.context.scope,
+        sessionId: params.context.sessionId,
 
         threadId: params.context.threadId,
         topicId:
@@ -75,8 +84,9 @@ export class MessageQueryActionImpl {
     // Priority 3: Fallback to global state
     else {
       ctx = {
-        agentId: this.#get().activeAgentId,
+        agentId: this.#get().activeGroupAgentId || this.#get().activeSessionId,
         groupId: this.#get().activeGroupId,
+        sessionId: this.#get().activeSessionId,
         threadId: this.#get().activeThreadId,
         topicId: this.#get().activeTopicId,
       };
@@ -109,7 +119,7 @@ export class MessageQueryActionImpl {
     skipFetch?: boolean,
   ): SWRResponse<UIChatMessage[]> => {
     // Skip fetch when skipFetch is true or required fields are missing
-    const shouldFetch = !skipFetch && !!context.agentId && !!context.topicId;
+    const shouldFetch = !skipFetch && !!(context.agentId || context.sessionId) && !!context.topicId;
 
     return useClientDataSWRWithSync<UIChatMessage[]>(
       shouldFetch ? ['CHAT_STORE_FETCH_MESSAGES', context] : null,

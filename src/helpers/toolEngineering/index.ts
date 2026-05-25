@@ -14,6 +14,7 @@ import { type ChatCompletionTool, type ToolManifest, type WorkingModel } from '@
 import { isToolAvailableInCurrentEnv } from '@/helpers/toolAvailability';
 import { getAgentStoreState } from '@/store/agent';
 import { agentChatConfigSelectors, agentSelectors } from '@/store/agent/selectors';
+import { getActiveProjectKnowledgeBaseId } from '@/store/project/projectContext';
 import { getToolStoreState } from '@/store/tool';
 import {
   klavisStoreSelectors,
@@ -153,7 +154,9 @@ export const createAgentToolsEngine = (
         // System-level rules (may override user selection for specific tools)
         [CloudSandboxManifest.identifier]:
           agentChatConfigSelectors.isCloudSandboxEnabled(agentState),
-        [KnowledgeBaseManifest.identifier]: agentSelectors.hasEnabledKnowledgeBases(agentState),
+        [KnowledgeBaseManifest.identifier]:
+          agentSelectors.hasEnabledKnowledgeBases(agentState) ||
+          !!getActiveProjectKnowledgeBaseId(),
         [LocalSystemManifest.identifier]: agentChatConfigSelectors.isLocalSystemEnabled(agentState),
         [MemoryManifest.identifier]: agentChatConfigSelectors.isMemoryToolEnabled(agentState),
         [WebBrowsingManifest.identifier]: searchConfig.useApplicationBuiltinSearchTool,

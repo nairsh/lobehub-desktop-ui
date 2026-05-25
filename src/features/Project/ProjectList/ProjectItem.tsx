@@ -15,8 +15,7 @@ import { useProjectModal } from '../ProjectModal';
 
 const styles = createStaticStyles(({ css }) => ({
   pinIcon: css`
-    color: ${cssVar.colorPrimary};
-    opacity: 0.8;
+    color: ${cssVar.colorWarning};
   `,
 }));
 
@@ -99,7 +98,14 @@ const ProjectItem = memo<ProjectItemProps>(({ project }) => {
           {project.name}
         </Text>
         {isPinned && (
-          <Icon className={styles.pinIcon} icon={BookmarkIcon} size={12} style={{ flex: 'none' }} />
+          <Icon
+            className={styles.pinIcon}
+            color={cssVar.colorWarning}
+            fill={cssVar.colorWarning}
+            flex={'none'}
+            icon={BookmarkIcon}
+            size={12}
+          />
         )}
       </Block>
     </Dropdown>

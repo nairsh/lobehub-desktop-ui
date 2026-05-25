@@ -1,3 +1,5 @@
+import '../../../session/slices/session/testSetup';
+
 import { type UIChatMessage } from '@lobechat/types';
 import { TraceEventType } from '@lobechat/types';
 import * as lobeUIModules from '@lobehub/ui';
@@ -54,7 +56,10 @@ vi.mock('@/services/topic', () => ({
 const realRefreshMessages = useChatStore.getState().refreshMessages;
 // Mock state
 const mockState = {
-  activeAgentId: 'session-id',
+  activeGroupAgentId: undefined,
+  activeGroupId: undefined,
+  activeSessionId: 'ssn_session-id',
+  activeThreadId: undefined,
   activeTopicId: 'topic-id',
   messages: [],
   refreshMessages: vi.fn(),
@@ -77,7 +82,7 @@ afterEach(() => {
 describe('chatMessage actions', () => {
   describe('addAIMessage', () => {
     it('should return early if activeAgentId is undefined', async () => {
-      useChatStore.setState({ activeAgentId: undefined });
+      useChatStore.setState({ activeSessionId: undefined });
       const { result } = renderHook(() => useChatStore());
       const updateMessageInputSpy = vi.spyOn(result.current, 'updateMessageInput');
 
@@ -98,12 +103,15 @@ describe('chatMessage actions', () => {
         await result.current.addAIMessage();
       });
 
-      expect(messageService.createMessage).toHaveBeenCalledWith({
-        content: inputMessage,
-        role: 'assistant',
-        agentId: mockState.activeAgentId,
-        topicId: mockState.activeTopicId,
-      });
+      expect(messageService.createMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: inputMessage,
+          role: 'assistant',
+          agentId: mockState.activeSessionId,
+          sessionId: mockState.activeSessionId,
+          topicId: mockState.activeTopicId,
+        }),
+      );
     });
 
     it('should call updateMessageInput with empty string', async () => {
@@ -119,7 +127,7 @@ describe('chatMessage actions', () => {
 
   describe('addUserMessage', () => {
     it('should return early if activeAgentId is undefined', async () => {
-      useChatStore.setState({ activeAgentId: undefined });
+      useChatStore.setState({ activeSessionId: undefined });
       const { result } = renderHook(() => useChatStore());
       const updateMessageInputSpy = vi.spyOn(result.current, 'updateMessageInput');
 
@@ -135,7 +143,7 @@ describe('chatMessage actions', () => {
       const message = 'Test user message';
       const fileList = ['file-id-1', 'file-id-2'];
       useChatStore.setState({
-        activeAgentId: mockState.activeAgentId,
+        activeSessionId: mockState.activeSessionId,
         activeTopicId: mockState.activeTopicId,
       });
       const { result } = renderHook(() => useChatStore());
@@ -144,21 +152,24 @@ describe('chatMessage actions', () => {
         await result.current.addUserMessage({ message, fileList });
       });
 
-      expect(messageService.createMessage).toHaveBeenCalledWith({
-        content: message,
-        files: fileList,
-        role: 'user',
-        agentId: mockState.activeAgentId,
-        topicId: mockState.activeTopicId,
-        threadId: undefined,
-      });
+      expect(messageService.createMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: message,
+          files: fileList,
+          role: 'user',
+          agentId: mockState.activeSessionId,
+          sessionId: mockState.activeSessionId,
+          topicId: mockState.activeTopicId,
+          threadId: undefined,
+        }),
+      );
     });
 
     it('should call optimisticCreateMessage with threadId when activeThreadId is set', async () => {
       const message = 'Test user message';
       const activeThreadId = 'thread-123';
       useChatStore.setState({
-        activeAgentId: mockState.activeAgentId,
+        activeSessionId: mockState.activeSessionId,
         activeTopicId: mockState.activeTopicId,
         activeThreadId,
       });
@@ -168,14 +179,17 @@ describe('chatMessage actions', () => {
         await result.current.addUserMessage({ message });
       });
 
-      expect(messageService.createMessage).toHaveBeenCalledWith({
-        content: message,
-        files: undefined,
-        role: 'user',
-        agentId: mockState.activeAgentId,
-        topicId: mockState.activeTopicId,
-        threadId: activeThreadId,
-      });
+      expect(messageService.createMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: message,
+          files: undefined,
+          role: 'user',
+          agentId: mockState.activeSessionId,
+          sessionId: mockState.activeSessionId,
+          topicId: mockState.activeTopicId,
+          threadId: activeThreadId,
+        }),
+      );
     });
 
     it('should call updateMessageInput with empty string', async () => {
@@ -191,21 +205,24 @@ describe('chatMessage actions', () => {
 
     it('should handle message without fileList', async () => {
       const message = 'Test user message without files';
-      useChatStore.setState({ activeAgentId: mockState.activeAgentId });
+      useChatStore.setState({ activeSessionId: mockState.activeSessionId });
       const { result } = renderHook(() => useChatStore());
 
       await act(async () => {
         await result.current.addUserMessage({ message });
       });
 
-      expect(messageService.createMessage).toHaveBeenCalledWith({
-        content: message,
-        files: undefined,
-        role: 'user',
-        agentId: mockState.activeAgentId,
-        topicId: mockState.activeTopicId,
-        threadId: undefined,
-      });
+      expect(messageService.createMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: message,
+          files: undefined,
+          role: 'user',
+          agentId: mockState.activeSessionId,
+          sessionId: mockState.activeSessionId,
+          topicId: mockState.activeTopicId,
+          threadId: undefined,
+        }),
+      );
     });
   });
 
@@ -226,7 +243,7 @@ describe('chatMessage actions', () => {
 
       act(() => {
         useChatStore.setState({
-          activeAgentId: 'session-id',
+          activeSessionId: 'session-id',
           activeTopicId: undefined,
           messagesMap: {
             [messageMapKey({ agentId: 'session-id' })]: [{ id: messageId } as UIChatMessage],
@@ -239,7 +256,7 @@ describe('chatMessage actions', () => {
 
       expect(deleteSpy).toHaveBeenCalledWith(messageId);
       expect(replaceMessagesSpy).toHaveBeenCalledWith(mockMessages, {
-        context: { agentId: 'session-id', topicId: undefined, threadId: undefined },
+        context: expect.objectContaining({ agentId: 'session-id', topicId: undefined }),
       });
     });
 
@@ -262,7 +279,7 @@ describe('chatMessage actions', () => {
 
       act(() => {
         useChatStore.setState({
-          activeAgentId: 'session-id',
+          activeSessionId: 'session-id',
           activeTopicId: undefined,
           messagesMap: {
             [messageMapKey({ agentId: 'session-id' })]: [
@@ -278,12 +295,12 @@ describe('chatMessage actions', () => {
       });
 
       // Only the message itself should be deleted, tool messages remain as orphaned
-      expect(removeMessagesSpy).toHaveBeenCalledWith([messageId], {
-        agentId: 'session-id',
-        topicId: undefined,
-      });
+      expect(removeMessagesSpy).toHaveBeenCalledWith(
+        [messageId],
+        expect.objectContaining({ agentId: 'session-id', topicId: undefined }),
+      );
       expect(replaceMessagesSpy).toHaveBeenCalledWith(mockMessages, {
-        context: { agentId: 'session-id', topicId: undefined, threadId: undefined },
+        context: expect.objectContaining({ agentId: 'session-id', topicId: undefined }),
       });
     });
 
@@ -303,7 +320,7 @@ describe('chatMessage actions', () => {
 
       act(() => {
         useChatStore.setState({
-          activeAgentId: 'session-id',
+          activeSessionId: 'session-id',
           activeTopicId: undefined,
           messagesMap: {
             [messageMapKey({ agentId: 'session-id' })]: [
@@ -331,12 +348,12 @@ describe('chatMessage actions', () => {
         await result.current.deleteMessage(groupMessageId);
       });
 
-      expect(removeMessagesSpy).toHaveBeenCalledWith([groupMessageId, 'child-1', 'child-2'], {
-        agentId: 'session-id',
-        topicId: undefined,
-      });
+      expect(removeMessagesSpy).toHaveBeenCalledWith(
+        [groupMessageId, 'child-1', 'child-2'],
+        expect.objectContaining({ agentId: 'session-id', topicId: undefined }),
+      );
       expect(replaceMessagesSpy).toHaveBeenCalledWith(mockMessages, {
-        context: { agentId: 'session-id', topicId: undefined, threadId: undefined },
+        context: expect.objectContaining({ agentId: 'session-id', topicId: undefined }),
       });
     });
 
@@ -356,7 +373,7 @@ describe('chatMessage actions', () => {
 
       act(() => {
         useChatStore.setState({
-          activeAgentId: 'session-id',
+          activeSessionId: 'session-id',
           activeTopicId: undefined,
           messagesMap: {
             [messageMapKey({ agentId: 'session-id' })]: [
@@ -396,13 +413,10 @@ describe('chatMessage actions', () => {
       // Should delete assistantGroup message + all children + tool results of children
       expect(removeMessagesSpy).toHaveBeenCalledWith(
         [groupMessageId, 'child-1', 'child-2', 'tool-result-1'],
-        {
-          agentId: 'session-id',
-          topicId: undefined,
-        },
+        expect.objectContaining({ agentId: 'session-id', topicId: undefined }),
       );
       expect(replaceMessagesSpy).toHaveBeenCalledWith(mockMessages, {
-        context: { agentId: 'session-id', topicId: undefined, threadId: undefined },
+        context: expect.objectContaining({ agentId: 'session-id', topicId: undefined }),
       });
     });
   });
@@ -461,7 +475,7 @@ describe('chatMessage actions', () => {
       const key = messageMapKey({ agentId: sessionId, topicId });
       act(() => {
         useChatStore.setState({
-          activeAgentId: sessionId,
+          activeSessionId: sessionId,
           activeTopicId: topicId as unknown as string,
           dbMessagesMap: {
             [key]: rawMessages,
@@ -514,10 +528,10 @@ describe('chatMessage actions', () => {
         {
           tools: [{ id: 'tool2' }],
         },
-        {
+        expect.objectContaining({
           agentId: sessionId,
           topicId,
-        },
+        }),
       );
     });
   });
@@ -681,7 +695,7 @@ describe('chatMessage actions', () => {
       expect(spy).toHaveBeenCalledWith(
         messageId,
         expect.objectContaining({ content: newContent }),
-        { agentId: 'session-id', topicId: 'topic-id' },
+        expect.objectContaining({ agentId: 'ssn_session-id', topicId: 'topic-id' }),
       );
     });
 
@@ -717,7 +731,7 @@ describe('chatMessage actions', () => {
 
       expect(replaceMessagesSpy).toHaveBeenCalledWith([], {
         action: 'optimisticUpdateMessageContent',
-        context: { agentId: 'session-id', topicId: 'topic-id', threadId: undefined },
+        context: expect.objectContaining({ agentId: 'ssn_session-id', topicId: 'topic-id' }),
       });
     });
   });
@@ -740,7 +754,7 @@ describe('chatMessage actions', () => {
       useChatStore.setState({ refreshMessages: realRefreshMessages });
 
       const { result } = renderHook(() => useChatStore());
-      const activeAgentId = useChatStore.getState().activeAgentId;
+      const activeAgentId = useChatStore.getState().activeSessionId;
       const activeTopicId = useChatStore.getState().activeTopicId;
 
       // 在这里，我们不需要再次模拟 mutate，因为它已经在顶部被模拟了
@@ -752,6 +766,7 @@ describe('chatMessage actions', () => {
       expect(mutate).toHaveBeenCalledWith([
         'SWR_USE_FETCH_MESSAGES',
         activeAgentId,
+        mockState.activeSessionId,
         activeTopicId,
         'session',
       ]);
@@ -969,10 +984,11 @@ describe('chatMessage actions', () => {
         await result.current.optimisticUpdateMessagePlugin(messageId, pluginValue);
       });
 
-      expect(updateMessagePluginSpy).toHaveBeenCalledWith(messageId, pluginValue, {
-        agentId: 'session-id',
-        topicId: 'topic-id',
-      });
+      expect(updateMessagePluginSpy).toHaveBeenCalledWith(
+        messageId,
+        pluginValue,
+        expect.objectContaining({ agentId: 'ssn_session-id', topicId: 'topic-id' }),
+      );
     });
 
     it('should replace messages after updating plugin', async () => {
@@ -986,7 +1002,7 @@ describe('chatMessage actions', () => {
       });
 
       expect(replaceMessagesSpy).toHaveBeenCalledWith([], {
-        context: { agentId: 'session-id', topicId: 'topic-id', threadId: undefined },
+        context: expect.objectContaining({ agentId: 'ssn_session-id', topicId: 'topic-id' }),
       });
     });
 
@@ -1119,7 +1135,7 @@ describe('chatMessage actions', () => {
 
       act(() => {
         useChatStore.setState({
-          activeAgentId: 'agent1',
+          activeGroupAgentId: 'agent1',
           activeGroupId: 'group1',
           activeTopicId: 'topic1',
         });
@@ -1238,7 +1254,7 @@ describe('chatMessage actions', () => {
 
         act(() => {
           useChatStore.setState({
-            activeAgentId: agentId,
+            activeSessionId: agentId,
             activeTopicId: topicId,
             messagesMap: {
               [key]: messages,
@@ -1305,7 +1321,7 @@ describe('chatMessage actions', () => {
 
         act(() => {
           useChatStore.setState({
-            activeAgentId: globalAgentId,
+            activeSessionId: globalAgentId,
             activeTopicId: undefined,
             dbMessagesMap: {
               [groupKey]: groupMessages,
@@ -1382,7 +1398,7 @@ describe('chatMessage actions', () => {
 
         act(() => {
           useChatStore.setState({
-            activeAgentId: globalAgentId,
+            activeSessionId: globalAgentId,
             activeTopicId: undefined,
             dbMessagesMap: {
               [groupKey]: groupMessages,
@@ -1458,7 +1474,7 @@ describe('chatMessage actions', () => {
       beforeEach(() => {
         act(() => {
           useChatStore.setState({
-            activeAgentId: 'global-agent',
+            activeSessionId: 'global-agent',
             activeTopicId: undefined,
             dbMessagesMap: { [groupKey]: messages },
             messagesMap: { [groupKey]: messages },
