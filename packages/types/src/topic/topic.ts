@@ -79,6 +79,7 @@ export interface ChatTopic extends Omit<BaseDataModel, 'meta'> {
   favorite?: boolean;
   historySummary?: string;
   metadata?: ChatTopicMetadata;
+  projectId?: string | null;
   sessionId?: string;
   title: string;
   trigger?: string | null;
@@ -145,6 +146,7 @@ export interface QueryTopicParams {
    */
   isInbox?: boolean;
   pageSize?: number;
+  projectId?: string | null;
   sessionId?: string | null;
 }
 

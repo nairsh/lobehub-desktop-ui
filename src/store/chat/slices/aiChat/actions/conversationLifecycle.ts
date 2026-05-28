@@ -38,7 +38,10 @@ import {
 import { getFileStoreState } from '@/store/file/store';
 import { useGlobalStore } from '@/store/global';
 import { systemStatusSelectors } from '@/store/global/selectors';
-import { setActiveProjectSystemPrompt } from '@/store/project/projectContext';
+import {
+  setActiveProjectKnowledgeBaseId,
+  setActiveProjectSystemPrompt,
+} from '@/store/project/projectContext';
 import { type StoreSetter } from '@/store/types';
 import { useUserMemoryStore } from '@/store/userMemory';
 
@@ -66,6 +69,7 @@ export interface SendMessageWithContextParams extends SendMessageParams {
    * Optional system prompt from the active project.
    * Appended to the agent's system role for the duration of this LLM call.
    */
+  projectKnowledgeBaseId?: string;
   projectSystemPrompt?: string;
 }
 
@@ -118,6 +122,7 @@ export class ConversationLifecycleActionImpl {
     messages: inputMessages,
     parentId: inputParentId,
     pageSelections,
+    projectKnowledgeBaseId,
     projectSystemPrompt,
   }: SendMessageWithContextParams): Promise<SendMessageResult | undefined> => {
     let editorData = inputEditorData;
@@ -693,6 +698,7 @@ export class ConversationLifecycleActionImpl {
             }
           : undefined;
 
+        setActiveProjectKnowledgeBaseId(projectKnowledgeBaseId);
         setActiveProjectSystemPrompt(projectSystemPrompt || undefined);
         try {
           await internal_execAgentRuntime({
@@ -706,6 +712,7 @@ export class ConversationLifecycleActionImpl {
             skipCreateFirstMessage: true,
           });
         } finally {
+          setActiveProjectKnowledgeBaseId(undefined);
           setActiveProjectSystemPrompt(undefined);
         }
 

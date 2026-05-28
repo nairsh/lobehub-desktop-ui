@@ -65,22 +65,33 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId, project
 
   const [topics, setTopics] = useState<ChatTopic[]>([]);
 
-  // Load topic details whenever the stored topic ID list changes
+  // Load topic details from the backend project relation, with the local map as
+  // a fallback for older servers that have not deployed topic.projectId yet.
   useEffect(() => {
-    if (storedTopicIds.length === 0 || !inboxAgentId) {
+    if (!inboxAgentId) {
       setTopics([]);
       return;
     }
     topicService
-      .getTopics({ agentId: inboxAgentId, isInbox: true, pageSize: 100 })
+      .getTopics({ agentId: inboxAgentId, isInbox: true, pageSize: 100, projectId })
       .then(({ items }) => {
-        const filtered = items.filter((t) => storedTopicIds.includes(t.id));
-        // Preserve the order stored in storedTopicIds (newest first)
-        filtered.sort((a, b) => storedTopicIds.indexOf(a.id) - storedTopicIds.indexOf(b.id));
-        setTopics(filtered);
+        setTopics(items);
       })
-      .catch(() => {});
-  }, [storedTopicIds, inboxAgentId]);
+      .catch(() => {
+        if (storedTopicIds.length === 0) {
+          setTopics([]);
+          return;
+        }
+        topicService
+          .getTopics({ agentId: inboxAgentId, isInbox: true, pageSize: 100 })
+          .then(({ items }) => {
+            const filtered = items.filter((t) => storedTopicIds.includes(t.id));
+            filtered.sort((a, b) => storedTopicIds.indexOf(a.id) - storedTopicIds.indexOf(b.id));
+            setTopics(filtered);
+          })
+          .catch(() => {});
+      });
+  }, [storedTopicIds, inboxAgentId, projectId]);
 
   useEffect(() => {
     if (!project) refreshProjects();
@@ -115,11 +126,12 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId, project
 
       try {
         sendMessage({
-          context: { agentId: inboxAgentId },
+          context: { agentId: inboxAgentId, projectId },
           contexts: contextList,
           editorData,
           files: fileList,
           message: inputMessage,
+          projectKnowledgeBaseId: knowledgeBaseId,
           projectSystemPrompt: currentInstructions || undefined,
         });
         navigate(SESSION_CHAT_URL(inboxAgentId, false));
@@ -141,7 +153,7 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId, project
           if (newEntry) {
             const topicId = newEntry[1].metadata.createdTopicId as string;
             unsubscribe();
-            useProjectStore.getState().addTopicToProject(projectId, topicId);
+            void useProjectStore.getState().addTopicToProject(projectId, topicId);
           }
         },
       );

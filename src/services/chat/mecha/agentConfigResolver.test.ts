@@ -12,6 +12,14 @@ import * as agentGroupSelectors from '@/store/agentGroup/selectors';
 
 import { resolveAgentConfig } from './agentConfigResolver';
 
+vi.hoisted(() => {
+  vi.stubGlobal('localStorage', {
+    getItem: vi.fn(() => null),
+    removeItem: vi.fn(),
+    setItem: vi.fn(),
+  });
+});
+
 describe('resolveAgentConfig', () => {
   const mockAgentStoreState = { someState: true };
   const mockAgentConfig = {
@@ -46,6 +54,21 @@ describe('resolveAgentConfig', () => {
 
       expect(result.plugins).toEqual(['plugin-a', 'plugin-b']);
       expect(result.isBuiltinAgent).toBe(false);
+    });
+
+    it('should inject active mode context and tools', () => {
+      vi.spyOn(agentSelectors.chatConfigByIdSelectors, 'getChatConfigById').mockReturnValue(
+        () =>
+          ({
+            activeMode: 'cloud-sandbox',
+            enableStreaming: true,
+          }) as any,
+      );
+
+      const result = resolveAgentConfig({ agentId: 'test-agent' });
+
+      expect(result.agentConfig.systemRole).toContain('Cloud sandbox');
+      expect(result.plugins).toContain('lobe-cloud-sandbox');
     });
 
     it('should treat agent with non-builtin slug as regular agent', () => {

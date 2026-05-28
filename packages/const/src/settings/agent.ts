@@ -49,7 +49,8 @@ export const DEFAULT_AGENT_CONFIG: LobeAgentConfig = {
   },
   plugins: [],
   provider: DEFAULT_PROVIDER,
-  systemRole: '',
+  systemRole:
+    'You are LobeHub, a capable AI assistant. Be concise and useful, ask clarifying questions when needed, use available tools and retrieved context proactively, respect project instructions and user memory, and verify important work before handing it back.',
   tts: DEFAUTT_AGENT_TTS_CONFIG,
 };
 

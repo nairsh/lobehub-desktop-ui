@@ -20,6 +20,8 @@ import { useUserStore } from '@/store/user';
 import { userGeneralSettingsSelectors } from '@/store/user/selectors';
 import { isDev } from '@/utils/env';
 
+import { appendModeContext, getModeConfig, mergeModeTools } from './mode';
+
 const log = debug('mecha:agentConfigResolver');
 
 /**
@@ -227,10 +229,17 @@ export const resolveAgentConfig = (ctx: AgentConfigResolverContext): ResolvedAge
   if (!slug) {
     log('agentId %s is not a builtin agent (no valid builtin slug found)', agentId);
     // Regular agent - use provided plugins if available, fallback to agent's plugins
-    const finalPlugins = plugins && plugins.length > 0 ? plugins : basePlugins;
+    const modeConfig = getModeConfig(chatConfig.activeMode);
+    const finalPlugins = mergeModeTools(
+      plugins && plugins.length > 0 ? plugins : basePlugins,
+      modeConfig,
+    );
 
     // Apply params adjustments based on chatConfig
-    let finalAgentConfig = applyParamsFromChatConfig(agentConfig, chatConfig);
+    let finalAgentConfig = applyParamsFromChatConfig(
+      { ...agentConfig, systemRole: appendModeContext(agentConfig.systemRole, modeConfig) },
+      chatConfig,
+    );
     let finalChatConfig = chatConfig;
 
     // === Page Editor Auto-Injection ===
@@ -249,10 +258,10 @@ export const resolveAgentConfig = (ctx: AgentConfigResolverContext): ResolvedAge
       // 3. Merge system roles: custom agent's role + page-agent role
       // Only append page-agent role if it exists
       const mergedSystemRole = pageAgentSystemRole
-        ? agentConfig.systemRole
-          ? `${agentConfig.systemRole}\n\n${pageAgentSystemRole}`
+        ? finalAgentConfig.systemRole
+          ? `${finalAgentConfig.systemRole}\n\n${pageAgentSystemRole}`
           : pageAgentSystemRole
-        : agentConfig.systemRole || '';
+        : finalAgentConfig.systemRole || '';
 
       finalAgentConfig = {
         ...finalAgentConfig,
@@ -373,6 +382,10 @@ export const resolveAgentConfig = (ctx: AgentConfigResolverContext): ResolvedAge
     ...chatConfig,
     ...runtimeConfig?.chatConfig,
   };
+  const modeConfig = getModeConfig(resolvedChatConfig.activeMode);
+
+  resolvedSystemRole = appendModeContext(resolvedSystemRole, modeConfig);
+  finalPlugins = mergeModeTools(finalPlugins, modeConfig);
 
   // === Page Editor Auto-Injection for Builtin Agents ===
   // When a builtin agent (other than page-agent itself) is used in page editor,

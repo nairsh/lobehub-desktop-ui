@@ -12,6 +12,7 @@ import { ToolsEngine } from '@lobechat/context-engine';
 import { type ChatCompletionTool, type ToolManifest, type WorkingModel } from '@lobechat/types';
 
 import { isToolAvailableInCurrentEnv } from '@/helpers/toolAvailability';
+import { getModeConfig } from '@/services/chat/mecha/mode';
 import { getAgentStoreState } from '@/store/agent';
 import { agentChatConfigSelectors, agentSelectors } from '@/store/agent/selectors';
 import { getActiveProjectKnowledgeBaseId } from '@/store/project/projectContext';
@@ -124,6 +125,11 @@ export const createAgentToolsEngine = (
   const searchConfig = getSearchConfig(workingModel.model, workingModel.provider);
   const agentState = getAgentStoreState();
   const userPlugins = agentSelectors.currentAgentPlugins(agentState);
+  const activeMode = agentChatConfigSelectors.currentChatConfig(agentState).activeMode;
+  const activeModeConfig = getModeConfig(activeMode);
+  const modeToolRules = activeModeConfig
+    ? Object.fromEntries(activeModeConfig.extraToolIdentifiers.map((id) => [id, true]))
+    : {};
 
   return createToolsEngine({
     defaultToolIds,
@@ -154,6 +160,7 @@ export const createAgentToolsEngine = (
         // System-level rules (may override user selection for specific tools)
         [CloudSandboxManifest.identifier]:
           agentChatConfigSelectors.isCloudSandboxEnabled(agentState),
+        ...modeToolRules,
         [KnowledgeBaseManifest.identifier]:
           agentSelectors.hasEnabledKnowledgeBases(agentState) ||
           !!getActiveProjectKnowledgeBaseId(),

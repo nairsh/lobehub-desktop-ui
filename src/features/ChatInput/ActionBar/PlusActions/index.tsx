@@ -26,6 +26,7 @@ import { useModelSupportToolUse } from '@/hooks/useModelSupportToolUse';
 import { useAgentStore } from '@/store/agent';
 import { agentByIdSelectors, chatConfigByIdSelectors } from '@/store/agent/selectors';
 import { useChatStore } from '@/store/chat';
+import { topicSelectors } from '@/store/chat/selectors';
 import { useFileStore } from '@/store/file';
 import { projectSelectors, useProjectStore } from '@/store/project';
 import { featureFlagsSelectors, useServerConfigStore } from '@/store/serverConfig';
@@ -123,6 +124,7 @@ const PlusActions = memo(() => {
   const supportToolUse = useModelSupportToolUse(model, provider);
 
   const activeTopicId = useChatStore((s) => s.activeTopicId);
+  const activeTopicProjectId = useChatStore((s) => topicSelectors.currentActiveTopic(s)?.projectId);
   const [projectList, addTopicToProject, removeTopicFromProject, setPendingProjectForAgent] =
     useProjectStore((s) => [
       projectSelectors.projectList(s),
@@ -131,8 +133,9 @@ const PlusActions = memo(() => {
       s.setPendingProjectForAgent,
     ]);
   const currentProjectId = useProjectStore(projectSelectors.projectIdByTopicId(activeTopicId));
+  const effectiveProjectId = activeTopicProjectId ?? currentProjectId;
   const currentProject = useProjectStore(
-    currentProjectId ? projectSelectors.projectById(currentProjectId) : () => null,
+    effectiveProjectId ? projectSelectors.projectById(effectiveProjectId) : () => null,
   );
   const pendingProjectId = useProjectStore(projectSelectors.pendingProjectIdByAgentId(agentId));
   const pendingProject = useProjectStore(
@@ -141,15 +144,15 @@ const PlusActions = memo(() => {
 
   // When a new topic is created for this agent, apply the pending project association.
   useEffect(() => {
-    if (activeTopicId && pendingProjectId && !currentProjectId) {
-      addTopicToProject(pendingProjectId, activeTopicId);
+    if (activeTopicId && pendingProjectId && !effectiveProjectId) {
+      void addTopicToProject(pendingProjectId, activeTopicId);
       setPendingProjectForAgent(agentId, null);
     }
   }, [
     activeTopicId,
     addTopicToProject,
     agentId,
-    currentProjectId,
+    effectiveProjectId,
     pendingProjectId,
     setPendingProjectForAgent,
   ]);
@@ -158,7 +161,7 @@ const PlusActions = memo(() => {
   const showMemoryIndicator = isMemoryEnabled;
   const showLibraryIndicator = enableKnowledgeBase && enabledKnowledgeBases.length > 0;
   const showModeIndicator = !!activeMode;
-  const showProjectIndicator = !!currentProjectId || !!pendingProjectId;
+  const showProjectIndicator = !!effectiveProjectId || !!pendingProjectId;
   const activeProjectDisplay = currentProject ?? pendingProject;
 
   const setActiveMode = async (mode: AgentMode | null) => {
@@ -168,23 +171,23 @@ const PlusActions = memo(() => {
   const projectChildren: ActionDropdownMenuItems = [
     ...projectList.map((p) => ({
       icon:
-        currentProjectId === p.id || pendingProjectId === p.id ? (
+        effectiveProjectId === p.id || pendingProjectId === p.id ? (
           <FolderOpenIcon size={16} style={{ color: cssVar.colorInfo }} />
         ) : (
           FolderOpenIcon
         ),
       key: `project-${p.id}`,
       label: p.name,
-      onClick: () => {
+      onClick: async () => {
         if (!activeTopicId) {
           setPendingProjectForAgent(agentId, pendingProjectId === p.id ? null : p.id);
           return;
         }
-        if (currentProjectId === p.id) {
-          removeTopicFromProject(p.id, activeTopicId);
+        if (effectiveProjectId === p.id) {
+          await removeTopicFromProject(p.id, activeTopicId);
         } else {
-          if (currentProjectId) removeTopicFromProject(currentProjectId, activeTopicId);
-          addTopicToProject(p.id, activeTopicId);
+          if (effectiveProjectId) await removeTopicFromProject(effectiveProjectId, activeTopicId);
+          await addTopicToProject(p.id, activeTopicId);
         }
       },
     })),
@@ -197,8 +200,11 @@ const PlusActions = memo(() => {
         openProjectModal({
           onSuccess: (newProjectId) => {
             if (!activeTopicId) return;
-            if (currentProjectId) removeTopicFromProject(currentProjectId, activeTopicId);
-            addTopicToProject(newProjectId, activeTopicId);
+            void (async () => {
+              if (effectiveProjectId)
+                await removeTopicFromProject(effectiveProjectId, activeTopicId);
+              await addTopicToProject(newProjectId, activeTopicId);
+            })();
           },
         });
       },
@@ -399,8 +405,8 @@ const PlusActions = memo(() => {
             showTooltip={false}
             title={activeProjectDisplay?.name}
             onClick={() => {
-              if (activeTopicId && currentProjectId) {
-                removeTopicFromProject(currentProjectId, activeTopicId);
+              if (activeTopicId && effectiveProjectId) {
+                void removeTopicFromProject(effectiveProjectId, activeTopicId);
               } else if (pendingProjectId) {
                 setPendingProjectForAgent(agentId, null);
               }

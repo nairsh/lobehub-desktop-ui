@@ -41,8 +41,9 @@ export class TopicService {
       groupId: params.groupId,
       isInbox: params.isInbox,
       pageSize: params.pageSize,
+      projectId: params.projectId,
       sessionId: this.toDbSessionId(params.sessionId),
-    }) as any;
+    } as any) as any;
   };
 
   getAllTopics = (): Promise<ChatTopic[]> => {
