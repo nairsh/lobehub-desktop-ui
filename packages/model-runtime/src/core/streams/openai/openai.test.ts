@@ -163,6 +163,62 @@ describe('OpenAIStream', () => {
     );
   });
 
+  it('should emit reasoning and text when both are present in the same delta', async () => {
+    const mockOpenAIStream = new ReadableStream({
+      start(controller) {
+        controller.enqueue({
+          id: 'dual-1',
+          choices: [
+            {
+              index: 0,
+              delta: {
+                content: 'OK',
+                reasoning_content: 'Thinking...',
+                role: 'assistant',
+              },
+            },
+          ],
+        });
+        controller.enqueue({
+          id: 'dual-1',
+          choices: [
+            {
+              index: 0,
+              delta: {},
+              finish_reason: 'stop',
+            },
+          ],
+        });
+
+        controller.close();
+      },
+    });
+
+    const protocolStream = OpenAIStream(mockOpenAIStream);
+
+    const decoder = new TextDecoder();
+    const chunks = [];
+
+    // @ts-ignore
+    for await (const chunk of protocolStream) {
+      chunks.push(decoder.decode(chunk, { stream: true }));
+    }
+
+    expect(chunks).toEqual(
+      [
+        'id: dual-1',
+        'event: reasoning',
+        `data: "Thinking..."\n`,
+        'id: dual-1',
+        'event: text',
+        `data: "OK"\n`,
+        'id: dual-1',
+        'event: stop',
+        `data: "stop"\n`,
+      ].map((i) => `${i}\n`),
+    );
+  });
+
   it('should emit base64_image and strip markdown data:image from text', async () => {
     const data = [
       {

@@ -448,6 +448,15 @@ const transformOpenAIStream = (
         }
       }
 
+      // Some providers (including DeepSeek thinking mode) may stream both fields
+      // in the same delta chunk. Preserve both instead of dropping final content.
+      if (typeof reasoning_content === 'string' && typeof content === 'string' && content !== '') {
+        return [
+          { data: reasoning_content, id: chunk.id, type: 'reasoning' },
+          { data: content, id: chunk.id, type: 'text' },
+        ];
+      }
+
       if (typeof reasoning_content === 'string') {
         return { data: reasoning_content, id: chunk.id, type: 'reasoning' };
       }
