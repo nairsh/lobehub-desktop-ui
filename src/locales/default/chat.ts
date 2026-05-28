@@ -1,6 +1,18 @@
 export default {
   'ModelSwitch.title': 'Model',
   'active': 'Active',
+  'modelCouncil.count': '{{count}} models',
+  'modelCouncil.judge': 'Judged by {{model}}',
+  'modelCouncil.member': 'Council model',
+  'modelCouncil.notConfigured': 'Choose at least two council models and one judge in settings.',
+  'modelCouncil.reasoning': 'Reasoning',
+  'modelCouncil.status.completed': 'Completed',
+  'modelCouncil.status.failed': 'Failed',
+  'modelCouncil.status.running': 'Thinking',
+  'modelCouncil.synthesizing': 'Synthesizing responses...',
+  'modelCouncil.thinking': 'Thinking',
+  'modelCouncil.title': 'Model Council',
+  'modelCouncil.viewResponse': 'View response',
   'agentBuilder.installPlugin.authRequired': 'Cloud MCP requires sign-in to continue',
   'agentBuilder.installPlugin.cancel': 'Cancel',
   'agentBuilder.installPlugin.clickApproveToConnect':

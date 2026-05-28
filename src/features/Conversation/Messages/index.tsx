@@ -18,6 +18,7 @@ import AssistantMessage from './Assistant';
 import AssistantGroupMessage from './AssistantGroup';
 import CompressedGroupMessage from './CompressedGroup';
 import GroupTasksMessage from './GroupTasks';
+import ModelCouncilMessage from './ModelCouncil';
 import SupervisorMessage from './Supervisor';
 import TaskMessage from './Task';
 import TasksMessage from './Tasks';
@@ -175,6 +176,10 @@ const MessageItem = memo<MessageItemProps>(
 
         case 'compressedGroup': {
           return <CompressedGroupMessage id={id} index={index} />;
+        }
+
+        case 'compareGroup': {
+          return <ModelCouncilMessage id={id} index={index} />;
         }
 
         case 'tool': {

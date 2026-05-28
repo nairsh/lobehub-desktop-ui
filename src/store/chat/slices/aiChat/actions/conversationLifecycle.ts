@@ -17,11 +17,13 @@ import { TRPCClientError } from '@trpc/client';
 import { t } from 'i18next';
 
 import { markUserValidAction } from '@/business/client/markUserValidAction';
+import { agentRuntimeClient } from '@/services/agentRuntime/client';
 import { aiChatService } from '@/services/aiChat';
 import { chatService } from '@/services/chat';
 import { resolveSelectedSkillsWithContent } from '@/services/chat/mecha/skillPreload';
 import { resolveSelectedToolsWithContent } from '@/services/chat/mecha/toolPreload';
 import { messageService } from '@/services/message';
+import { modelCouncilService } from '@/services/modelCouncil';
 import {
   isOpenTerminalApiMissing,
   openTerminalWorkspaceService,
@@ -71,6 +73,7 @@ export interface SendMessageWithContextParams extends SendMessageParams {
    */
   projectKnowledgeBaseId?: string;
   projectSystemPrompt?: string;
+  useModelCouncil?: boolean;
 }
 
 /**
@@ -124,6 +127,7 @@ export class ConversationLifecycleActionImpl {
     pageSelections,
     projectKnowledgeBaseId,
     projectSystemPrompt,
+    useModelCouncil,
   }: SendMessageWithContextParams): Promise<SendMessageResult | undefined> => {
     let editorData = inputEditorData;
     const { internal_execAgentRuntime, mainInputEditor } = this.#get();
@@ -379,6 +383,175 @@ export class ConversationLifecycleActionImpl {
         });
         return;
       }
+    }
+
+    if (useModelCouncil) {
+      let data: any;
+      try {
+        const topicId = operationContext.topicId;
+
+        data = await modelCouncilService.start(
+          {
+            agentId: operationContext.agentId,
+            editorData,
+            files: fileIdList,
+            groupId: operationContext.groupId ?? undefined,
+            newTopic: !topicId
+              ? {
+                  topicMessageIds: forceNewTopicFromExisting ? [] : messages.map((m) => m.id),
+                  title: message.slice(0, 20) || t('defaultTitle', { ns: 'topic' }),
+                }
+              : undefined,
+            pageSelections,
+            parentId,
+            prompt: message,
+            threadId: operationContext.threadId ?? undefined,
+            topicId: topicId ?? undefined,
+          },
+          abortController,
+        );
+
+        const finalContext = {
+          ...operationContext,
+          topicId: data.topicId ?? operationContext.topicId,
+          threadId: operationContext.threadId,
+        };
+
+        if (data?.topics) {
+          const pageSize = systemStatusSelectors.topicPageSize(useGlobalStore.getState());
+          this.#get().internal_updateTopics(operationContext.agentId, {
+            groupId: operationContext.groupId,
+            items: data.topics.items,
+            pageSize,
+            total: data.topics.total,
+          });
+          this.#get().updateOperationMetadata(operationId, { createdTopicId: data.topicId });
+        } else if (operationContext.topicId) {
+          this.#get().internal_dispatchTopic({
+            type: 'updateTopic',
+            id: operationContext.topicId,
+            value: { updatedAt: Date.now() },
+          });
+        }
+
+        this.#get().replaceMessages(data.messages, {
+          context: finalContext,
+          action: 'sendMessage/modelCouncilResponse',
+        });
+
+        if (data.isCreateNewTopic && data.topicId) {
+          await this.#get().switchTopic(data.topicId, {
+            clearNewKey: true,
+            skipRefreshMessage: true,
+          });
+        }
+
+        this.#get().completeOperation(operationId);
+        if (data.topicId) this.#get().internal_updateTopicLoading(data.topicId, true);
+
+        const contentByMessageId = new Map<string, string>();
+        agentRuntimeClient.createStreamConnection(data.operationId, {
+          onDisconnect: async () => {
+            if (data.topicId) this.#get().internal_updateTopicLoading(data.topicId, false);
+            await this.#get().refreshMessages(finalContext);
+          },
+          onEvent: (event: any) => {
+            const eventData = event.data || {};
+            switch (event.type) {
+              case 'model_council_member_chunk':
+              case 'model_council_judge_chunk': {
+                const messageId = eventData.messageId;
+                if (!messageId) return;
+                const nextContent = `${contentByMessageId.get(messageId) || ''}${eventData.text || ''}`;
+                contentByMessageId.set(messageId, nextContent);
+                this.#get().internal_dispatchMessage(
+                  { id: messageId, type: 'updateMessage', value: { content: nextContent } },
+                  { operationId },
+                );
+                return;
+              }
+              case 'model_council_member_end':
+              case 'model_council_judge_end': {
+                const messageId = eventData.messageId;
+                if (!messageId) return;
+                const content = eventData.content || contentByMessageId.get(messageId) || '';
+                contentByMessageId.set(messageId, content);
+                this.#get().internal_dispatchMessage(
+                  {
+                    id: messageId,
+                    type: 'updateMessage',
+                    value: {
+                      content,
+                      metadata: {
+                        modelCouncil: {
+                          status: 'completed',
+                          usage: eventData.usage,
+                        },
+                      } as any,
+                    },
+                  },
+                  { operationId },
+                );
+                return;
+              }
+              case 'model_council_member_error': {
+                const messageId = eventData.messageId;
+                if (!messageId) return;
+                this.#get().internal_dispatchMessage(
+                  {
+                    id: messageId,
+                    type: 'updateMessage',
+                    value: {
+                      error: {
+                        message: eventData.message,
+                        type: 'ModelCouncilMemberError' as any,
+                      },
+                      metadata: { modelCouncil: { status: eventData.status || 'failed' } } as any,
+                    },
+                  },
+                  { operationId },
+                );
+                return;
+              }
+              case 'model_council_judge_start': {
+                const messageId = eventData.messageId;
+                if (!messageId) return;
+                this.#get().internal_dispatchMessage(
+                  {
+                    id: messageId,
+                    type: 'updateMessage',
+                    value: { metadata: { modelCouncil: { status: 'running' } } as any },
+                  },
+                  { operationId },
+                );
+                return;
+              }
+            }
+          },
+        });
+
+        if (ENABLE_BUSINESS_FEATURES) markUserValidAction();
+
+        return {
+          assistantMessageId: data.judgeMessageId,
+          userMessageId: data.userMessageId,
+        };
+      } catch (e) {
+        console.error(e);
+        this.#get().failOperation(operationId, {
+          type: e instanceof Error ? e.name : 'model_council_error',
+          message: e instanceof Error ? e.message : 'Unknown error',
+        });
+      } finally {
+        if (!data) {
+          this.#get().internal_dispatchMessage(
+            { type: 'deleteMessages', ids: [tempId, tempAssistantId] },
+            { operationId },
+          );
+        }
+      }
+
+      return;
     }
 
     // ── Client mode: send via server API then run agent locally ──

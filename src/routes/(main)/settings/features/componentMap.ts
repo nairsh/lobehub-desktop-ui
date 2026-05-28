@@ -22,6 +22,9 @@ export const componentMap = {
   [SettingsTabs.Memory]: dynamic(() => import('../memory'), {
     loading: loading('Settings > Memory'),
   }),
+  [SettingsTabs.ModelCouncil]: dynamic(() => import('../model-council'), {
+    loading: loading('Settings > ModelCouncil'),
+  }),
   [SettingsTabs.Notification]: dynamic(
     () => import('@/business/client/BusinessSettingPages/Notification'),
     {

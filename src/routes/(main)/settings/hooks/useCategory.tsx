@@ -11,6 +11,7 @@ import {
   Database,
   EllipsisIcon,
   EthernetPort,
+  Gavel,
   Gift,
   Info,
   KeyboardIcon,
@@ -84,7 +85,7 @@ export const useCategory = () => {
       {
         icon: avatarUrl ? <Avatar avatar={avatarUrl} shape={'square'} size={26} /> : undefined,
         key: SettingsTabs.Profile,
-        label: username ? username : tAuth('tab.profile'),
+        label: username || tAuth('tab.profile'),
       },
       {
         icon: ChartColumnBigIcon,
@@ -153,6 +154,11 @@ export const useCategory = () => {
         icon: BrainCircuit,
         key: SettingsTabs.Memory,
         label: t('tab.memory'),
+      },
+      {
+        icon: Gavel,
+        key: SettingsTabs.ModelCouncil,
+        label: t('tab.modelCouncil'),
       },
       {
         icon: KeyRound,

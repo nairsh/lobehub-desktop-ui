@@ -3,9 +3,11 @@
 import { type SlashOptions } from '@lobehub/editor';
 import { type ChatInputActionsProps } from '@lobehub/editor/react';
 import { type MenuProps } from '@lobehub/ui';
-import { Alert, Flexbox } from '@lobehub/ui';
+import { Alert, Button, Flexbox, Icon, Popover, Text } from '@lobehub/ui';
+import { Switch } from '@lobehub/ui/base-ui';
+import { ChevronDown, Gavel } from 'lucide-react';
 import { type ReactNode } from 'react';
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { type ActionKeys } from '@/features/ChatInput';
@@ -17,6 +19,9 @@ import {
 import { useChatStore } from '@/store/chat';
 import { operationSelectors } from '@/store/chat/selectors';
 import { fileChatSelectors, useFileStore } from '@/store/file';
+import { useUserStore } from '@/store/user';
+import { settingsSelectors } from '@/store/user/selectors';
+import type { ModelCouncilSettings } from '@/types/modelCouncil';
 
 import WideScreenContainer from '../../WideScreenContainer';
 import InterventionBar from '../InterventionBar';
@@ -133,6 +138,16 @@ const ChatInput = memo<ChatInputProps>(
     const { t } = useTranslation('chat');
 
     const getMessages = useGetMessages();
+    const [isCouncilMode, setCouncilMode] = useState(false);
+    const councilSettings = useUserStore(
+      (s) =>
+        (settingsSelectors.currentSettings(s) as any).modelCouncil as
+          | ModelCouncilSettings
+          | undefined,
+    );
+    const councilCount = councilSettings?.councilModels?.length || 0;
+    const councilReady =
+      !!councilSettings?.enabled && councilCount >= 2 && !!councilSettings?.judgeModel;
 
     // ConversationStore state
     const context = useConversationStore((s) => s.context);
@@ -214,9 +229,15 @@ const ChatInput = memo<ChatInputProps>(
         }));
 
         // Fire and forget - send with captured message
-        await sendMessage({ editorData, files: currentFileList, message, pageSelections });
+        await sendMessage({
+          editorData,
+          files: currentFileList,
+          message,
+          pageSelections,
+          useModelCouncil: isCouncilMode && councilReady,
+        });
       },
-      [sendMessage],
+      [sendMessage, isCouncilMode, councilReady],
     );
 
     const sendButtonProps: SendButtonProps = {
@@ -225,6 +246,76 @@ const ChatInput = memo<ChatInputProps>(
       onStop: stopGenerating,
       ...customSendButtonProps,
     };
+
+    const councilControl = useMemo(
+      () => (
+        <Popover
+          arrow={false}
+          placement={'topLeft'}
+          trigger={'click'}
+          content={
+            <Flexbox gap={10} padding={12} style={{ minWidth: 280 }}>
+              <Flexbox horizontal align={'center'} justify={'space-between'}>
+                <Text strong>{t('modelCouncil.title')}</Text>
+                <Switch
+                  checked={isCouncilMode && councilReady}
+                  disabled={!councilReady}
+                  onChange={setCouncilMode}
+                />
+              </Flexbox>
+              {councilReady ? (
+                <>
+                  {councilSettings?.councilModels.map((item) => (
+                    <Flexbox
+                      horizontal
+                      align={'center'}
+                      justify={'space-between'}
+                      key={`${item.provider}/${item.model}`}
+                    >
+                      <Text>{item.label || item.model}</Text>
+                      {item.reasoning && (
+                        <Text type={'secondary'}>{t('modelCouncil.reasoning')}</Text>
+                      )}
+                    </Flexbox>
+                  ))}
+                  <Text type={'secondary'}>
+                    {t('modelCouncil.judge', {
+                      model:
+                        councilSettings?.judgeModel?.label || councilSettings?.judgeModel?.model,
+                    })}
+                  </Text>
+                </>
+              ) : (
+                <Text type={'secondary'}>{t('modelCouncil.notConfigured')}</Text>
+              )}
+            </Flexbox>
+          }
+        >
+          <Button
+            icon={<Icon icon={Gavel} size={14} />}
+            size={'small'}
+            type={isCouncilMode && councilReady ? 'primary' : 'text'}
+          >
+            <Flexbox horizontal align={'center'} gap={6}>
+              {isCouncilMode && councilReady
+                ? t('modelCouncil.count', { count: councilCount })
+                : t('modelCouncil.title')}
+              <Icon icon={ChevronDown} size={14} />
+            </Flexbox>
+          </Button>
+        </Popover>
+      ),
+      [councilCount, councilReady, councilSettings, isCouncilMode, t],
+    );
+
+    const mergedSendAreaPrefix = sendAreaPrefix ? (
+      <Flexbox horizontal align={'center'} gap={8}>
+        {councilControl}
+        {sendAreaPrefix}
+      </Flexbox>
+    ) : (
+      councilControl
+    );
 
     const defaultContent = (
       <WideScreenContainer
@@ -267,7 +358,7 @@ const ChatInput = memo<ChatInputProps>(
               borderRadius={14}
               extraActionItems={extraActionItems}
               leftContent={leftContent}
-              sendAreaPrefix={sendAreaPrefix}
+              sendAreaPrefix={mergedSendAreaPrefix}
               showRuntimeConfig={showRuntimeConfig}
             />
           </>

@@ -19,7 +19,7 @@ export const sendMessage = (
   set: (partial: Partial<ConversationStore>) => void,
   get: () => ConversationStore,
 ) => {
-  return async (params: SendMessageParams) => {
+  return async (params: SendMessageParams & { useModelCouncil?: boolean }) => {
     const state = get();
     const { context, hooks, displayMessages } = state;
 

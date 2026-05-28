@@ -57,6 +57,7 @@ export enum SettingsTabs {
   Image = 'image',
   LLM = 'llm',
   Memory = 'memory',
+  ModelCouncil = 'model-council',
   Notification = 'notification',
   // business
   Plans = 'plans',
