@@ -126,6 +126,7 @@ const Page = memo(() => {
               {
                 children: (
                   <Switch
+                    nativeButton
                     checked={council.enabled}
                     onChange={(enabled) => save({ ...council, enabled })}
                   />
@@ -159,7 +160,7 @@ const Page = memo(() => {
                                   model: model.id,
                                   provider: model.provider,
                                 },
-                                checked,
+                                checked.target.checked,
                               )
                             }
                           >
@@ -172,6 +173,7 @@ const Page = memo(() => {
                           </Checkbox>
                           {selected && model.reasoning && (
                             <Switch
+                              nativeButton
                               checked={
                                 council.councilModels.find(
                                   (item) => modelKey(item) === `${model.provider}/${model.id}`,
