@@ -23,6 +23,18 @@ const getChatConfigById =
 const getEnableHistoryCountById = (agentId: string) => (s: AgentStoreState) =>
   getChatConfigById(agentId)(s).enableHistoryCount;
 
+const getEnableCompressHistoryById =
+  (agentId: string) =>
+  (s: AgentStoreState): boolean =>
+    getChatConfigById(agentId)(s).enableCompressHistory ??
+    (DEFAULT_AGENT_CHAT_CONFIG.enableCompressHistory as boolean);
+
+const getEnableContextCompressionById =
+  (agentId: string) =>
+  (s: AgentStoreState): boolean =>
+    getChatConfigById(agentId)(s).enableContextCompression ??
+    (DEFAULT_AGENT_CHAT_CONFIG.enableContextCompression as boolean);
+
 const getHistoryCountById =
   (agentId: string) =>
   (s: AgentStoreState): number => {
@@ -84,6 +96,8 @@ const getActiveModeById =
 export const chatConfigByIdSelectors = {
   getActiveModeById,
   getChatConfigById,
+  getEnableCompressHistoryById,
+  getEnableContextCompressionById,
   getEnableHistoryCountById,
   getHistoryCountById,
   getRuntimeEnvConfigById,

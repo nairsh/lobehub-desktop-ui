@@ -21,6 +21,12 @@ const useModelBuiltinSearch = (s: AgentStoreState) =>
 const searchFCModel = (s: AgentStoreState) =>
   chatConfigByIdSelectors.getSearchFCModelById(s.activeAgentId || '')(s);
 
+const enableCompressHistory = (s: AgentStoreState) =>
+  chatConfigByIdSelectors.getEnableCompressHistoryById(s.activeAgentId || '')(s);
+
+const enableContextCompression = (s: AgentStoreState) =>
+  chatConfigByIdSelectors.getEnableContextCompressionById(s.activeAgentId || '')(s);
+
 // Use raw chatConfig value, not the selector with business logic that may force false
 const enableHistoryCount = (s: AgentStoreState) =>
   chatConfigByIdSelectors.getChatConfigById(s.activeAgentId || '')(s).enableHistoryCount;
@@ -54,6 +60,8 @@ const enableHistoryDivider =
 export const agentChatConfigSelectors = {
   agentSearchMode,
   currentChatConfig,
+  enableCompressHistory,
+  enableContextCompression,
   enableHistoryCount,
   enableHistoryDivider,
   historyCount,

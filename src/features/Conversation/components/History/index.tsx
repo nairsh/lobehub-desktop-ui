@@ -33,8 +33,8 @@ const History = memo(() => {
     return [history?.content, history?.model];
   });
 
-  const enableCompressHistory = useAgentStore(
-    (s) => agentChatConfigSelectors.currentChatConfig(s).enableCompressHistory,
+  const enableCompressHistory = useAgentStore((s) =>
+    agentChatConfigSelectors.enableCompressHistory(s),
   );
 
   return (
