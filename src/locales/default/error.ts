@@ -213,6 +213,8 @@ export default {
     'Your subscription points have been exhausted, and you cannot use this feature. Please top up credits or configure a custom model API to continue using it.',
   'response.SystemTimeNotMatchError':
     'Sorry, your system time does not match the server. Please check your system time and try again.',
+  'response.ModelCouncilAllFailed':
+    'All council members failed to respond. Please check your API keys and try again.',
   'response.UnknownChatFetchError':
     'Sorry, an unknown request error occurred. Please check the information below or try again.',
   'stt.responseError': 'Service request failed, please check the configuration or try again',
