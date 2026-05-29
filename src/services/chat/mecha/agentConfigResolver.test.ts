@@ -450,12 +450,13 @@ describe('resolveAgentConfig', () => {
       });
     });
 
-    it('should preserve compression settings when runtime overrides history config', () => {
+    it('should preserve auto and legacy compression settings when runtime overrides history config', () => {
       vi.spyOn(agentSelectors.chatConfigByIdSelectors, 'getChatConfigById').mockReturnValue(
         () =>
           ({
-            compressThreshold: 8,
+            contextCompressionThresholdRatio: 0.6,
             enableCompressHistory: true,
+            enableContextCompression: true,
             enableHistoryCount: true,
             enableStreaming: true,
             historyCount: 20,
@@ -472,8 +473,9 @@ describe('resolveAgentConfig', () => {
       const result = resolveAgentConfig({ agentId: 'builtin-agent' });
 
       expect(result.chatConfig).toEqual({
-        compressThreshold: 8,
+        contextCompressionThresholdRatio: 0.6,
         enableCompressHistory: true,
+        enableContextCompression: true,
         enableHistoryCount: false,
         enableStreaming: true,
         historyCount: 20,

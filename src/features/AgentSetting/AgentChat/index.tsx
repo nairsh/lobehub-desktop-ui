@@ -54,6 +54,7 @@ const AgentChat = memo(() => {
       },
       {
         children: <Switch />,
+        desc: t('settingChat.enableCompressHistory.desc'),
         hidden: !config.enableHistoryCount,
         label: t('settingChat.enableCompressHistory.title'),
         layout: 'horizontal',

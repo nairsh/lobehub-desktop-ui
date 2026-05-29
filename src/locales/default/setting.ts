@@ -585,7 +585,9 @@ export default {
   'settingChat.enableAutoCreateTopic.title': 'Auto Create Topic',
   'settingChat.enableAutoScrollOnStreaming.desc': 'Override global setting for this assistant',
   'settingChat.enableAutoScrollOnStreaming.title': 'Auto-scroll During AI Response',
-  'settingChat.enableCompressHistory.title': 'Enable Automatic Summary of Chat History',
+  'settingChat.enableCompressHistory.desc':
+    'Keeps the older history-summary compression behavior separate from auto context compression.',
+  'settingChat.enableCompressHistory.title': 'Enable Legacy History Summary Compression',
   'settingChat.enableHistoryCount.alias': 'Unlimited',
   'settingChat.enableHistoryCount.limited': 'Include only {{number}} conversation messages',
   'settingChat.enableHistoryCount.setlimited': 'Set limited history messages',

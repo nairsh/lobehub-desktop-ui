@@ -5,7 +5,7 @@ import { createStaticStyles } from 'antd-style';
 import { debounce } from 'es-toolkit/compat';
 import isEqual from 'fast-deep-equal';
 import { type ComponentType } from 'react';
-import { memo, useCallback, useEffect, useRef } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import InfoTooltip from '@/components/InfoTooltip';
@@ -296,12 +296,13 @@ const Controls = memo<ControlsProps>(({ setUpdating, updating }) => {
   );
 
   // Use useMemo to ensure the debounce function is only created once
-  const handleValuesChange = useCallback(
-    debounce(async (values) => {
-      setUpdating(true);
-      await updateAgentConfig(values);
-      setUpdating(false);
-    }, 500),
+  const handleValuesChange = useMemo(
+    () =>
+      debounce(async (values) => {
+        setUpdating(true);
+        await updateAgentConfig(values);
+        setUpdating(false);
+      }, 500),
     [updateAgentConfig, setUpdating],
   );
 
@@ -405,6 +406,7 @@ const Controls = memo<ControlsProps>(({ setUpdating, updating }) => {
             label: (
               <Flexbox horizontal align={'center'} className={styles.label} gap={8}>
                 {t('settingChat.enableCompressHistory.title')}
+                <InfoTooltip title={t('settingChat.enableCompressHistory.desc')} />
               </Flexbox>
             ),
             name: ['chatConfig', 'enableCompressHistory'],

@@ -373,6 +373,99 @@ describe('AgentSlice Actions', () => {
       });
       expect(agentService.updateAgentConfig).not.toHaveBeenCalled();
     });
+
+    it('should persist context compression settings through agent service', async () => {
+      const { result } = renderHook(() => useAgentStore());
+
+      vi.mocked(agentService.updateAgentConfig).mockResolvedValue({
+        agent: {
+          chatConfig: {
+            contextCompressionThresholdRatio: 0.65,
+            enableContextCompression: false,
+          },
+        } as any,
+        success: true,
+      });
+
+      act(() => {
+        useAgentStore.setState({
+          activeAgentId: 'agent-1',
+          agentMap: {
+            'agent-1': {
+              chatConfig: {
+                contextCompressionThresholdRatio: 0.5,
+                enableContextCompression: true,
+              },
+            },
+          },
+        });
+      });
+
+      await act(async () => {
+        await result.current.updateAgentChatConfig({
+          contextCompressionThresholdRatio: 0.65,
+          enableContextCompression: false,
+        });
+      });
+
+      expect(agentService.updateAgentConfig).toHaveBeenCalledWith(
+        'agent-1',
+        {
+          chatConfig: {
+            contextCompressionThresholdRatio: 0.65,
+            enableContextCompression: false,
+          },
+        },
+        expect.any(AbortSignal),
+      );
+      expect(result.current.agentMap['agent-1']).toMatchObject({
+        chatConfig: {
+          contextCompressionThresholdRatio: 0.65,
+          enableContextCompression: false,
+        },
+      });
+    });
+
+    it('should persist context compression settings through chat service', async () => {
+      const { result } = renderHook(() => useAgentStore());
+
+      vi.mocked(chatSessionService.updateChatConfig).mockResolvedValue(undefined);
+
+      act(() => {
+        useAgentStore.setState({
+          activeAgentId: 'ssn_chat',
+          agentMap: {
+            ssn_chat: {
+              chatConfig: {
+                contextCompressionThresholdRatio: 0.5,
+                enableContextCompression: true,
+              },
+            },
+          },
+        });
+      });
+
+      await act(async () => {
+        await result.current.updateAgentChatConfig({
+          contextCompressionThresholdRatio: 0.65,
+          enableContextCompression: false,
+        });
+      });
+
+      expect(chatSessionService.updateChatConfig).toHaveBeenCalledWith('ssn_chat', {
+        chatConfig: {
+          contextCompressionThresholdRatio: 0.65,
+          enableContextCompression: false,
+        },
+      });
+      expect(result.current.agentMap.ssn_chat).toMatchObject({
+        chatConfig: {
+          contextCompressionThresholdRatio: 0.65,
+          enableContextCompression: false,
+        },
+      });
+      expect(agentService.updateAgentConfig).not.toHaveBeenCalled();
+    });
   });
 
   describe('updateAgentRuntimeEnvConfigById', () => {
