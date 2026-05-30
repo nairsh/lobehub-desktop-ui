@@ -42,6 +42,11 @@ export interface LobeAgentChatConfig extends AgentMemoryChatConfig {
    */
   compressionModelId?: string;
   /**
+   * Ratio of the context window that triggers automatic compression.
+   * Lower values compress earlier.
+   */
+  contextCompressionThresholdRatio?: number;
+  /**
    * Disable context caching
    */
   deepseekV4ReasoningEffort?: 'none' | 'high' | 'max';
@@ -199,6 +204,7 @@ export const AgentChatConfigSchema = z
     autoCreateTopicThreshold: z.number().default(2),
     codexMaxReasoningEffort: z.enum(['low', 'medium', 'high', 'xhigh']).optional(),
     compressionModelId: z.string().optional(),
+    contextCompressionThresholdRatio: z.number().optional(),
     deepseekV4ReasoningEffort: z.enum(['none', 'high', 'max']).optional(),
     disableContextCaching: z.boolean().optional(),
     effort: z.enum(['low', 'medium', 'high', 'max']).optional(),

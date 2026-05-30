@@ -194,6 +194,58 @@ describe('agentChatConfigSelectors', () => {
     });
   });
 
+  describe('enableCompressHistory', () => {
+    it('should return enableCompressHistory from config', () => {
+      const state = createState({
+        activeAgentId: 'agent-1',
+        agentMap: {
+          'agent-1': {
+            chatConfig: { enableCompressHistory: false },
+          },
+        },
+      });
+
+      expect(agentChatConfigSelectors.enableCompressHistory(state)).toBe(false);
+    });
+
+    it('should return default when not specified', () => {
+      const state = createState({
+        activeAgentId: 'agent-1',
+        agentMap: { 'agent-1': {} },
+      });
+
+      expect(agentChatConfigSelectors.enableCompressHistory(state)).toBe(
+        DEFAULT_AGENT_CHAT_CONFIG.enableCompressHistory,
+      );
+    });
+  });
+
+  describe('enableContextCompression', () => {
+    it('should return enableContextCompression from config', () => {
+      const state = createState({
+        activeAgentId: 'agent-1',
+        agentMap: {
+          'agent-1': {
+            chatConfig: { enableContextCompression: false },
+          },
+        },
+      });
+
+      expect(agentChatConfigSelectors.enableContextCompression(state)).toBe(false);
+    });
+
+    it('should return default when not specified', () => {
+      const state = createState({
+        activeAgentId: 'agent-1',
+        agentMap: { 'agent-1': {} },
+      });
+
+      expect(agentChatConfigSelectors.enableContextCompression(state)).toBe(
+        DEFAULT_AGENT_CHAT_CONFIG.enableContextCompression,
+      );
+    });
+  });
+
   describe('historyCount', () => {
     it('should return historyCount from config', () => {
       const state = createState({

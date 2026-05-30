@@ -5,7 +5,7 @@ import { createStaticStyles } from 'antd-style';
 import { debounce } from 'es-toolkit/compat';
 import isEqual from 'fast-deep-equal';
 import { type ComponentType } from 'react';
-import { memo, useCallback, useEffect, useRef } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import InfoTooltip from '@/components/InfoTooltip';
@@ -152,6 +152,10 @@ const Controls = memo<ControlsProps>(({ setUpdating, updating }) => {
   const [form] = Form.useForm();
 
   const enableMaxTokens = AntdForm.useWatch(['chatConfig', 'enableMaxTokens'], form);
+  const enableContextCompression = AntdForm.useWatch(
+    ['chatConfig', 'enableContextCompression'],
+    form,
+  );
   const enableHistoryCount = AntdForm.useWatch(['chatConfig', 'enableHistoryCount'], form);
   const { frequency_penalty, presence_penalty, temperature, top_p } = config.params ?? {};
 
@@ -161,6 +165,12 @@ const Controls = memo<ControlsProps>(({ setUpdating, updating }) => {
   // Use raw chatConfig value, not the selector with business logic that may force false
   const enableHistoryCountFromStore = useAgentStore(
     (s) => chatConfigByIdSelectors.getChatConfigById(agentId)(s).enableHistoryCount,
+  );
+  const enableCompressHistoryFromStore = useAgentStore((s) =>
+    chatConfigByIdSelectors.getEnableCompressHistoryById(agentId)(s),
+  );
+  const enableContextCompressionFromStore = useAgentStore((s) =>
+    chatConfigByIdSelectors.getEnableContextCompressionById(agentId)(s),
   );
 
   const lastValuesRef = useRef<Record<ParamKey, number | undefined>>({
@@ -191,11 +201,20 @@ const Controls = memo<ControlsProps>(({ setUpdating, updating }) => {
     form.setFieldsValue({
       chatConfig: {
         ...form.getFieldValue('chatConfig'),
+        enableCompressHistory: enableCompressHistoryFromStore,
+        enableContextCompression: enableContextCompressionFromStore,
         enableHistoryCount: enableHistoryCountFromStore,
         historyCount: historyCountFromStore,
       },
     });
-  }, [form, enableHistoryCountFromStore, historyCountFromStore, updating]);
+  }, [
+    form,
+    enableCompressHistoryFromStore,
+    enableContextCompressionFromStore,
+    enableHistoryCountFromStore,
+    historyCountFromStore,
+    updating,
+  ]);
 
   const temperatureValue = AntdForm.useWatch(PARAM_NAME_MAP.temperature, form);
   const topPValue = AntdForm.useWatch(PARAM_NAME_MAP.top_p, form);
@@ -277,12 +296,13 @@ const Controls = memo<ControlsProps>(({ setUpdating, updating }) => {
   );
 
   // Use useMemo to ensure the debounce function is only created once
-  const handleValuesChange = useCallback(
-    debounce(async (values) => {
-      setUpdating(true);
-      await updateAgentConfig(values);
-      setUpdating(false);
-    }, 500),
+  const handleValuesChange = useMemo(
+    () =>
+      debounce(async (values) => {
+        setUpdating(true);
+        await updateAgentConfig(values);
+        setUpdating(false);
+      }, 500),
     [updateAgentConfig, setUpdating],
   );
 
@@ -357,6 +377,44 @@ const Controls = memo<ControlsProps>(({ setUpdating, updating }) => {
       tag: 'compression',
       valuePropName: 'checked',
     },
+    ...(enableContextCompression
+      ? [
+          {
+            children: (
+              <SliderWithInput
+                max={0.9}
+                min={0.3}
+                step={0.05}
+                styles={{
+                  input: {
+                    maxWidth: 72,
+                  },
+                }}
+              />
+            ),
+            label: (
+              <Flexbox horizontal align={'center'} className={styles.label} gap={8}>
+                {t('settingModel.contextCompressionThreshold.title')}
+                <InfoTooltip title={t('settingModel.contextCompressionThreshold.desc')} />
+              </Flexbox>
+            ),
+            name: ['chatConfig', 'contextCompressionThresholdRatio'],
+            tag: 'compression',
+          } satisfies FormItemProps,
+          {
+            children: <Switch />,
+            label: (
+              <Flexbox horizontal align={'center'} className={styles.label} gap={8}>
+                {t('settingChat.enableCompressHistory.title')}
+                <InfoTooltip title={t('settingChat.enableCompressHistory.desc')} />
+              </Flexbox>
+            ),
+            name: ['chatConfig', 'enableCompressHistory'],
+            tag: 'compression',
+            valuePropName: 'checked',
+          } satisfies FormItemProps,
+        ]
+      : []),
   ];
 
   // History Count items
@@ -405,8 +463,8 @@ const Controls = memo<ControlsProps>(({ setUpdating, updating }) => {
   const allItems = [
     ...baseItems,
     ...maxTokensItems,
-    ...contextCompressionItems,
     ...historyCountItems,
+    ...contextCompressionItems,
   ];
 
   return (

@@ -585,7 +585,9 @@ export default {
   'settingChat.enableAutoCreateTopic.title': 'Auto Create Topic',
   'settingChat.enableAutoScrollOnStreaming.desc': 'Override global setting for this assistant',
   'settingChat.enableAutoScrollOnStreaming.title': 'Auto-scroll During AI Response',
-  'settingChat.enableCompressHistory.title': 'Enable Automatic Summary of Chat History',
+  'settingChat.enableCompressHistory.desc':
+    'Keeps the older history-summary compression behavior separate from auto context compression.',
+  'settingChat.enableCompressHistory.title': 'Enable Legacy History Summary Compression',
   'settingChat.enableHistoryCount.alias': 'Unlimited',
   'settingChat.enableHistoryCount.limited': 'Include only {{number}} conversation messages',
   'settingChat.enableHistoryCount.setlimited': 'Set limited history messages',
@@ -704,6 +706,9 @@ export default {
   'settingModel.enableContextCompression.desc':
     'Automatically compress historical messages into summaries when conversation exceeds 64,000 tokens, saving 60-80% token usage',
   'settingModel.enableContextCompression.title': 'Enable Auto Context Compression',
+  'settingModel.contextCompressionThreshold.desc':
+    'Controls how early long chats are compressed. Lower values compress sooner and use fewer tokens; higher values keep more original context.',
+  'settingModel.contextCompressionThreshold.title': 'Compression Trigger Ratio',
   'settingModel.enableMaxTokens.title': 'Enable Max Tokens Limit',
   'settingModel.enableReasoningEffort.title': 'Enable Reasoning Effort Adjustment',
   'settingModel.frequencyPenalty.desc':

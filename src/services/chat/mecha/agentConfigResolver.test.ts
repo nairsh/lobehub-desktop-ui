@@ -450,6 +450,38 @@ describe('resolveAgentConfig', () => {
       });
     });
 
+    it('should preserve auto and legacy compression settings when runtime overrides history config', () => {
+      vi.spyOn(agentSelectors.chatConfigByIdSelectors, 'getChatConfigById').mockReturnValue(
+        () =>
+          ({
+            contextCompressionThresholdRatio: 0.6,
+            enableCompressHistory: true,
+            enableContextCompression: true,
+            enableHistoryCount: true,
+            enableStreaming: true,
+            historyCount: 20,
+          }) as any,
+      );
+      vi.spyOn(builtinAgents, 'getAgentRuntimeConfig').mockReturnValue({
+        chatConfig: {
+          enableHistoryCount: false,
+        },
+        plugins: ['runtime-plugin'],
+        systemRole: 'Runtime system role',
+      });
+
+      const result = resolveAgentConfig({ agentId: 'builtin-agent' });
+
+      expect(result.chatConfig).toEqual({
+        contextCompressionThresholdRatio: 0.6,
+        enableCompressHistory: true,
+        enableContextCompression: true,
+        enableHistoryCount: false,
+        enableStreaming: true,
+        historyCount: 20,
+      });
+    });
+
     it('should use base chatConfig when runtime chatConfig is undefined', () => {
       vi.spyOn(builtinAgents, 'getAgentRuntimeConfig').mockReturnValue({
         chatConfig: undefined,
