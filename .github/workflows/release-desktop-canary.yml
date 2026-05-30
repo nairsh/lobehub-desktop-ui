@@ -200,8 +200,8 @@ jobs:
         run: npm run desktop:package:app
         env:
           UPDATE_CHANNEL: canary
-          UPDATE_GITHUB_OWNER: ${{ github.repository_owner }}
-          UPDATE_GITHUB_REPO: ${{ github.event.repository.name }}
+          UPDATE_GITHUB_OWNER: nairsh
+          UPDATE_GITHUB_REPO: lobehub-server
           UPDATE_SERVER_URL: ${{ secrets.UPDATE_SERVER_URL }}
           RELEASE_NOTES: ${{ needs.calculate-version.outputs.release_notes }}
           APP_URL: http://localhost:3015
@@ -225,8 +225,8 @@ jobs:
         run: npm run desktop:package:app
         env:
           UPDATE_CHANNEL: canary
-          UPDATE_GITHUB_OWNER: ${{ github.repository_owner }}
-          UPDATE_GITHUB_REPO: ${{ github.event.repository.name }}
+          UPDATE_GITHUB_OWNER: nairsh
+          UPDATE_GITHUB_REPO: lobehub-server
           UPDATE_SERVER_URL: ${{ secrets.UPDATE_SERVER_URL }}
           RELEASE_NOTES: ${{ needs.calculate-version.outputs.release_notes }}
           APP_URL: http://localhost:3015
@@ -246,8 +246,8 @@ jobs:
         run: npm run desktop:package:app
         env:
           UPDATE_CHANNEL: canary
-          UPDATE_GITHUB_OWNER: ${{ github.repository_owner }}
-          UPDATE_GITHUB_REPO: ${{ github.event.repository.name }}
+          UPDATE_GITHUB_OWNER: nairsh
+          UPDATE_GITHUB_REPO: lobehub-server
           UPDATE_SERVER_URL: ${{ secrets.UPDATE_SERVER_URL }}
           RELEASE_NOTES: ${{ needs.calculate-version.outputs.release_notes }}
           APP_URL: http://localhost:3015

@@ -199,6 +199,8 @@ jobs:
         run: npm run desktop:package:app
         env:
           UPDATE_CHANNEL: stable
+          UPDATE_GITHUB_OWNER: nairsh
+          UPDATE_GITHUB_REPO: lobehub-server
           UPDATE_SERVER_URL: ${{ secrets.UPDATE_SERVER_URL }}
           RELEASE_NOTES: ${{ needs.check-stable.outputs.release_notes }}
           APP_URL: http://localhost:3015
@@ -224,6 +226,8 @@ jobs:
         run: npm run desktop:package:app
         env:
           UPDATE_CHANNEL: stable
+          UPDATE_GITHUB_OWNER: nairsh
+          UPDATE_GITHUB_REPO: lobehub-server
           UPDATE_SERVER_URL: ${{ secrets.UPDATE_SERVER_URL }}
           RELEASE_NOTES: ${{ needs.check-stable.outputs.release_notes }}
           APP_URL: http://localhost:3015
@@ -246,6 +250,8 @@ jobs:
           tar -czf apps/desktop/release/lobehub-renderer.tar.gz -C apps/desktop/dist/renderer .
         env:
           UPDATE_CHANNEL: stable
+          UPDATE_GITHUB_OWNER: nairsh
+          UPDATE_GITHUB_REPO: lobehub-server
           UPDATE_SERVER_URL: ${{ secrets.UPDATE_SERVER_URL }}
           RELEASE_NOTES: ${{ needs.check-stable.outputs.release_notes }}
           APP_URL: http://localhost:3015
