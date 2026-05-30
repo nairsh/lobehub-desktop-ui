@@ -160,7 +160,7 @@ const Page = memo(() => {
                                   model: model.id,
                                   provider: model.provider,
                                 },
-                                checked.target.checked,
+                                checked,
                               )
                             }
                           >
