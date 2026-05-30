@@ -127,4 +127,55 @@ describe('processCommands', () => {
     expect(result.forceNewTopic).toBe(true);
     expect(result.triggerCompression).toBe(true);
   });
+
+  it('should return triggerCompression for raw /compact line-start text command', () => {
+    const params = {
+      ...baseParams,
+      editorData: {
+        root: {
+          children: [
+            {
+              children: [{ text: '/compact', type: 'text' }],
+              type: 'paragraph',
+            },
+          ],
+          type: 'root',
+        },
+      },
+    };
+
+    const result = processCommands(params);
+    expect(result).toEqual({ triggerCompression: true });
+  });
+
+  it('should keep action-tag behavior when mixed with raw text commands', () => {
+    const params = {
+      ...baseParams,
+      editorData: {
+        root: {
+          children: [
+            {
+              children: [
+                {
+                  actionCategory: 'command',
+                  actionLabel: 'Send in new topic',
+                  actionType: 'newTopic',
+                  type: 'action-tag',
+                },
+              ],
+              type: 'paragraph',
+            },
+            {
+              children: [{ text: '/compact', type: 'text' }],
+              type: 'paragraph',
+            },
+          ],
+          type: 'root',
+        },
+      },
+    };
+
+    const result = processCommands(params);
+    expect(result).toEqual({ forceNewTopic: true, triggerCompression: true });
+  });
 });

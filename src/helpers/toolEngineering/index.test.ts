@@ -257,6 +257,20 @@ describe('toolEngineering', () => {
       expect(enabledResult.enabledToolIds).toContain(MemoryManifest.identifier);
     });
 
+    it('should expose required memory sourceIds fields in write tool schemas', () => {
+      const findMemoryApi = (name: string) => MemoryManifest.api.find((api) => api.name === name);
+
+      expect(findMemoryApi('addPreferenceMemory')?.parameters.properties?.sourceIds).toBeDefined();
+      expect(findMemoryApi('addPreferenceMemory')?.parameters.required).toContain('sourceIds');
+      expect(
+        findMemoryApi('addIdentityMemory')?.parameters.properties?.withIdentity.properties
+          ?.sourceIds,
+      ).toBeDefined();
+      expect(
+        findMemoryApi('addIdentityMemory')?.parameters.properties?.withIdentity.required,
+      ).toContain('sourceIds');
+    });
+
     it('should expose cloud sandbox as a runtime-managed default when cloud mode is enabled', () => {
       mockIsCloudSandboxEnabled = true;
 

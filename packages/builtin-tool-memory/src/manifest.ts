@@ -221,6 +221,12 @@ export const MemoryManifest: BuiltinToolManifest = {
             enum: MEMORY_TYPES,
             type: 'string',
           },
+          sourceIds: {
+            description:
+              'Stable source message ids that support this memory; use null if unavailable',
+            items: { type: 'string' },
+            type: ['array', 'null'],
+          },
           summary: {
             description: 'Concise overview of this specific memory',
             type: 'string',
@@ -344,6 +350,7 @@ export const MemoryManifest: BuiltinToolManifest = {
           'details',
           'memoryCategory',
           'memoryType',
+          'sourceIds',
           'summary',
           'tags',
           'title',
@@ -371,6 +378,12 @@ export const MemoryManifest: BuiltinToolManifest = {
             const: 'activity',
             description: 'Memory type; always activity.',
             type: 'string',
+          },
+          sourceIds: {
+            description:
+              'Stable source message ids that support this memory; use null if unavailable',
+            items: { type: 'string' },
+            type: ['array', 'null'],
           },
           summary: {
             description: 'Concise overview of this activity.',
@@ -504,6 +517,7 @@ export const MemoryManifest: BuiltinToolManifest = {
           'details',
           'memoryType',
           'memoryCategory',
+          'sourceIds',
           'tags',
           'withActivity',
         ],
@@ -529,6 +543,12 @@ export const MemoryManifest: BuiltinToolManifest = {
             description: 'Memory type',
             enum: MEMORY_TYPES,
             type: 'string',
+          },
+          sourceIds: {
+            description:
+              'Stable source message ids that support this memory; use null if unavailable',
+            items: { type: 'string' },
+            type: ['array', 'null'],
           },
           summary: {
             description: 'Concise overview of this specific memory',
@@ -616,6 +636,7 @@ export const MemoryManifest: BuiltinToolManifest = {
           'details',
           'memoryCategory',
           'memoryType',
+          'sourceIds',
           'summary',
           'tags',
           'title',
@@ -677,6 +698,12 @@ export const MemoryManifest: BuiltinToolManifest = {
                 type: 'string',
               },
               scoreConfidence: { type: 'number' },
+              sourceIds: {
+                description:
+                  'Stable source message ids that support this identity; use null if unavailable',
+                items: { type: 'string' },
+                type: ['array', 'null'],
+              },
               sourceEvidence: { type: ['string', 'null'] },
               type: {
                 enum: IDENTITY_TYPES,
@@ -690,6 +717,7 @@ export const MemoryManifest: BuiltinToolManifest = {
               'relationship',
               'role',
               'scoreConfidence',
+              'sourceIds',
               'sourceEvidence',
               'type',
             ],
@@ -727,6 +755,12 @@ export const MemoryManifest: BuiltinToolManifest = {
             description: 'Memory type',
             enum: MEMORY_TYPES,
             type: 'string',
+          },
+          sourceIds: {
+            description:
+              'Stable source message ids that support this memory; use null if unavailable',
+            items: { type: 'string' },
+            type: ['array', 'null'],
           },
           summary: {
             description: 'Concise overview of this specific memory',
@@ -844,6 +878,7 @@ export const MemoryManifest: BuiltinToolManifest = {
           'details',
           'memoryCategory',
           'memoryType',
+          'sourceIds',
           'withPreference',
         ],
         type: 'object',

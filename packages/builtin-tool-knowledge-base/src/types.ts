@@ -22,8 +22,20 @@ export interface SearchKnowledgeBaseArgs {
   query: string;
   topK?: number;
 }
+
+export interface KnowledgeBaseDocumentResult {
+  documentId: string;
+  knowledgeBaseId: string;
+  relevance: number;
+  snippet: string;
+  title: string;
+  updatedAt: Date | string;
+}
+
 export interface SearchKnowledgeBaseState {
   chunks: ChatSemanticSearchChunk[];
+  documents: KnowledgeBaseDocumentResult[];
+  errors?: { bm25?: string; vector?: string };
   fileResults: FileSearchResult[];
   totalResults: number;
 }

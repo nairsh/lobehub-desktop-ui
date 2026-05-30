@@ -90,6 +90,62 @@ describe('parseCommandsFromEditorData', () => {
     expect(result[1].type).toBe('translate');
     expect(result[2].type).toBe('lobe-notebook');
   });
+
+  it('should parse raw line-start /compact text command', () => {
+    const editorData = {
+      root: {
+        children: [
+          {
+            children: [{ text: '/compact please summarize', type: 'text' }],
+            type: 'paragraph',
+          },
+        ],
+        type: 'root',
+      },
+    };
+
+    expect(parseCommandsFromEditorData(editorData)).toContainEqual({
+      category: 'command',
+      label: 'Compact context',
+      type: 'compact',
+    });
+  });
+
+  it('should parse raw line-start /newTopic text command with leading spaces', () => {
+    const editorData = {
+      root: {
+        children: [
+          {
+            children: [{ text: '   /newTopic move this to a new thread', type: 'text' }],
+            type: 'paragraph',
+          },
+        ],
+        type: 'root',
+      },
+    };
+
+    expect(parseCommandsFromEditorData(editorData)).toContainEqual({
+      category: 'command',
+      label: 'Send in new topic',
+      type: 'newTopic',
+    });
+  });
+
+  it('should not parse slash commands when they are not at line start', () => {
+    const editorData = {
+      root: {
+        children: [
+          {
+            children: [{ text: 'hello /compact', type: 'text' }],
+            type: 'paragraph',
+          },
+        ],
+        type: 'root',
+      },
+    };
+
+    expect(parseCommandsFromEditorData(editorData)).toEqual([]);
+  });
 });
 
 describe('parseSelectedSkillsFromEditorData', () => {

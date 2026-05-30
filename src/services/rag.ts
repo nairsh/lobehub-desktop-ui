@@ -18,6 +18,22 @@ interface KnowledgeContentItem {
   totalLineCount?: number;
 }
 
+interface KnowledgeBaseDocumentResult {
+  documentId: string;
+  knowledgeBaseId: string;
+  relevance: number;
+  snippet: string;
+  title: string;
+  updatedAt: Date | string;
+}
+
+interface SemanticSearchForChatClientResult {
+  chunks: ChatSemanticSearchChunk[];
+  documents?: KnowledgeBaseDocumentResult[];
+  errors?: { bm25?: string; vector?: string };
+  fileResults: FileSearchResult[];
+}
+
 const isFileSearchResult = (value: FileSearchResult | null): value is FileSearchResult =>
   value !== null;
 
@@ -191,7 +207,7 @@ class RAGService {
   semanticSearchForChatWithFallback = async (
     params: SemanticSearchSchemaType,
     signal?: AbortSignal,
-  ): Promise<{ chunks: ChatSemanticSearchChunk[]; fileResults: FileSearchResult[] }> => {
+  ): Promise<SemanticSearchForChatClientResult> => {
     try {
       return await this.semanticSearchForChat(params, signal);
     } catch (error) {
@@ -251,7 +267,7 @@ class RAGService {
         })),
       );
 
-      return { chunks, fileResults: ranked };
+      return { chunks, documents: [], fileResults: ranked };
     }
   };
 

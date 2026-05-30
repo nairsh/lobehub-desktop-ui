@@ -33,7 +33,14 @@ export const parseActionTagsFromEditorData = (
 
 export const parseCommandsFromEditorData = (
   editorData: Record<string, any> | undefined,
-): ParsedCommand[] => parseActionTagsFromEditorData(editorData);
+): ParsedCommand[] => {
+  if (!editorData) return [];
+
+  const actionTagCommands = parseActionTagsFromEditorData(editorData);
+  const textCommands = parseLineStartTextCommandsFromEditorData(editorData);
+
+  return [...actionTagCommands, ...textCommands];
+};
 
 export const parseSelectedSkillsFromEditorData = (
   editorData: Record<string, any> | undefined,
@@ -163,4 +170,42 @@ function walkNode(node: any, out: ParsedActionTag[]): void {
       walkNode(child, out);
     }
   }
+}
+
+const LINE_START_COMMANDS: Record<string, ParsedCommand> = {
+  compact: { category: 'command', label: 'Compact context', type: 'compact' },
+  newtopic: { category: 'command', label: 'Send in new topic', type: 'newTopic' },
+};
+
+const parseLineStartTextCommandsFromEditorData = (
+  editorData: Record<string, any> | undefined,
+): ParsedCommand[] => {
+  if (!editorData?.root?.children || !Array.isArray(editorData.root.children)) return [];
+
+  const commands: ParsedCommand[] = [];
+
+  for (const child of editorData.root.children) {
+    const lineText = collectNodeText(child).trimStart();
+    const match = lineText.match(/^\/([a-z][\w-]*)\b/i);
+
+    if (!match) continue;
+
+    const command = LINE_START_COMMANDS[match[1].toLowerCase()];
+    if (command) commands.push(command);
+  }
+
+  return commands;
+};
+
+function collectNodeText(node: any): string {
+  if (!node) return '';
+  if (node.type === 'text' && typeof node.text === 'string') return node.text;
+  if (!Array.isArray(node.children)) return '';
+
+  let text = '';
+  for (const child of node.children) {
+    text += collectNodeText(child);
+  }
+
+  return text;
 }
