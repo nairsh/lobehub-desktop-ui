@@ -28,6 +28,7 @@ const StoreUpdater = memo<StoreUpdaterProps>(
     allowExpand,
     slashPlacement,
     getMessages,
+    supportsCouncil,
   }) => {
     const storeApi = useStoreApi();
     const useStoreUpdater = createStoreUpdater(storeApi);
@@ -42,6 +43,7 @@ const StoreUpdater = memo<StoreUpdaterProps>(
     useStoreUpdater('allowExpand', allowExpand);
     useStoreUpdater('slashPlacement', slashPlacement);
     useStoreUpdater('getMessages', getMessages);
+    useStoreUpdater('supportsCouncil', supportsCouncil);
 
     useStoreUpdater('sendButtonProps', sendButtonProps);
     useStoreUpdater('onSend', onSend);

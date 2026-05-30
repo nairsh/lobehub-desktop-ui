@@ -144,7 +144,7 @@ export class CommonActionImpl {
                 onboarding: data.onboarding,
                 preference,
                 referralStatus: data.referralStatus,
-                settings: data.settings || {},
+                settings: (data.settings || {}) as UserSettings,
                 subscriptionPlan: data.subscriptionPlan,
                 user,
               },

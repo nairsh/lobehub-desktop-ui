@@ -10,6 +10,7 @@ import {
   FileUp,
   FolderOpenIcon,
   FolderUp,
+  Gavel,
   Globe,
   Layers,
   LibraryBig,
@@ -30,9 +31,13 @@ import { topicSelectors } from '@/store/chat/selectors';
 import { useFileStore } from '@/store/file';
 import { projectSelectors, useProjectStore } from '@/store/project';
 import { featureFlagsSelectors, useServerConfigStore } from '@/store/serverConfig';
+import { useUserStore } from '@/store/user';
+import { settingsSelectors } from '@/store/user/selectors';
+import type { ModelCouncilSettings } from '@/types/modelCouncil';
 
 import { useAgentId } from '../../hooks/useAgentId';
 import { useUpdateAgentConfig } from '../../hooks/useUpdateAgentConfig';
+import { useChatInputStore } from '../../store';
 import Action from '../components/Action';
 import { type ActionDropdownMenuItems } from '../components/ActionDropdown';
 import { useMemoryEnabled } from '../Memory/useMemoryEnabled';
@@ -108,6 +113,20 @@ const PlusActions = memo(() => {
   const { open: openProjectModal } = useProjectModal();
 
   const { enableKnowledgeBase } = useServerConfigStore(featureFlagsSelectors);
+
+  const councilMode = useChatInputStore((s) => s.councilMode);
+  const setCouncilMode = useChatInputStore((s) => s.setCouncilMode);
+  const supportsCouncil = useChatInputStore((s) => s.supportsCouncil);
+  const councilSettings = useUserStore(
+    (s) =>
+      (settingsSelectors.currentSettings(s) as any).modelCouncil as ModelCouncilSettings | undefined,
+  );
+  const councilReady =
+    !!supportsCouncil &&
+    !!councilSettings?.enabled &&
+    (councilSettings?.councilModels?.length || 0) >= 2 &&
+    !!councilSettings?.judgeModel;
+  const showCouncil = councilMode && councilReady;
 
   const [searchMode, rawSearchMode, model, provider, enabledKnowledgeBases, activeMode] =
     useAgentStore((s) => [
@@ -326,15 +345,14 @@ const PlusActions = memo(() => {
         createSkillStoreModal();
       },
     },
-    ...(enableKnowledgeBase
+    ...(councilReady
       ? [
           {
-            icon: LibraryBig,
-            key: 'library',
-            label: t('knowledgeBase.title'),
+            icon: showCouncil ? <Gavel size={16} style={{ color: cssVar.colorInfo }} /> : Gavel,
+            key: 'model-council',
+            label: t('modelCouncil.title'),
             onClick: () => {
-              setOpen(false);
-              setLibraryOpen(true);
+              setCouncilMode(!councilMode);
             },
           },
         ]
@@ -356,6 +374,15 @@ const PlusActions = memo(() => {
           }}
           onOpenChange={setOpen}
         />
+        {showCouncil && (
+          <Action
+            color={cssVar.colorInfo}
+            icon={Gavel}
+            showTooltip={false}
+            title={t('modelCouncil.title')}
+            onClick={() => setCouncilMode(false)}
+          />
+        )}
         {showSearchIndicator && (
           <Action
             color={cssVar.colorInfo}

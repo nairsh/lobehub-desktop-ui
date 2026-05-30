@@ -299,7 +299,7 @@ export const INITIAL_STATUS = {
   showImagePanel: true,
   showImageTopicPanel: true,
   showLeftPanel: true,
-  showRightPanel: true,
+  showRightPanel: false,
   showSystemRole: false,
   showVideoPanel: true,
   showVideoTopicPanel: true,

@@ -7,6 +7,7 @@ import { type ActionKeys } from '@/features/ChatInput';
 
 export type SendButtonHandler = (params: {
   clearContent: () => void;
+  councilMode: boolean;
   editor: IEditor;
   getEditorData: () => Record<string, any> | undefined;
   getMarkdownContent: () => string;
@@ -42,6 +43,8 @@ export interface PublicState {
   sendButtonProps?: SendButtonProps;
   sendMenu?: MenuProps;
   showTypoBar?: boolean;
+  /** Whether this input surface honors Model Council mode on send (gates the dropdown toggle) */
+  supportsCouncil?: boolean;
   /**
    * Slash menu placement: 'bottom' for home page (input in center), 'top' for page input (at bottom)
    */
@@ -50,6 +53,8 @@ export interface PublicState {
 
 export interface State extends PublicState {
   _savedEditorState?: Record<string, any>;
+  /** Whether Model Council mode is armed — sends the next message to multiple models */
+  councilMode: boolean;
   editor?: IEditor;
   isContentEmpty: boolean;
   markdownContent: string;
@@ -62,6 +67,7 @@ export interface State extends PublicState {
 
 export const initialState: State = {
   allowExpand: true,
+  councilMode: false,
   expand: false,
   isContentEmpty: false,
   leftActions: [],

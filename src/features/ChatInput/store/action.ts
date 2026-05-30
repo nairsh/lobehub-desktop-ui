@@ -10,6 +10,7 @@ export interface Action {
   getMarkdownContent: () => string;
   handleSendButton: () => void;
   handleStop: () => void;
+  setCouncilMode: (councilMode: boolean) => void;
   setDocument: (type: string, content: any, options?: Record<string, unknown>) => void;
   setExpand: (expend: boolean) => void;
   setJSONState: (content: any) => void;
@@ -41,6 +42,7 @@ export const store: CreateStore = (publicState) => (set, get) => ({
 
     get().onSend?.({
       clearContent: () => editor?.cleanDocument(),
+      councilMode: get().councilMode,
       editor: editor!,
       getEditorData: get().getJSONState,
       getMarkdownContent: get().getMarkdownContent,
@@ -59,6 +61,10 @@ export const store: CreateStore = (publicState) => (set, get) => ({
     if (!get().editor) return;
 
     get().sendButtonProps?.onStop?.({ editor: get().editor! });
+  },
+
+  setCouncilMode: (councilMode) => {
+    set({ councilMode });
   },
 
   setDocument: (type, content, options) => {
