@@ -1,3 +1,4 @@
+import { isDesktop } from '@lobechat/const';
 import dayjs from 'dayjs';
 import isToday from 'dayjs/plugin/isToday';
 import isYesterday from 'dayjs/plugin/isYesterday';
@@ -32,6 +33,6 @@ if (typeof window !== 'undefined') {
   });
 }
 
-if (__DEV__) {
+if (__DEV__ && !isDesktop) {
   scan({ enabled: true });
 }

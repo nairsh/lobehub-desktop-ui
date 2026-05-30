@@ -599,25 +599,28 @@ export const desktopRoutes: RouteObject[] = [
 ];
 
 desktopRoutes.push({
-  element: dynamicElement(() => import('@/routes/onboarding'), 'Desktop > Onboarding'),
+  element: dynamicElement(
+    () => import('@/routes/(desktop)/desktop-onboarding'),
+    'Desktop > Onboarding',
+  ),
+  errorElement: <ErrorBoundary resetPath="/" />,
+  path: '/desktop-onboarding',
+});
+
+desktopRoutes.push({
+  element: redirectElement('/desktop-onboarding'),
   errorElement: <ErrorBoundary resetPath="/" />,
   path: '/onboarding',
 });
 
 desktopRoutes.push({
-  element: dynamicElement(
-    () => import('@/routes/onboarding/agent'),
-    'Desktop > Onboarding > Agent',
-  ),
+  element: redirectElement('/desktop-onboarding'),
   errorElement: <ErrorBoundary resetPath="/" />,
   path: '/onboarding/agent',
 });
 
 desktopRoutes.push({
-  element: dynamicElement(
-    () => import('@/routes/onboarding/classic'),
-    'Desktop > Onboarding > Classic',
-  ),
+  element: redirectElement('/desktop-onboarding'),
   errorElement: <ErrorBoundary resetPath="/" />,
   path: '/onboarding/classic',
 });

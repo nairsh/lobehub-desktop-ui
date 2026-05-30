@@ -130,6 +130,7 @@ export function sharedRendererPlugins(options: SharedRendererOptions) {
     vitePlatformResolve(options.platform),
     defaultTsconfigPaths && tsconfigPaths({ projects: ['.'] }),
     isDev &&
+      options.platform !== 'desktop' &&
       codeInspectorPlugin({
         bundler: 'vite',
         exclude: [/\.(css|json)$/],

@@ -4,10 +4,6 @@ import path from 'node:path';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
-const KNOWN_DIVERGENCES: Record<string, string> = {
-  '/desktop-onboarding': '/onboarding',
-};
-
 interface RouteShape {
   children?: RouteNodeShape[];
   hasChildren: boolean;
@@ -29,7 +25,7 @@ const getPropertyName = (name: ts.PropertyName) => {
   return undefined;
 };
 
-const normalizePath = (path?: string) => (path ? (KNOWN_DIVERGENCES[path] ?? path) : undefined);
+const normalizePath = (path?: string) => path;
 
 const extractRouteNodes = (
   array: ts.ArrayLiteralExpression,
