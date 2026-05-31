@@ -59,7 +59,7 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
     border-radius: 0 !important;
   `,
   inputRounded: css`
-    border-radius: 14px !important;
+    border-radius: 20px !important;
   `,
 }));
 

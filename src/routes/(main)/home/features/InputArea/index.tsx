@@ -62,7 +62,7 @@ const InputArea = () => {
       minHeight: 48,
       resize: false,
       style: {
-        borderRadius: 14,
+        borderRadius: 20,
         boxShadow: '0 12px 32px rgba(0,0,0,.04)',
       },
     }),

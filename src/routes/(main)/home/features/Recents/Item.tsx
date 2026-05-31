@@ -33,7 +33,7 @@ const RecentListItem = memo<RecentChatItem>((item) => {
         active={activeTopicId === id}
         contextMenuItems={dropdownMenu}
         disabled={editing}
-        height={26}
+        height={32}
         icon={type === 'group' ? UsersIcon : undefined}
         title={title}
         actions={

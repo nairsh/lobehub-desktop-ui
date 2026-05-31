@@ -285,6 +285,7 @@ const ChatInput = memo<ChatInputProps>(
               actionBarStyle={actionBarStyle}
               borderRadius={14}
               extraActionItems={extraActionItems}
+              inputContainerProps={{ defaultHeight: 36 }}
               leftContent={leftContent}
               sendAreaPrefix={sendAreaPrefix}
               showRuntimeConfig={showRuntimeConfig}
