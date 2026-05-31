@@ -73,7 +73,7 @@ const useStyles = createStyles(({ css, token }) => ({
     height: 1px;
     margin-block: 2px;
     border: 0;
-    background: ${token.colorSplit};
+    background: ${token.colorBorder};
   `,
   pill: css`
     max-width: min(420px, 70vw);
