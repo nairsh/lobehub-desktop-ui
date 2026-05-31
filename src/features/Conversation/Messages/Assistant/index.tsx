@@ -141,10 +141,14 @@ const AssistantMessage = memo<AssistantMessageProps>(({ id, index, disableEditin
       (s) => {
         if (role !== 'assistant') return undefined;
 
+        const messageIndex = s.displayMessages.findIndex((item) => item.id === id);
+        const nextMessage = messageIndex >= 0 ? s.displayMessages[messageIndex + 1] : undefined;
+
         return s.displayMessages.find((message) => {
           if (message.role !== 'compareGroup') return false;
 
           return (
+            message.id === nextMessage?.id ||
             message.children?.some((child) => child.id === id) ||
             (!!item.parentId && item.parentId === message.parentId)
           );

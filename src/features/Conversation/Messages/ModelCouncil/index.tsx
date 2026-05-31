@@ -144,6 +144,10 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
 
       const groupMessage = s.displayMessages.find((item) => item.id === id);
       if (!groupMessage || groupMessage.role !== 'compareGroup') return false;
+      const groupIndex = s.displayMessages.findIndex((item) => item.id === id);
+      const previousMessage = groupIndex > 0 ? s.displayMessages[groupIndex - 1] : undefined;
+
+      if (previousMessage?.role === 'assistant') return true;
 
       return s.displayMessages.some((item) => {
         if (item.role !== 'assistant') return false;
