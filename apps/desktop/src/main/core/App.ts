@@ -506,6 +506,7 @@ export class App {
     }
 
     // Execute cleanup operations
+    this.shortcutManager.unregisterAll();
     this.staticFileServerManager.destroy();
   };
 }

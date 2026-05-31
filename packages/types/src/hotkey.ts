@@ -65,6 +65,7 @@ export const HotkeyEnum = {
   DeleteLastMessage: 'deleteLastMessage',
   EditMessage: 'editMessage',
   NavigateToChat: 'navigateToChat',
+  NewChatTab: 'newChatTab',
   OpenChatSettings: 'openChatSettings',
   OpenHotkeyHelper: 'openHotkeyHelper',
   RegenerateMessage: 'regenerateMessage',
@@ -112,6 +113,7 @@ export interface HotkeyItem {
 
 export const DesktopHotkeyEnum = {
   OpenSettings: 'openSettings',
+  OpenFloatingChat: 'openFloatingChat',
   ShowApp: 'showApp',
 };
 

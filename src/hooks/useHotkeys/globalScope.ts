@@ -1,10 +1,13 @@
 import { INBOX_SESSION_ID } from '@lobechat/const';
 import { HotkeyEnum } from '@lobechat/types';
+import { useEffect } from 'react';
 
+import { useCreateNewTab } from '@/features/Electron/titlebar/TabBar/hooks/useCreateNewTab';
 import { useNavigateToAgent } from '@/hooks/useNavigateToAgent';
 import { usePinnedAgentState } from '@/hooks/usePinnedAgentState';
 import { useGlobalStore } from '@/store/global';
 
+import { isEditableShortcutTarget, isModTEvent } from './shortcutGuards';
 import { useHotkeyById } from './useHotkeyById';
 
 // Switch to chat tab (and focus on Lobe AI)
@@ -57,6 +60,23 @@ export const useCommandPaletteHotkey = () => {
   });
 };
 
+export const useNewChatTabHotkey = () => {
+  const createNewTab = useCreateNewTab();
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isModTEvent(event)) return;
+      if (isEditableShortcutTarget(event.target)) return;
+
+      event.preventDefault();
+      void createNewTab();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [createNewTab]);
+};
+
 export const useRegisterGlobalHotkeys = () => {
   // Global auto-registration doesn't need enableScope
   useToggleLeftPanelHotkey();
@@ -64,4 +84,5 @@ export const useRegisterGlobalHotkeys = () => {
   useNavigateToChatHotkey();
   useOpenHotkeyHelperHotkey();
   useCommandPaletteHotkey();
+  useNewChatTabHotkey();
 };

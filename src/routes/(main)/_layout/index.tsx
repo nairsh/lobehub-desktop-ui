@@ -15,6 +15,7 @@ import DesktopFileMenuBridge from '@/features/DesktopFileMenuBridge';
 import DesktopNavigationBridge from '@/features/DesktopNavigationBridge';
 import AuthRequiredModal from '@/features/Electron/AuthRequiredModal';
 import TitleBar from '@/features/Electron/titlebar/TitleBar';
+import FloatingChat from '@/features/FloatingChat';
 import HotkeyHelperPanel from '@/features/HotkeyHelperPanel';
 import NavPanel from '@/features/NavPanel';
 import { useFeedbackModal } from '@/hooks/useFeedbackModal';
@@ -85,6 +86,7 @@ const Layout: FC = () => {
       </DndContextWrapper>
       <Suspense fallback={null}>
         <HotkeyHelperPanel />
+        <FloatingChat />
         <RegisterHotkeys />
         <CmdkLazy />
         {isFeedbackModalOpen && (

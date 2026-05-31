@@ -1448,12 +1448,10 @@ describe('ChatService', () => {
         );
       });
 
-      it('should keep memory disabled until the agent explicitly opts in', async () => {
+      it('should enable memory from global settings when the agent has no explicit override', async () => {
         const contextEngineeringSpy = vi
           .spyOn(mechaModule, 'contextEngineering')
           .mockResolvedValue([]);
-        // user-level memory may still be enabled globally, but the chat runtime
-        // should not expose memory unless the agent toggles it on.
         vi.spyOn(settingsSelectors, 'memoryEnabled').mockReturnValue(true);
 
         const messages = [{ content: 'Hello', role: 'user' }] as UIChatMessage[];
@@ -1465,9 +1463,8 @@ describe('ChatService', () => {
           }),
         });
 
-        // no agent-level config means memory stays off
         expect(contextEngineeringSpy).toHaveBeenCalledWith(
-          expect.objectContaining({ enableUserMemories: false }),
+          expect.objectContaining({ enableUserMemories: true }),
         );
       });
     });

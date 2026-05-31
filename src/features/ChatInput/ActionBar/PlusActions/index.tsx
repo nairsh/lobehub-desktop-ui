@@ -6,13 +6,11 @@ import { Upload } from 'antd';
 import { createStaticStyles, css, cssVar, cx } from 'antd-style';
 import {
   Blocks,
-  Brain,
   FileUp,
   FolderOpenIcon,
   FolderUp,
   Gavel,
   Globe,
-  Layers,
   LibraryBig,
   PlusIcon,
 } from 'lucide-react';
@@ -23,7 +21,6 @@ import { message } from '@/components/AntdStaticMethods';
 import { AttachKnowledgeModal } from '@/features/LibraryModal';
 import { useProjectModal } from '@/features/Project';
 import { createSkillStoreModal } from '@/features/SkillStore';
-import { useModelSupportToolUse } from '@/hooks/useModelSupportToolUse';
 import { useAgentStore } from '@/store/agent';
 import { agentByIdSelectors, chatConfigByIdSelectors } from '@/store/agent/selectors';
 import { useChatStore } from '@/store/chat';
@@ -40,14 +37,6 @@ import { useUpdateAgentConfig } from '../../hooks/useUpdateAgentConfig';
 import { useChatInputStore } from '../../store';
 import Action from '../components/Action';
 import { type ActionDropdownMenuItems } from '../components/ActionDropdown';
-import { useMemoryEnabled } from '../Memory/useMemoryEnabled';
-
-type AgentMode =
-  | 'agent-builder'
-  | 'bot-builder'
-  | 'cloud-sandbox'
-  | 'group-builder'
-  | 'self-iteration';
 
 const prefixCls = 'ant';
 
@@ -93,14 +82,6 @@ const hotArea = css`
   }
 `;
 
-const MODES: AgentMode[] = [
-  'cloud-sandbox',
-  'agent-builder',
-  'group-builder',
-  'bot-builder',
-  'self-iteration',
-];
-
 const PlusActions = memo(() => {
   const { t } = useTranslation('chat');
   const { t: tSetting } = useTranslation('setting');
@@ -116,31 +97,25 @@ const PlusActions = memo(() => {
 
   const councilMode = useChatInputStore((s) => s.councilMode);
   const setCouncilMode = useChatInputStore((s) => s.setCouncilMode);
-  const supportsCouncil = useChatInputStore((s) => s.supportsCouncil);
   const councilSettings = useUserStore(
     (s) =>
-      (settingsSelectors.currentSettings(s) as any).modelCouncil as ModelCouncilSettings | undefined,
+      (settingsSelectors.currentSettings(s) as any).modelCouncil as
+        | ModelCouncilSettings
+        | undefined,
   );
   const councilReady =
-    !!supportsCouncil &&
     !!councilSettings?.enabled &&
     (councilSettings?.councilModels?.length || 0) >= 2 &&
     !!councilSettings?.judgeModel;
   const showCouncil = councilMode && councilReady;
 
-  const [searchMode, rawSearchMode, model, provider, enabledKnowledgeBases, activeMode] =
-    useAgentStore((s) => [
-      chatConfigByIdSelectors.getSearchModeById(agentId)(s),
-      chatConfigByIdSelectors.getChatConfigById(agentId)(s)?.searchMode,
-      agentByIdSelectors.getAgentModelById(agentId)(s),
-      agentByIdSelectors.getAgentModelProviderById(agentId)(s),
-      agentByIdSelectors
-        .getAgentKnowledgeBasesById(agentId)(s)
-        .filter((kb) => kb.enabled),
-      chatConfigByIdSelectors.getActiveModeById(agentId)(s),
-    ]);
-  const isMemoryEnabled = useMemoryEnabled(agentId);
-  const supportToolUse = useModelSupportToolUse(model, provider);
+  const [searchMode, rawSearchMode, enabledKnowledgeBases] = useAgentStore((s) => [
+    chatConfigByIdSelectors.getSearchModeById(agentId)(s),
+    chatConfigByIdSelectors.getChatConfigById(agentId)(s)?.searchMode,
+    agentByIdSelectors
+      .getAgentKnowledgeBasesById(agentId)(s)
+      .filter((kb) => kb.enabled),
+  ]);
 
   const activeTopicId = useChatStore((s) => s.activeTopicId);
   const activeTopicProjectId = useChatStore((s) => topicSelectors.currentActiveTopic(s)?.projectId);
@@ -177,15 +152,9 @@ const PlusActions = memo(() => {
   ]);
 
   const showSearchIndicator = rawSearchMode === 'auto';
-  const showMemoryIndicator = isMemoryEnabled;
   const showLibraryIndicator = enableKnowledgeBase && enabledKnowledgeBases.length > 0;
-  const showModeIndicator = !!activeMode;
   const showProjectIndicator = !!effectiveProjectId || !!pendingProjectId;
   const activeProjectDisplay = currentProject ?? pendingProject;
-
-  const setActiveMode = async (mode: AgentMode | null) => {
-    await updateAgentChatConfig({ activeMode: mode });
-  };
 
   const projectChildren: ActionDropdownMenuItems = [
     ...projectList.map((p) => ({
@@ -228,27 +197,6 @@ const PlusActions = memo(() => {
         });
       },
     },
-  ];
-
-  const modeChildren: ActionDropdownMenuItems = [
-    // "No mode" option to clear active mode (null clears it through the store merge)
-    {
-      icon: !activeMode ? <Layers size={16} style={{ color: cssVar.colorInfo }} /> : Layers,
-      key: 'mode-none',
-      label: t('mode.none'),
-      onClick: async () => {
-        await setActiveMode(null);
-      },
-    },
-    { type: 'divider' },
-    ...MODES.map((mode) => ({
-      icon: activeMode === mode ? <Layers size={16} style={{ color: cssVar.colorInfo }} /> : Layers,
-      key: `mode-${mode}`,
-      label: t(`mode.${mode}` as any),
-      onClick: async () => {
-        await setActiveMode(mode);
-      },
-    })),
   ];
 
   const items: ActionDropdownMenuItems = [
@@ -322,22 +270,6 @@ const PlusActions = memo(() => {
       },
     },
     {
-      icon: isMemoryEnabled ? <Brain size={16} style={{ color: cssVar.colorInfo }} /> : Brain,
-      key: 'memory',
-      label: t('memory.title'),
-      onClick: async () => {
-        await updateAgentChatConfig({ memory: { enabled: !isMemoryEnabled } });
-      },
-    },
-    {
-      // Modes submenu — hover opens a side flyout with available modes
-      children: modeChildren,
-      icon: showModeIndicator ? <Layers size={16} style={{ color: cssVar.colorInfo }} /> : Layers,
-      key: 'modes',
-      label: t('mode.title'),
-    },
-    {
-      disabled: !supportToolUse,
       icon: Blocks,
       key: 'tools',
       label: tSetting('tools.title'),
@@ -345,18 +277,15 @@ const PlusActions = memo(() => {
         createSkillStoreModal();
       },
     },
-    ...(councilReady
-      ? [
-          {
-            icon: showCouncil ? <Gavel size={16} style={{ color: cssVar.colorInfo }} /> : Gavel,
-            key: 'model-council',
-            label: t('modelCouncil.title'),
-            onClick: () => {
-              setCouncilMode(!councilMode);
-            },
-          },
-        ]
-      : []),
+    {
+      disabled: !councilReady,
+      icon: showCouncil ? <Gavel size={16} style={{ color: cssVar.colorInfo }} /> : Gavel,
+      key: 'model-council',
+      label: t('modelCouncil.title'),
+      onClick: () => {
+        if (councilReady) setCouncilMode(!councilMode);
+      },
+    },
   ];
 
   return (
@@ -394,17 +323,6 @@ const PlusActions = memo(() => {
             }}
           />
         )}
-        {showMemoryIndicator && (
-          <Action
-            color={cssVar.colorInfo}
-            icon={Brain}
-            showTooltip={false}
-            title={t('memory.title')}
-            onClick={async () => {
-              await updateAgentChatConfig({ memory: { enabled: false } });
-            }}
-          />
-        )}
         {showLibraryIndicator && (
           <Action
             color={cssVar.colorInfo}
@@ -412,17 +330,6 @@ const PlusActions = memo(() => {
             showTooltip={false}
             title={t('knowledgeBase.title')}
             onClick={() => setLibraryOpen(true)}
-          />
-        )}
-        {showModeIndicator && (
-          <Action
-            color={cssVar.colorInfo}
-            icon={Layers}
-            showTooltip={false}
-            title={t(`mode.${activeMode}` as any)}
-            onClick={async () => {
-              await setActiveMode(null);
-            }}
           />
         )}
         {showProjectIndicator && (

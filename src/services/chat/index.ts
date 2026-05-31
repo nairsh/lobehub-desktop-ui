@@ -24,7 +24,6 @@ import {
   agentSelectors,
 } from '@/store/agent/selectors';
 import { aiProviderSelectors, getAiInfraStoreState } from '@/store/aiInfra';
-import { getChatStoreState } from '@/store/chat';
 import { getToolStoreState } from '@/store/tool';
 import {
   builtinToolSelectors,
@@ -101,7 +100,7 @@ class ChatService {
     enabledToolIds: string[] = [],
   ): string | undefined => {
     if (enabledToolIds.includes(AgentBuilderIdentifier)) {
-      return getChatStoreState().activeAgentId || targetAgentId || undefined;
+      return getAgentStoreState().activeAgentId || targetAgentId || undefined;
     }
 
     return targetAgentId || undefined;
@@ -149,7 +148,8 @@ class ChatService {
 
     // =================== 1.1 process user memories =================== //
 
-    const enableUserMemories = chatConfig.memory?.enabled === true;
+    const enableUserMemories =
+      chatConfig.memory?.enabled ?? settingsSelectors.memoryEnabled(getUserStoreState());
     const userMemorySettings = settingsSelectors.currentMemorySettings(getUserStoreState());
     const effectiveMemoryEffort =
       chatConfig.memory?.effort ?? userMemorySettings.effort ?? 'medium';
@@ -176,7 +176,7 @@ class ChatService {
     }
 
     if (isAgentBuilderEnabled) {
-      const activeAgentId = getChatStoreState().activeAgentId || '';
+      const activeAgentId = getAgentStoreState().activeAgentId || '';
       const baseContext =
         agentByIdSelectors.getAgentBuilderContextById(activeAgentId)(getAgentStoreState());
       const activeAgentConfig =

@@ -85,6 +85,15 @@ describe('BrowserWindowsCtr', () => {
     });
   });
 
+  describe('openFloatingChat', () => {
+    it('should show the main window and broadcast openFloatingChat', async () => {
+      await browserWindowsCtr.openFloatingChat();
+      expect(mockGetMainWindow).toHaveBeenCalled();
+      expect(mockShow).toHaveBeenCalled();
+      expect(mockBroadcast).toHaveBeenCalledWith('openFloatingChat');
+    });
+  });
+
   describe('openSettingsWindow', () => {
     it('should navigate to settings in main window with the specified path', async () => {
       const path = '/settings/common';

@@ -51,4 +51,10 @@ export interface NavigationBroadcastEvents {
    * Ask renderer to navigate within the SPA without reloading the whole page.
    */
   navigate: (data: { path: string; replace?: boolean }) => void;
+
+  /**
+   * Ask renderer to open and focus the compact floating chat overlay.
+   * Triggered by the desktop global floating-chat shortcut.
+   */
+  openFloatingChat: () => void;
 }

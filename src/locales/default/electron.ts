@@ -33,6 +33,8 @@ export default {
   'tab.closeLeftTabs': 'Close Tabs to the Left',
   'tab.closeOtherTabs': 'Close Other Tabs',
   'tab.closeRightTabs': 'Close Tabs to the Right',
+  'tab.expandFloatingChat': 'Open Full Chat',
+  'tab.floatingChat': 'Floating Chat',
   'tab.newTab': 'New Tab',
   'tab.running': 'Agent is running',
   'tab.unread': 'New message',

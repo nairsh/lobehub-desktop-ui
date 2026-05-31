@@ -31,6 +31,7 @@ vi.mock('@/shortcuts', () => ({
   DEFAULT_SHORTCUTS_CONFIG: {
     showApp: 'Control+E',
     openSettings: 'CommandOrControl+,',
+    openFloatingChat: 'CommandOrControl+Shift+K',
   },
 }));
 
@@ -59,8 +60,10 @@ describe('ShortcutManager', () => {
     mockShortcutMethodMap = new Map();
     const showAppMethod = vi.fn();
     const openSettingsMethod = vi.fn();
+    const openFloatingChatMethod = vi.fn();
     mockShortcutMethodMap.set('showApp', showAppMethod);
     mockShortcutMethodMap.set('openSettings', openSettingsMethod);
+    mockShortcutMethodMap.set('openFloatingChat', openFloatingChatMethod);
 
     // Mock App
     mockApp = {
@@ -78,9 +81,10 @@ describe('ShortcutManager', () => {
     });
 
     it('should populate shortcuts map from app shortcut method map', () => {
-      expect(shortcutManager['shortcuts'].size).toBe(2);
+      expect(shortcutManager['shortcuts'].size).toBe(3);
       expect(shortcutManager['shortcuts'].has('showApp')).toBe(true);
       expect(shortcutManager['shortcuts'].has('openSettings')).toBe(true);
+      expect(shortcutManager['shortcuts'].has('openFloatingChat')).toBe(true);
     });
   });
 
@@ -118,6 +122,10 @@ describe('ShortcutManager', () => {
       expect(globalShortcut.register).toHaveBeenCalledWith('Control+E', expect.any(Function));
       expect(globalShortcut.register).toHaveBeenCalledWith(
         'CommandOrControl+,',
+        expect.any(Function),
+      );
+      expect(globalShortcut.register).toHaveBeenCalledWith(
+        'CommandOrControl+Shift+K',
         expect.any(Function),
       );
     });
@@ -516,7 +524,7 @@ describe('ShortcutManager', () => {
       expect(config.openSettings).toBe('Ctrl+Shift+P');
       expect(config.invalidKey).toBeUndefined();
 
-      expect(globalShortcut.register).toHaveBeenCalledTimes(2);
+      expect(globalShortcut.register).toHaveBeenCalledTimes(3);
       expect(mockStoreManager.set).toHaveBeenCalledWith('shortcuts', config);
     });
 

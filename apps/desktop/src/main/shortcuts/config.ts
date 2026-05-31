@@ -3,6 +3,7 @@
  */
 export const ShortcutActionEnum = {
   openSettings: 'openSettings',
+  openFloatingChat: 'openFloatingChat',
   /**
    * Show/hide main window
    */
@@ -15,6 +16,7 @@ export type ShortcutActionType = (typeof ShortcutActionEnum)[keyof typeof Shortc
  * Default shortcut configuration
  */
 export const DEFAULT_SHORTCUTS_CONFIG: Record<ShortcutActionType, string> = {
-  [ShortcutActionEnum.showApp]: 'Control+E',
   [ShortcutActionEnum.openSettings]: 'CommandOrControl+,',
+  [ShortcutActionEnum.openFloatingChat]: 'CommandOrControl+Shift+K',
+  [ShortcutActionEnum.showApp]: 'Control+E',
 };

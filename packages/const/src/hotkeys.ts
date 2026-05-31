@@ -53,6 +53,12 @@ export const HOTKEYS_REGISTRATION: HotkeyRegistration = [
   },
   {
     group: HotkeyGroupEnum.Essential,
+    id: HotkeyEnum.NewChatTab,
+    keys: combineKeys([KeyEnum.Mod, 't']),
+    scopes: [HotkeyScopeEnum.Global],
+  },
+  {
+    group: HotkeyGroupEnum.Essential,
     id: HotkeyEnum.OpenHotkeyHelper,
     keys: combineKeys([KeyEnum.Ctrl, KeyEnum.Shift, KeyEnum.QuestionMark]),
     scopes: [HotkeyScopeEnum.Global],
@@ -133,5 +139,9 @@ export const DESKTOP_HOTKEYS_REGISTRATION: DesktopHotkeyRegistration = [
     id: DesktopHotkeyEnum.OpenSettings,
     keys: combineKeys([KeyEnum.Mod, KeyEnum.Comma]),
     nonEditable: true,
+  },
+  {
+    id: DesktopHotkeyEnum.OpenFloatingChat,
+    keys: combineKeys([KeyEnum.Mod, KeyEnum.Shift, 'k']),
   },
 ];

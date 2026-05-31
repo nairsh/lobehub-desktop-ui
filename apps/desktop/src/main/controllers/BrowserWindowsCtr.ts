@@ -20,6 +20,13 @@ export default class BrowserWindowsCtr extends ControllerModule {
     mainWindow.toggleVisible();
   }
 
+  @shortcut('openFloatingChat')
+  async openFloatingChat() {
+    const mainWindow = this.app.browserManager.getMainWindow();
+    mainWindow.show();
+    mainWindow.broadcast('openFloatingChat');
+  }
+
   @IpcMethod()
   async openSettingsWindow(options?: string | OpenSettingsWindowOptions) {
     const normalizedOptions: OpenSettingsWindowOptions =
