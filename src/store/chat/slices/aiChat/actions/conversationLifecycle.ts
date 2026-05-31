@@ -45,6 +45,8 @@ import {
   setActiveProjectSystemPrompt,
 } from '@/store/project/projectContext';
 import { type StoreSetter } from '@/store/types';
+import { useUserStore } from '@/store/user';
+import { settingsSelectors } from '@/store/user/selectors';
 import { useUserMemoryStore } from '@/store/userMemory';
 import type { ModelCouncilSettings } from '@/types/modelCouncil';
 
@@ -111,6 +113,11 @@ const isAbortError = (error: unknown, abortController?: AbortController) =>
 
 const createAbortError = () =>
   Object.assign(new Error('Compression cancelled'), { name: 'AbortError' });
+
+const getCurrentModelCouncilSettings = () =>
+  (settingsSelectors.currentSettings(useUserStore.getState()) as any).modelCouncil as
+    | ModelCouncilSettings
+    | undefined;
 
 export class ConversationLifecycleActionImpl {
   readonly #get: () => ChatStore;
@@ -396,6 +403,7 @@ export class ConversationLifecycleActionImpl {
       let data: any;
       try {
         const topicId = operationContext.topicId;
+        const councilOverride = overrideCouncil || getCurrentModelCouncilSettings();
 
         data = await modelCouncilService.start(
           {
@@ -409,7 +417,7 @@ export class ConversationLifecycleActionImpl {
                   title: message.slice(0, 20) || t('defaultTitle', { ns: 'topic' }),
                 }
               : undefined,
-            overrideCouncil,
+            overrideCouncil: councilOverride,
             pageSelections,
             parentId,
             prompt: message,
@@ -418,6 +426,15 @@ export class ConversationLifecycleActionImpl {
           },
           abortController,
         );
+
+        const requestedCouncilCount = councilOverride?.councilModels?.length || 0;
+        const acceptedCouncilCount = data.settingsSnapshot?.councilModels?.length || 0;
+
+        if (requestedCouncilCount > 0 && acceptedCouncilCount !== requestedCouncilCount) {
+          throw new Error(
+            `Model Council expected ${requestedCouncilCount} council models, but the backend accepted ${acceptedCouncilCount}. Re-save Model Council settings or check unavailable providers.`,
+          );
+        }
 
         const finalContext = {
           ...operationContext,
