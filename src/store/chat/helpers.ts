@@ -19,6 +19,11 @@ export const getMessageById = (
       const member = (message as any).members.find((m: UIChatMessage) => m.id === id);
       if (member) return member;
     }
+
+    if (message.role === 'compareGroup' && message.children) {
+      const child = message.children.find((m) => m.id === id);
+      if (child) return child as UIChatMessage;
+    }
   }
 
   return undefined;

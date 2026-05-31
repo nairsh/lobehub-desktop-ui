@@ -196,7 +196,7 @@ const ChatInput = memo<ChatInputProps>(
 
     // Send handler - gets message, clears editor immediately, then sends
     const handleSend: SendButtonHandler = useCallback(
-      async ({ clearContent, getMarkdownContent, getEditorData }) => {
+      async ({ clearContent, councilMode, getMarkdownContent, getEditorData }) => {
         // Get instant values from stores at trigger time
         const fileStore = useFileStore.getState();
         const currentFileList = fileChatSelectors.chatUploadFileList(fileStore);
@@ -232,7 +232,7 @@ const ChatInput = memo<ChatInputProps>(
           files: currentFileList,
           message,
           pageSelections,
-          useModelCouncil: councilReady,
+          useModelCouncil: councilMode && councilReady,
         });
       },
       [sendMessage, councilReady],

@@ -1,25 +1,39 @@
 'use client';
 
 import type { AssistantContentBlock } from '@lobechat/types';
-import { Flexbox, Icon, Text } from '@lobehub/ui';
+import { ModelIcon } from '@lobehub/icons';
+import { Flexbox, Icon, Markdown, Text } from '@lobehub/ui';
 import { createStyles } from 'antd-style';
 import { AlertCircle, CheckCircle2, ChevronRight, Loader2 } from 'lucide-react';
-import { memo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
+import { useEnabledChatModels } from '@/hooks/useEnabledChatModels';
+import type { ModelCouncilModelConfig, ModelCouncilSettings } from '@/types/modelCouncil';
 
 import { dataSelectors, useConversationStore } from '../../store';
 
 const useStyles = createStyles(({ css, token }) => ({
   card: css`
-    padding: 16px;
+    padding-block: 14px;
+    padding-inline: 16px;
     border: 1px solid ${token.colorBorderSecondary};
     border-radius: 8px;
+
     background: ${token.colorBgContainer};
   `,
   content: css`
     line-height: 1.7;
     color: ${token.colorTextSecondary};
-    white-space: pre-wrap;
+  `,
+  contentPreview: css`
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+
+    line-height: 1.6;
+    color: ${token.colorTextSecondary};
   `,
   expandButton: css`
     cursor: pointer;
@@ -39,6 +53,14 @@ const useStyles = createStyles(({ css, token }) => ({
       color: ${token.colorText};
     }
   `,
+  iconCell: css`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 18px;
+    height: 18px;
+  `,
   dash: css`
     padding: 16px;
     border: 1px dashed ${token.colorBorder};
@@ -46,12 +68,36 @@ const useStyles = createStyles(({ css, token }) => ({
     color: ${token.colorTextSecondary};
   `,
   pill: css`
+    max-width: min(420px, 70vw);
     padding-block: 4px;
     padding-inline: 10px;
     border: 1px solid ${token.colorBorderSecondary};
     border-radius: 999px;
 
     background: ${token.colorBgContainer};
+  `,
+  response: css`
+    margin-block-start: 4px;
+  `,
+  responseHeader: css`
+    min-height: 28px;
+  `,
+  stackIcon: css`
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 24px;
+    height: 24px;
+    border: 1px solid ${token.colorBgContainer};
+    border-radius: 50%;
+
+    background: ${token.colorBgElevated};
+
+    &:not(:first-child) {
+      margin-inline-start: -8px;
+    }
   `,
 }));
 
@@ -60,38 +106,110 @@ interface ModelCouncilMessageProps {
   index: number;
 }
 
+const modelKey = (item: Pick<ModelCouncilModelConfig, 'provider' | 'model'>) =>
+  `${item.provider}/${item.model}`;
+
+const getChildModel = (child: AssistantContentBlock) =>
+  child as AssistantContentBlock & {
+    error?: { message?: string };
+    metadata?: Record<string, any>;
+    model?: string | null;
+    provider?: string | null;
+  };
+
+const isFailedStatus = (status?: string) =>
+  status === 'failed' || status === 'timeout' || status === 'canceled';
+
+const isTerminalStatus = (status?: string) => status === 'completed' || isFailedStatus(status);
+
 const ModelCouncilMessage = memo<ModelCouncilMessageProps>(({ id }) => {
   const { t } = useTranslation('chat');
   const { styles, theme } = useStyles();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const message = useConversationStore(dataSelectors.getDisplayMessageById(id));
-  const children = message?.children || [];
+  const enabledModels = useEnabledChatModels();
+  const children = (message?.children || []) as AssistantContentBlock[];
   const metadata = (message?.metadata as any) || {};
+  const settingsSnapshot = metadata.settingsSnapshot as ModelCouncilSettings | undefined;
   const groupStatus = metadata.status as string | undefined;
-  const isJudging = groupStatus === 'judging' || groupStatus === 'running';
+
+  const modelDisplayMap = useMemo(() => {
+    const map = new Map<string, string>();
+
+    for (const provider of enabledModels) {
+      for (const model of provider.children) {
+        map.set(
+          modelKey({ model: model.id, provider: provider.id }),
+          (model as any).displayName || model.id,
+        );
+      }
+    }
+
+    for (const model of settingsSnapshot?.councilModels || []) {
+      if (model.label) map.set(modelKey(model), model.label);
+    }
+
+    const judge = settingsSnapshot?.judgeModel;
+    if (judge?.label) map.set(modelKey(judge), judge.label);
+
+    return map;
+  }, [enabledModels, settingsSnapshot]);
 
   if (!message) return null;
 
+  const memberChildren = children.filter((child) => {
+    const role = (getChildModel(child).metadata?.modelCouncil || {}).role;
+    return role !== 'judge';
+  });
+  const judgeChild = children.find((child) => {
+    const role = (getChildModel(child).metadata?.modelCouncil || {}).role;
+    return role === 'judge';
+  });
+  const hasRunningMember = memberChildren.some((child) => {
+    const childModel = getChildModel(child);
+    const status = childModel.error
+      ? 'failed'
+      : ((childModel.metadata?.modelCouncil || {}) as { status?: string }).status || 'waiting';
+
+    return !isTerminalStatus(status);
+  });
+  const judgeStatus = judgeChild
+    ? ((getChildModel(judgeChild).metadata?.modelCouncil || {}) as { status?: string }).status ||
+      'waiting'
+    : undefined;
+  const isJudging =
+    !!judgeChild &&
+    !isTerminalStatus(judgeStatus) &&
+    (groupStatus === 'judging' || !hasRunningMember);
+
   return (
-    <Flexbox gap={12} style={{ marginInline: 'auto', maxWidth: 720, width: '100%' }}>
-      <Text type={'secondary'}>{t('modelCouncil.thinking')}</Text>
-      {children.map((child: AssistantContentBlock) => {
-        const childMeta = ((child.metadata as any)?.modelCouncil || {}) as { status?: string };
-        const status = child.error ? 'failed' : childMeta.status || 'running';
+    <Flexbox gap={12} style={{ marginInline: 'auto', maxWidth: 840, width: '100%' }}>
+      {memberChildren.map((child: AssistantContentBlock) => {
+        const childModel = getChildModel(child);
+        const childMeta = (childModel.metadata?.modelCouncil || {}) as { status?: string };
+        const status = childModel.error ? 'failed' : childMeta.status || 'running';
         const isExpanded = expanded[child.id];
-        const childModel = child as AssistantContentBlock & {
-          model?: string | null;
-          provider?: string | null;
-        };
-        const modelLabel = childModel.model || childModel.provider || t('modelCouncil.member');
+        const modelId = childModel.model || '';
+        const providerId = childModel.provider || '';
+        const modelLabel =
+          modelDisplayMap.get(modelKey({ model: modelId, provider: providerId })) ||
+          modelId ||
+          providerId ||
+          t('modelCouncil.member');
         const completed = status === 'completed';
-        const failed = status === 'failed' || status === 'timeout' || status === 'canceled';
+        const failed = isFailedStatus(status);
 
         return (
           <Flexbox className={styles.card} gap={12} key={child.id}>
             <Flexbox horizontal align={'center'} justify={'space-between'}>
               <Flexbox horizontal align={'center'} className={styles.pill} gap={8}>
-                <Text strong>{modelLabel}</Text>
+                <span className={styles.iconCell}>
+                  <ModelIcon model={modelId || modelLabel} size={16} type={'color'} />
+                </span>
+                <Text ellipsis strong>
+                  {modelLabel}
+                  {!completed && !failed ? ` ${t('modelCouncil.status.running')}` : ''}
+                </Text>
               </Flexbox>
               <button
                 className={styles.expandButton}
@@ -114,20 +232,48 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(({ id }) => {
               )}
               <Text type={'secondary'}>
                 {failed
-                  ? child.error?.message || t('modelCouncil.status.failed')
+                  ? childModel.error?.message || t('modelCouncil.status.failed')
                   : completed
                     ? t('modelCouncil.status.completed')
                     : t('modelCouncil.status.running')}
               </Text>
             </Flexbox>
-            {isExpanded && child.content && <div className={styles.content}>{child.content}</div>}
+            {isExpanded && child.content && (
+              <div className={styles.content}>
+                <Markdown variant={'chat'}>{child.content}</Markdown>
+              </div>
+            )}
+            {!isExpanded && child.content && (
+              <div className={styles.contentPreview}>{child.content}</div>
+            )}
           </Flexbox>
         );
       })}
-      {isJudging && (
+      {(hasRunningMember || isJudging) && (
         <Flexbox horizontal align={'center'} className={styles.dash} gap={8}>
           <Icon spin icon={Loader2} size={16} />
-          <Text strong>{t('modelCouncil.synthesizing')}</Text>
+          <Text strong>
+            {hasRunningMember ? t('modelCouncil.thinking') : t('modelCouncil.synthesizing')}
+          </Text>
+        </Flexbox>
+      )}
+      {judgeChild?.content && (
+        <Flexbox className={styles.response} gap={8}>
+          <Flexbox horizontal align={'center'} className={styles.responseHeader}>
+            {memberChildren.map((child) => {
+              const childModel = getChildModel(child);
+              return (
+                <span className={styles.stackIcon} key={child.id}>
+                  <ModelIcon
+                    model={childModel.model || childModel.provider || ''}
+                    size={17}
+                    type={'color'}
+                  />
+                </span>
+              );
+            })}
+          </Flexbox>
+          <Markdown variant={'chat'}>{judgeChild.content}</Markdown>
         </Flexbox>
       )}
     </Flexbox>

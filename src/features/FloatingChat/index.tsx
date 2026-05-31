@@ -15,6 +15,7 @@ import { ChatInputProvider } from '@/features/ChatInput';
 import { ActionBarContext } from '@/features/ChatInput/ActionBar/context';
 import ModelAction from '@/features/ChatInput/ActionBar/Model';
 import PlusActions from '@/features/ChatInput/ActionBar/PlusActions';
+import { useChatInputStore } from '@/features/ChatInput/store';
 import { ChatList, ConversationProvider, useConversationStore } from '@/features/Conversation';
 import { isEditableShortcutTarget, isFloatingChatEvent } from '@/hooks/useHotkeys/shortcutGuards';
 import { useOperationState } from '@/hooks/useOperationState';
@@ -190,13 +191,13 @@ const useStyles = createStyles(({ css, token }) => ({
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
-const FloatingComposer = memo<{
-  agentId: string;
+const FloatingComposerBody = memo<{
   compact: boolean;
-}>(({ agentId, compact }) => {
+}>(({ compact }) => {
   const { styles } = useStyles();
   const { t } = useTranslation('chat');
   const [value, setValue] = useState('');
+  const councilMode = useChatInputStore((s) => s.councilMode);
   const [sendMessage, stopGenerating, operationState] = useConversationStore((s) => [
     s.sendMessage,
     s.stopGenerating,
@@ -223,9 +224,58 @@ const FloatingComposer = memo<{
     await sendMessage({
       message,
       skipTopicSwitch: true,
-      useModelCouncil: councilReady,
+      useModelCouncil: councilMode && councilReady,
     });
-  }, [councilReady, isGenerating, sendMessage, value]);
+  }, [councilMode, councilReady, isGenerating, sendMessage, value]);
+
+  return (
+    <div className={styles.inputShell}>
+      <ActionBarContext value={{ actionSize: { blockSize: 28, size: 14 }, borderRadius: 999 }}>
+        <PlusActions />
+      </ActionBarContext>
+      <textarea
+        className={styles.textarea}
+        placeholder={t('sendPlaceholder')}
+        rows={1}
+        value={value}
+        onChange={(event) => setValue(event.currentTarget.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+            event.preventDefault();
+            void handleSend();
+          }
+        }}
+      />
+      {!compact && <ModelAction />}
+      <button
+        className={styles.sendButton}
+        disabled={disabled}
+        title={isGenerating ? t('input.stop') : t('input.send')}
+        onClick={() => {
+          if (isGenerating) {
+            stopGenerating();
+            return;
+          }
+          void handleSend();
+        }}
+      >
+        <SendHorizontal size={16} />
+      </button>
+    </div>
+  );
+});
+
+FloatingComposerBody.displayName = 'FloatingComposerBody';
+
+const FloatingComposer = memo<{
+  agentId: string;
+  compact: boolean;
+}>(({ agentId, compact }) => {
+  const [stopGenerating, operationState] = useConversationStore((s) => [
+    s.stopGenerating,
+    s.operationState,
+  ]);
+  const isGenerating = Boolean(operationState?.isInputLoading || operationState?.isAIGenerating);
 
   return (
     <ChatInputProvider
@@ -235,45 +285,13 @@ const FloatingComposer = memo<{
       leftActions={['plusActions']}
       rightActions={['model']}
       sendButtonProps={{
-        disabled,
+        disabled: isGenerating,
         generating: isGenerating,
         onStop: () => stopGenerating(),
         shape: 'round',
       }}
     >
-      <div className={styles.inputShell}>
-        <ActionBarContext value={{ actionSize: { blockSize: 28, size: 14 }, borderRadius: 999 }}>
-          <PlusActions />
-        </ActionBarContext>
-        <textarea
-          className={styles.textarea}
-          placeholder={t('sendPlaceholder')}
-          rows={1}
-          value={value}
-          onChange={(event) => setValue(event.currentTarget.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
-              event.preventDefault();
-              void handleSend();
-            }
-          }}
-        />
-        {!compact && <ModelAction />}
-        <button
-          className={styles.sendButton}
-          disabled={disabled}
-          title={isGenerating ? t('input.stop') : t('input.send')}
-          onClick={() => {
-            if (isGenerating) {
-              stopGenerating();
-              return;
-            }
-            void handleSend();
-          }}
-        >
-          <SendHorizontal size={16} />
-        </button>
-      </div>
+      <FloatingComposerBody compact={compact} />
     </ChatInputProvider>
   );
 });

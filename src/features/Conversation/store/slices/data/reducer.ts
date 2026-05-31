@@ -119,7 +119,22 @@ export const messagesReducer = (
     case 'updateMessage': {
       const { id, value } = payload;
       const index = state.findIndex((m) => m.id === id);
-      if (index < 0) return state;
+      if (index < 0) {
+        const groupIndex = state.findIndex((m) => m.children?.some((child) => child.id === id));
+        if (groupIndex < 0) return state;
+
+        return produce(state, (draft) => {
+          const children = draft[groupIndex].children;
+          const childIndex = children?.findIndex((child) => child.id === id) ?? -1;
+          if (!children || childIndex < 0) return;
+
+          children[childIndex] = merge(children[childIndex] as UIChatMessage, {
+            ...value,
+            updatedAt: Date.now(),
+          }) as any;
+          draft[groupIndex].updatedAt = Date.now();
+        });
+      }
 
       return produce(state, (draft) => {
         draft[index] = merge(draft[index], { ...value, updatedAt: Date.now() });
@@ -145,7 +160,21 @@ export const messagesReducer = (
     case 'updateMessageMetadata': {
       const { id, value } = payload;
       const index = state.findIndex((m) => m.id === id);
-      if (index < 0) return state;
+      if (index < 0) {
+        const groupIndex = state.findIndex((m) => m.children?.some((child) => child.id === id));
+        if (groupIndex < 0) return state;
+
+        return produce(state, (draft) => {
+          const children = draft[groupIndex].children;
+          const childIndex = children?.findIndex((child) => child.id === id) ?? -1;
+          if (!children || childIndex < 0) return;
+
+          const child = children[childIndex] as UIChatMessage;
+          child.metadata = merge(child.metadata, value);
+          child.updatedAt = Date.now();
+          draft[groupIndex].updatedAt = Date.now();
+        });
+      }
 
       return produce(state, (draft) => {
         const message = draft[index];

@@ -1,18 +1,17 @@
 'use client';
 
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import PageTitle from '@/components/PageTitle';
-import { useAgentStore } from '@/store/agent';
-import { agentSelectors } from '@/store/agent/selectors';
 import { useChatStore } from '@/store/chat';
 import { topicSelectors } from '@/store/chat/selectors';
 
 const Title = memo(() => {
-  const agentTitle = useAgentStore(agentSelectors.currentAgentTitle);
+  const { t } = useTranslation('electron');
 
   const topicTitle = useChatStore((s) => topicSelectors.currentActiveTopic(s)?.title);
-  return <PageTitle title={[topicTitle, agentTitle].filter(Boolean).join(' · ')} />;
+  return <PageTitle title={topicTitle || t('navigation.chat')} />;
 });
 
 export default Title;

@@ -528,6 +528,31 @@ export class ConversationLifecycleActionImpl {
                   },
                   { operationId },
                 );
+                if (eventData.groupId) {
+                  this.#get().internal_dispatchMessage(
+                    {
+                      id: eventData.groupId,
+                      type: 'updateMessageGroupMetadata',
+                      value: { status: 'judging' },
+                    },
+                    { operationId },
+                  );
+                }
+                return;
+              }
+              case 'model_council_end': {
+                if (!eventData.groupId) return;
+                this.#get().internal_dispatchMessage(
+                  {
+                    id: eventData.groupId,
+                    type: 'updateMessageGroupMetadata',
+                    value: {
+                      members: eventData.members,
+                      status: eventData.status || 'completed',
+                    },
+                  },
+                  { operationId },
+                );
                 return;
               }
             }

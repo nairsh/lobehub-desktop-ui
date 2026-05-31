@@ -82,6 +82,12 @@ interface UpdateMessageMetadata {
   value: Partial<UIChatMessage['metadata']>;
 }
 
+interface UpdateMessageGroupMetadata {
+  id: string;
+  type: 'updateMessageGroupMetadata';
+  value: Record<string, unknown>;
+}
+
 export type MessageDispatch =
   | CreateMessage
   | UpdateMessage
@@ -89,6 +95,7 @@ export type MessageDispatch =
   | UpdatePluginState
   | UpdateMessageExtra
   | UpdateMessageMetadata
+  | UpdateMessageGroupMetadata
   | DeleteMessage
   | UpdateMessagePlugin
   | UpdateMessageTools
@@ -108,7 +115,18 @@ export const messagesReducer = (
         const index = draftState.findIndex((i) => i.id === id);
         if (index >= 0) {
           draftState[index] = merge(draftState[index], { ...value, updatedAt: Date.now() });
+          return;
         }
+
+        const group = draftState.find((message) =>
+          message.children?.some((child) => child.id === id),
+        );
+        const child = group?.children?.find((item) => item.id === id);
+        if (!group || !child) return;
+
+        const childMessage = child as UIChatMessage;
+        Object.assign(childMessage, merge(childMessage, { ...value, updatedAt: Date.now() }));
+        group.updatedAt = Date.now();
       });
     }
 
@@ -129,6 +147,27 @@ export const messagesReducer = (
     }
 
     case 'updateMessageMetadata': {
+      return produce(state, (draftState) => {
+        const { id, value } = payload;
+        const message = draftState.find((i) => i.id === id);
+        if (!message) {
+          const group = draftState.find((item) => item.children?.some((child) => child.id === id));
+          const child = group?.children?.find((item) => item.id === id);
+          if (!group || !child) return;
+
+          const childMessage = child as UIChatMessage;
+          childMessage.metadata = merge(childMessage.metadata, value);
+          childMessage.updatedAt = Date.now();
+          group.updatedAt = Date.now();
+          return;
+        }
+
+        message.metadata = merge(message.metadata, value);
+        message.updatedAt = Date.now();
+      });
+    }
+
+    case 'updateMessageGroupMetadata': {
       return produce(state, (draftState) => {
         const { id, value } = payload;
         const message = draftState.find((i) => i.id === id);

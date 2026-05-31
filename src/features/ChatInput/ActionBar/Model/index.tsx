@@ -20,6 +20,7 @@ import type { ModelCouncilSettings } from '@/types/modelCouncil';
 
 import { useAgentId } from '../../hooks/useAgentId';
 import { useUpdateAgentConfig } from '../../hooks/useUpdateAgentConfig';
+import { useChatInputStore } from '../../store';
 import Action from '../components/Action';
 
 const styles = createStaticStyles(({ css, cssVar }) => ({
@@ -85,6 +86,7 @@ const ModelSwitch = memo(() => {
         | ModelCouncilSettings
         | undefined,
   );
+  const councilMode = useChatInputStore((s) => s.councilMode);
 
   const agentId = useAgentId();
   const [chatConfig, model, provider, updateAgentConfigById] = useAgentStore((s) => [
@@ -109,6 +111,7 @@ const ModelSwitch = memo(() => {
   const councilModels = councilSettings?.councilModels ?? [];
   const councilReady =
     !!councilSettings?.enabled && councilModels.length >= 2 && !!councilSettings?.judgeModel;
+  const councilActive = councilMode && councilReady;
 
   const handleModelChange = useCallback(
     async (params: { model: string; provider: string }) => {
@@ -143,7 +146,7 @@ const ModelSwitch = memo(() => {
           height={36}
           paddingInline={8}
         >
-          {councilReady ? (
+          {councilActive ? (
             <div className={styles.councilStack}>
               {councilModels.map((item) => (
                 <span className={styles.councilIcon} key={`${item.provider}/${item.model}`}>
@@ -165,7 +168,7 @@ const ModelSwitch = memo(() => {
               </Text>
             </>
           )}
-          {!councilReady && reasoning && reasoning.value !== 'none' && (
+          {!councilActive && reasoning && reasoning.value !== 'none' && (
             <span className={styles.reasoningLabel}>{reasoning.label}</span>
           )}
           <ChevronDown size={12} style={{ color: cssVar.colorTextTertiary, flexShrink: 0 }} />

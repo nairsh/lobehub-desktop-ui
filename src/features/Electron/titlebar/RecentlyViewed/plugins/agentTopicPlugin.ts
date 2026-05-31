@@ -90,12 +90,7 @@ export const agentTopicPlugin: RecentlyViewedPlugin<'agent-topic'> = {
     const topicExists = topic !== undefined;
     const hasStoreData = agentExists && topicExists;
 
-    // Use topic title if available, otherwise fall back to agent title, then cached
-    const title =
-      topic?.title ||
-      agentMeta?.title ||
-      cached?.title ||
-      ctx.t('navigation.chat', { ns: 'electron' });
+    const title = topic?.title || cached?.title || ctx.t('navigation.chat', { ns: 'electron' });
 
     return {
       avatar: agentMeta?.avatar ?? cached?.avatar,

@@ -24,9 +24,10 @@ export const getCachedDataForReference = (reference: PageReference): CachedPageD
       const meta = agentSelectors.getAgentMetaById(agentId)(useAgentStore.getState());
       if (!meta || Object.keys(meta).length === 0) return undefined;
 
-      let title = meta.title;
+      let title = reference.type === 'agent' ? '' : meta.title;
       if (reference.type === 'agent-topic' && 'topicId' in reference.params) {
         const topicId = reference.params.topicId;
+        title = '';
         const topicDataMap = useChatStore.getState().topicDataMap;
         for (const data of Object.values(topicDataMap)) {
           const topic = data.items?.find((t) => t.id === topicId);

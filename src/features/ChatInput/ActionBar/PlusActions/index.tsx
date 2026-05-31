@@ -82,23 +82,6 @@ const hotArea = css`
   }
 `;
 
-const activePill = css`
-  cursor: pointer;
-  user-select: none;
-
-  height: 28px;
-  padding-block: 0;
-  padding-inline: 8px;
-  border: 1px solid ${cssVar.colorInfoBorder};
-  border-radius: 999px;
-
-  font-size: 12px;
-  line-height: 1;
-  color: ${cssVar.colorInfo};
-
-  background: ${cssVar.colorInfoBg};
-`;
-
 const PlusActions = memo(() => {
   const { t } = useTranslation('chat');
   const { t: tSetting } = useTranslation('setting');
@@ -362,18 +345,13 @@ const PlusActions = memo(() => {
           />
         )}
         {councilMode && councilReady && (
-          <Flexbox
-            horizontal
-            align={'center'}
-            className={activePill}
-            gap={4}
-            role="button"
+          <Action
+            color={cssVar.colorInfo}
+            icon={Gavel}
+            showTooltip={false}
             title={t('modelCouncil.title')}
             onClick={() => setCouncilMode(false)}
-          >
-            <Gavel size={13} />
-            {t('modelCouncil.title')}
-          </Flexbox>
+          />
         )}
       </Flexbox>
       {enableKnowledgeBase && <AttachKnowledgeModal open={libraryOpen} setOpen={setLibraryOpen} />}

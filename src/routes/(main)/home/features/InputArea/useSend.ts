@@ -32,7 +32,7 @@ export const useSend = () => {
     !!councilSettings?.judgeModel;
 
   const send = useCallback<SendButtonHandler>(
-    async ({ getEditorData }) => {
+    async ({ councilMode, getEditorData }) => {
       const { inputMessage, mainInputEditor } = useChatStore.getState();
       const editorData = getEditorData?.() ?? mainInputEditor?.getJSONState();
       const fileList = fileChatSelectors.chatUploadFileList(useFileStore.getState());
@@ -75,7 +75,7 @@ export const useSend = () => {
               editorData,
               files: fileList,
               message: inputMessage,
-              useModelCouncil: councilReady,
+              useModelCouncil: councilMode && councilReady,
             });
 
             router.push(SESSION_CHAT_URL(inboxAgentId, false));
