@@ -121,9 +121,10 @@ export default {
   'modelCouncil.settings.judge.desc':
     'This model reads the council answers and writes the final response.',
   'modelCouncil.settings.judge.title': 'Judge model',
-  'modelCouncil.settings.maxModels.desc': 'Server guard is capped at 6 models per council run.',
-  'modelCouncil.settings.maxModels.title': 'Default council size',
+  'modelCouncil.settings.models.add': 'Add',
   'modelCouncil.settings.models.desc': '{{count}} of {{max}} models selected.',
+  'modelCouncil.settings.models.placeholder': 'Select a model',
+  'modelCouncil.settings.models.remove': 'Remove model',
   'modelCouncil.settings.models.title': 'Council models',
   'modelCouncil.settings.title': 'Model Council',
   'agentInfoDescription.basic.avatar': 'Avatar',

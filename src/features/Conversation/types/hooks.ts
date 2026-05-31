@@ -53,6 +53,8 @@ export interface ConversationHooks {
     assistantMessageId: string;
     /** The created thread ID (if a new thread was created) */
     createdThreadId?: string;
+    /** The topic ID used for this message, including a newly created topic. */
+    topicId?: string;
     /** The created user message ID */
     userMessageId: string;
   }) => Promise<void>;

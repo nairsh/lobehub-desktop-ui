@@ -14,8 +14,9 @@ import { useAgentStore } from '@/store/agent';
 import { agentByIdSelectors, chatConfigByIdSelectors } from '@/store/agent/selectors';
 import { aiModelSelectors, useAiInfraStore } from '@/store/aiInfra';
 import { useUserStore } from '@/store/user';
-import { userGeneralSettingsSelectors } from '@/store/user/selectors';
+import { settingsSelectors, userGeneralSettingsSelectors } from '@/store/user/selectors';
 import type { LobeAgentChatConfig } from '@/types/agent';
+import type { ModelCouncilSettings } from '@/types/modelCouncil';
 
 import { useAgentId } from '../../hooks/useAgentId';
 import { useUpdateAgentConfig } from '../../hooks/useUpdateAgentConfig';
@@ -51,11 +52,39 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
     font-weight: 500;
     color: ${cssVar.colorTextTertiary};
   `,
+  councilIcon: css`
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 22px;
+    height: 22px;
+    border: 1px solid ${cssVar.colorBgContainer};
+    border-radius: 50%;
+
+    background: ${cssVar.colorBgElevated};
+
+    &:not(:first-child) {
+      margin-inline-start: -7px;
+    }
+  `,
+  councilStack: css`
+    display: flex;
+    align-items: center;
+    padding-inline: 2px;
+  `,
 }));
 
 const ModelSwitch = memo(() => {
   const { t } = useTranslation('chat');
   const isDevMode = useUserStore((s) => userGeneralSettingsSelectors.config(s).isDevMode);
+  const councilSettings = useUserStore(
+    (s) =>
+      (settingsSelectors.currentSettings(s) as any).modelCouncil as
+        | ModelCouncilSettings
+        | undefined,
+  );
 
   const agentId = useAgentId();
   const [chatConfig, model, provider, updateAgentConfigById] = useAgentStore((s) => [
@@ -77,6 +106,9 @@ const ModelSwitch = memo(() => {
     modelCard?.displayName ?? (model.includes('/') ? model.split('/').at(-1)! : model);
 
   const showExtendParams = isDevMode && isModelHasExtendParams;
+  const councilModels = councilSettings?.councilModels ?? [];
+  const councilReady =
+    !!councilSettings?.enabled && councilModels.length >= 2 && !!councilSettings?.judgeModel;
 
   const handleModelChange = useCallback(
     async (params: { model: string; provider: string }) => {
@@ -111,17 +143,29 @@ const ModelSwitch = memo(() => {
           height={36}
           paddingInline={8}
         >
-          <div className={styles.icon}>
-            <ModelIcon model={model} size={18} type={'color'} />
-          </div>
-          <Text
-            ellipsis
-            color={cssVar.colorTextSecondary}
-            style={{ fontSize: 14, fontWeight: 500 }}
-          >
-            {modelDisplayName}
-          </Text>
-          {reasoning && reasoning.value !== 'none' && (
+          {councilReady ? (
+            <div className={styles.councilStack}>
+              {councilModels.map((item) => (
+                <span className={styles.councilIcon} key={`${item.provider}/${item.model}`}>
+                  <ModelIcon model={item.model} size={16} type={'color'} />
+                </span>
+              ))}
+            </div>
+          ) : (
+            <>
+              <div className={styles.icon}>
+                <ModelIcon model={model} size={18} type={'color'} />
+              </div>
+              <Text
+                ellipsis
+                color={cssVar.colorTextSecondary}
+                style={{ fontSize: 14, fontWeight: 500 }}
+              >
+                {modelDisplayName}
+              </Text>
+            </>
+          )}
+          {!councilReady && reasoning && reasoning.value !== 'none' && (
             <span className={styles.reasoningLabel}>{reasoning.label}</span>
           )}
           <ChevronDown size={12} style={{ color: cssVar.colorTextTertiary, flexShrink: 0 }} />

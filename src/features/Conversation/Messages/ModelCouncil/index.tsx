@@ -1,7 +1,7 @@
 'use client';
 
 import type { AssistantContentBlock } from '@lobechat/types';
-import { Button, Flexbox, Icon, Text } from '@lobehub/ui';
+import { Flexbox, Icon, Text } from '@lobehub/ui';
 import { createStyles } from 'antd-style';
 import { AlertCircle, CheckCircle2, ChevronRight, Loader2 } from 'lucide-react';
 import { memo, useState } from 'react';
@@ -20,6 +20,24 @@ const useStyles = createStyles(({ css, token }) => ({
     line-height: 1.7;
     color: ${token.colorTextSecondary};
     white-space: pre-wrap;
+  `,
+  expandButton: css`
+    cursor: pointer;
+
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+
+    padding: 0;
+    border: 0;
+
+    color: ${token.colorTextSecondary};
+
+    background: transparent;
+
+    &:hover {
+      color: ${token.colorText};
+    }
   `,
   dash: css`
     padding: 16px;
@@ -75,16 +93,16 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(({ id }) => {
               <Flexbox horizontal align={'center'} className={styles.pill} gap={8}>
                 <Text strong>{modelLabel}</Text>
               </Flexbox>
-              <Button
-                size={'small'}
-                type={'text'}
+              <button
+                className={styles.expandButton}
+                type="button"
                 onClick={() => setExpanded((prev) => ({ ...prev, [child.id]: !isExpanded }))}
               >
                 <Flexbox horizontal align={'center'} gap={6}>
                   {t('modelCouncil.viewResponse')}
                   <Icon icon={ChevronRight} size={14} />
                 </Flexbox>
-              </Button>
+              </button>
             </Flexbox>
             <Flexbox horizontal align={'center'} gap={8}>
               {completed ? (

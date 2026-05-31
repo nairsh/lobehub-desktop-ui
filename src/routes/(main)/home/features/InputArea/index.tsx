@@ -105,6 +105,7 @@ const InputArea = () => {
           onUploadFiles={handleUploadFiles}
         >
           <ChatInputProvider
+            supportsCouncil
             agentId={inboxAgentId}
             allowExpand={false}
             leftActions={leftActions}

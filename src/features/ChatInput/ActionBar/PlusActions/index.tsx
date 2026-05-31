@@ -82,6 +82,23 @@ const hotArea = css`
   }
 `;
 
+const activePill = css`
+  cursor: pointer;
+  user-select: none;
+
+  height: 28px;
+  padding-block: 0;
+  padding-inline: 8px;
+  border: 1px solid ${cssVar.colorInfoBorder};
+  border-radius: 999px;
+
+  font-size: 12px;
+  line-height: 1;
+  color: ${cssVar.colorInfo};
+
+  background: ${cssVar.colorInfoBg};
+`;
+
 const PlusActions = memo(() => {
   const { t } = useTranslation('chat');
   const { t: tSetting } = useTranslation('setting');
@@ -107,7 +124,6 @@ const PlusActions = memo(() => {
     !!councilSettings?.enabled &&
     (councilSettings?.councilModels?.length || 0) >= 2 &&
     !!councilSettings?.judgeModel;
-  const showCouncil = councilMode && councilReady;
 
   const [searchMode, rawSearchMode, enabledKnowledgeBases] = useAgentStore((s) => [
     chatConfigByIdSelectors.getSearchModeById(agentId)(s),
@@ -279,11 +295,18 @@ const PlusActions = memo(() => {
     },
     {
       disabled: !councilReady,
-      icon: showCouncil ? <Gavel size={16} style={{ color: cssVar.colorInfo }} /> : Gavel,
+      icon:
+        councilMode && councilReady ? (
+          <Gavel size={16} style={{ color: cssVar.colorInfo }} />
+        ) : (
+          Gavel
+        ),
       key: 'model-council',
       label: t('modelCouncil.title'),
       onClick: () => {
-        if (councilReady) setCouncilMode(!councilMode);
+        if (!councilReady) return;
+        setOpen(false);
+        setCouncilMode(!councilMode);
       },
     },
   ];
@@ -303,15 +326,6 @@ const PlusActions = memo(() => {
           }}
           onOpenChange={setOpen}
         />
-        {showCouncil && (
-          <Action
-            color={cssVar.colorInfo}
-            icon={Gavel}
-            showTooltip={false}
-            title={t('modelCouncil.title')}
-            onClick={() => setCouncilMode(false)}
-          />
-        )}
         {showSearchIndicator && (
           <Action
             color={cssVar.colorInfo}
@@ -346,6 +360,20 @@ const PlusActions = memo(() => {
               }
             }}
           />
+        )}
+        {councilMode && councilReady && (
+          <Flexbox
+            horizontal
+            align={'center'}
+            className={activePill}
+            gap={4}
+            role="button"
+            title={t('modelCouncil.title')}
+            onClick={() => setCouncilMode(false)}
+          >
+            <Gavel size={13} />
+            {t('modelCouncil.title')}
+          </Flexbox>
         )}
       </Flexbox>
       {enableKnowledgeBase && <AttachKnowledgeModal open={libraryOpen} setOpen={setLibraryOpen} />}

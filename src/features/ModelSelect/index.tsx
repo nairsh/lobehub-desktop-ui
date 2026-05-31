@@ -35,8 +35,12 @@ interface ModelOption {
   value: string;
 }
 
-interface ModelSelectProps extends Pick<SelectProps, 'loading' | 'size' | 'style' | 'variant'> {
+interface ModelSelectProps extends Pick<
+  SelectProps,
+  'loading' | 'placeholder' | 'size' | 'style' | 'variant'
+> {
   defaultValue?: { model: string; provider?: string };
+  excludeValues?: string[];
   initialWidth?: boolean;
   onChange?: (props: { model: string; provider: string }) => void;
   popupWidth?: number;
@@ -48,10 +52,13 @@ interface ModelSelectProps extends Pick<SelectProps, 'loading' | 'size' | 'style
 const ModelSelect = memo<ModelSelectProps>(
   ({
     value,
+    defaultValue,
     onChange,
     showAbility = true,
     requiredAbilities,
+    excludeValues,
     loading,
+    placeholder,
     size,
     style,
     variant,
@@ -59,6 +66,7 @@ const ModelSelect = memo<ModelSelectProps>(
     popupWidth,
   }) => {
     const enabledList = useEnabledChatModels();
+    const excluded = useMemo(() => new Set(excludeValues ?? []), [excludeValues]);
 
     const options = useMemo<SelectProps['options']>(() => {
       const getChatModels = (provider: EnabledProviderWithModels) => {
@@ -69,12 +77,14 @@ const ModelSelect = memo<ModelSelectProps>(
               )
             : provider.children;
 
-        return models.map((model) => ({
-          ...model,
-          label: <ModelItemRender {...model} {...model.abilities} showInfoTag={false} />,
-          provider: provider.id,
-          value: `${provider.id}/${model.id}`,
-        }));
+        return models
+          .filter((model) => !excluded.has(`${provider.id}/${model.id}`))
+          .map((model) => ({
+            ...model,
+            label: <ModelItemRender {...model} {...model.abilities} showInfoTag={false} />,
+            provider: provider.id,
+            value: `${provider.id}/${model.id}`,
+          }));
       };
 
       if (enabledList.length === 1) {
@@ -101,19 +111,20 @@ const ModelSelect = memo<ModelSelectProps>(
           };
         })
         .filter(Boolean) as SelectProps['options'];
-    }, [enabledList, requiredAbilities, showAbility]);
+    }, [enabledList, excluded, requiredAbilities, showAbility]);
 
     return (
       <TooltipGroup>
         <Select
           className={styles.select}
-          defaultValue={`${value?.provider}/${value?.model}`}
+          defaultValue={defaultValue ? `${defaultValue.provider}/${defaultValue.model}` : undefined}
           loading={loading}
           options={options}
+          placeholder={placeholder}
           popupClassName={styles.popup}
           popupMatchSelectWidth={popupWidth === undefined ? false : popupWidth}
           size={size}
-          value={`${value?.provider}/${value?.model}`}
+          value={value ? `${value.provider}/${value.model}` : undefined}
           variant={variant}
           optionRender={(option) => (
             <ModelItemRender

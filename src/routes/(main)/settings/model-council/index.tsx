@@ -1,10 +1,10 @@
 'use client';
 
-import { Checkbox, Flexbox, Form, Icon, InputNumber, Skeleton, Text } from '@lobehub/ui';
+import { Button, Flexbox, Form, Icon, Skeleton, Text } from '@lobehub/ui';
 import { Switch } from '@lobehub/ui/base-ui';
 import { createStyles } from 'antd-style';
 import isEqual from 'fast-deep-equal';
-import { Gavel, Loader2Icon } from 'lucide-react';
+import { Gavel, Loader2Icon, Plus, Trash2 } from 'lucide-react';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -47,6 +47,7 @@ const Page = memo(() => {
   const { styles } = useStyles();
   const enabledModels = useEnabledChatModels();
   const [loading, setLoading] = useState(false);
+  const [pendingModel, setPendingModel] = useState<ModelCouncilModelConfig | undefined>();
   const [settings, setSettings, isUserStateInit] = useUserStore(
     (s) => [
       ((settingsSelectors.currentSettings(s) as any).modelCouncil ||
@@ -85,15 +86,26 @@ const Page = memo(() => {
     [setSettings],
   );
 
-  const selectedKeys = new Set(council.councilModels.map(modelKey));
+  const selectedKeys = useMemo(() => new Set(council.councilModels.map(modelKey)), [council]);
 
-  const toggleModel = useCallback(
-    async (model: ModelCouncilModelConfig, checked: boolean) => {
-      const nextModels = checked
-        ? [...council.councilModels, model].slice(0, 6)
-        : council.councilModels.filter((item) => modelKey(item) !== modelKey(model));
+  const addModel = useCallback(async () => {
+    if (
+      !pendingModel ||
+      selectedKeys.has(modelKey(pendingModel)) ||
+      council.councilModels.length >= 6
+    )
+      return;
 
-      await save({ ...council, councilModels: nextModels });
+    await save({ ...council, councilModels: [...council.councilModels, pendingModel] });
+    setPendingModel(undefined);
+  }, [council, pendingModel, save, selectedKeys]);
+
+  const removeModel = useCallback(
+    async (model: ModelCouncilModelConfig) => {
+      await save({
+        ...council,
+        councilModels: council.councilModels.filter((item) => modelKey(item) !== modelKey(model)),
+      });
     },
     [council, save],
   );
@@ -126,7 +138,6 @@ const Page = memo(() => {
               {
                 children: (
                   <Switch
-                    nativeButton
                     checked={council.enabled}
                     onChange={(enabled) => save({ ...council, enabled })}
                   />
@@ -138,9 +149,42 @@ const Page = memo(() => {
               {
                 children: (
                   <Flexbox gap={8}>
-                    {flatModels.map((model) => {
-                      const selected = selectedKeys.has(`${model.provider}/${model.id}`);
-                      const disabled = !selected && council.councilModels.length >= 6;
+                    <Flexbox horizontal align={'center'} gap={8}>
+                      <ModelSelect
+                        initialWidth
+                        excludeValues={[...selectedKeys]}
+                        placeholder={t('modelCouncil.settings.models.placeholder')}
+                        value={pendingModel}
+                        onChange={(model) => {
+                          const found = flatModels.find(
+                            (item) => item.provider === model.provider && item.id === model.model,
+                          );
+                          setPendingModel({
+                            label: found?.displayName || model.model,
+                            model: model.model,
+                            provider: model.provider,
+                          });
+                        }}
+                      />
+                      <Button
+                        icon={<Icon icon={Plus} />}
+                        disabled={
+                          !pendingModel ||
+                          selectedKeys.has(modelKey(pendingModel)) ||
+                          council.councilModels.length >= 6
+                        }
+                        onClick={() => void addModel()}
+                      >
+                        {t('modelCouncil.settings.models.add')}
+                      </Button>
+                    </Flexbox>
+                    {council.councilModels.map((selectedModel) => {
+                      const fullModel = flatModels.find(
+                        (model) =>
+                          model.provider === selectedModel.provider &&
+                          model.id === selectedModel.model,
+                      );
+
                       return (
                         <Flexbox
                           horizontal
@@ -148,45 +192,32 @@ const Page = memo(() => {
                           className={styles.modelRow}
                           gap={12}
                           justify={'space-between'}
-                          key={`${model.provider}/${model.id}`}
+                          key={modelKey(selectedModel)}
                         >
-                          <Checkbox
-                            checked={selected}
-                            disabled={disabled}
-                            onChange={(checked) =>
-                              toggleModel(
-                                {
-                                  label: model.displayName,
-                                  model: model.id,
-                                  provider: model.provider,
-                                },
-                                checked,
-                              )
-                            }
-                          >
-                            <Flexbox gap={2}>
-                              <Text>{model.displayName}</Text>
-                              <Text className={styles.muted} type={'secondary'}>
-                                {model.providerName}
-                              </Text>
-                            </Flexbox>
-                          </Checkbox>
-                          {selected && model.reasoning && (
-                            <Switch
-                              nativeButton
-                              checked={
-                                council.councilModels.find(
-                                  (item) => modelKey(item) === `${model.provider}/${model.id}`,
-                                )?.reasoning
-                              }
-                              onChange={(reasoning) =>
-                                updateModelReasoning(
-                                  { model: model.id, provider: model.provider },
-                                  reasoning,
-                                )
-                              }
+                          <Flexbox gap={2}>
+                            <Text>
+                              {selectedModel.label || fullModel?.displayName || selectedModel.model}
+                            </Text>
+                            <Text className={styles.muted} type={'secondary'}>
+                              {fullModel?.providerName || selectedModel.provider}
+                            </Text>
+                          </Flexbox>
+                          <Flexbox horizontal align={'center'} gap={8}>
+                            {fullModel?.reasoning && (
+                              <Switch
+                                checked={selectedModel.reasoning}
+                                onChange={(reasoning) =>
+                                  updateModelReasoning(selectedModel, reasoning)
+                                }
+                              />
+                            )}
+                            <Button
+                              icon={<Icon icon={Trash2} />}
+                              size={'small'}
+                              title={t('modelCouncil.settings.models.remove')}
+                              onClick={() => void removeModel(selectedModel)}
                             />
-                          )}
+                          </Flexbox>
                         </Flexbox>
                       );
                     })}
@@ -208,20 +239,6 @@ const Page = memo(() => {
                 ),
                 desc: t('modelCouncil.settings.judge.desc'),
                 label: t('modelCouncil.settings.judge.title'),
-              },
-              {
-                children: (
-                  <InputNumber
-                    max={6}
-                    min={2}
-                    value={council.maxModels}
-                    onChange={(maxModels) =>
-                      save({ ...council, maxModels: Number(maxModels || 3) })
-                    }
-                  />
-                ),
-                desc: t('modelCouncil.settings.maxModels.desc'),
-                label: t('modelCouncil.settings.maxModels.title'),
               },
             ],
             title: (

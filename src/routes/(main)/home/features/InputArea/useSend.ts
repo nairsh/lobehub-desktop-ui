@@ -8,6 +8,9 @@ import { builtinAgentSelectors } from '@/store/agent/selectors';
 import { useChatStore } from '@/store/chat';
 import { fileChatSelectors, useFileStore } from '@/store/file';
 import { useHomeStore } from '@/store/home';
+import { useUserStore } from '@/store/user';
+import { settingsSelectors } from '@/store/user/selectors';
+import type { ModelCouncilSettings } from '@/types/modelCouncil';
 
 export const useSend = () => {
   const router = useQueryRoute();
@@ -17,6 +20,16 @@ export const useSend = () => {
   const clearChatContextSelections = useFileStore((s) => s.clearChatContextSelections);
 
   const homeInputLoading = useHomeStore((s) => s.homeInputLoading);
+  const councilSettings = useUserStore(
+    (s) =>
+      (settingsSelectors.currentSettings(s) as any).modelCouncil as
+        | ModelCouncilSettings
+        | undefined,
+  );
+  const councilReady =
+    !!councilSettings?.enabled &&
+    (councilSettings?.councilModels?.length || 0) >= 2 &&
+    !!councilSettings?.judgeModel;
 
   const send = useCallback<SendButtonHandler>(
     async ({ getEditorData }) => {
@@ -62,6 +75,7 @@ export const useSend = () => {
               editorData,
               files: fileList,
               message: inputMessage,
+              useModelCouncil: councilReady,
             });
 
             router.push(SESSION_CHAT_URL(inboxAgentId, false));
@@ -74,7 +88,14 @@ export const useSend = () => {
         mainInputEditor?.clearContent();
       }
     },
-    [inboxAgentId, sendMessage, clearChatContextSelections, clearChatUploadFileList, router],
+    [
+      inboxAgentId,
+      sendMessage,
+      councilReady,
+      clearChatContextSelections,
+      clearChatUploadFileList,
+      router,
+    ],
   );
 
   return {

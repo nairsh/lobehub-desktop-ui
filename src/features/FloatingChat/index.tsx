@@ -1,7 +1,10 @@
 'use client';
 
+import { LOADING_FLAT } from '@lobechat/const';
 import { useWatchBroadcast } from '@lobechat/electron-client-ipc';
 import { Flexbox } from '@lobehub/ui';
+import { TypewriterEffect } from '@lobehub/ui/awesome';
+import { LoadingDots } from '@lobehub/ui/chat';
 import { createStyles, cssVar } from 'antd-style';
 import { Maximize2, MessageSquarePlus, SendHorizontal, X } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -9,16 +12,20 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 import { ChatInputProvider } from '@/features/ChatInput';
+import { ActionBarContext } from '@/features/ChatInput/ActionBar/context';
 import ModelAction from '@/features/ChatInput/ActionBar/Model';
 import PlusActions from '@/features/ChatInput/ActionBar/PlusActions';
 import { ChatList, ConversationProvider, useConversationStore } from '@/features/Conversation';
-import { useCreateNewTab } from '@/features/Electron/titlebar/TabBar/hooks/useCreateNewTab';
 import { isEditableShortcutTarget, isFloatingChatEvent } from '@/hooks/useHotkeys/shortcutGuards';
 import { useOperationState } from '@/hooks/useOperationState';
 import { useAgentStore } from '@/store/agent';
 import { builtinAgentSelectors } from '@/store/agent/selectors';
 import { useChatStore } from '@/store/chat';
+import { topicSelectors } from '@/store/chat/selectors';
 import { messageMapKey } from '@/store/chat/utils/messageMapKey';
+import { useUserStore } from '@/store/user';
+import { settingsSelectors } from '@/store/user/selectors';
+import type { ModelCouncilSettings } from '@/types/modelCouncil';
 
 const useStyles = createStyles(({ css, token }) => ({
   body: css`
@@ -30,7 +37,7 @@ const useStyles = createStyles(({ css, token }) => ({
     overflow: auto;
     flex: 1;
     min-height: 0;
-    padding-block: 72px 12px;
+    padding-block: 64px 12px;
   `,
   dragHandle: css`
     cursor: grab;
@@ -54,8 +61,8 @@ const useStyles = createStyles(({ css, token }) => ({
     gap: 8px;
     align-items: center;
 
-    min-height: 64px;
-    padding-block: 8px;
+    min-height: 56px;
+    padding-block: 7px;
     padding-inline: 10px;
     border: 1px solid ${token.colorBorderSecondary};
     border-radius: 32px;
@@ -70,8 +77,8 @@ const useStyles = createStyles(({ css, token }) => ({
     align-items: center;
     justify-content: center;
 
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border: none;
     border-radius: 50%;
 
@@ -118,15 +125,33 @@ const useStyles = createStyles(({ css, token }) => ({
     align-items: center;
     justify-content: center;
 
-    width: 52px !important;
-    height: 52px !important;
+    width: 36px !important;
+    height: 36px !important;
     border: none;
     border-radius: 50% !important;
 
     color: ${token.colorText};
 
     background: ${cssVar.colorFillQuaternary} !important;
-    box-shadow: 0 16px 34px rgb(0 0 0 / 10%);
+    box-shadow: 0 10px 24px rgb(0 0 0 / 8%);
+  `,
+  title: css`
+    pointer-events: none;
+
+    position: absolute;
+    z-index: 1;
+    inset-block-start: 20px;
+    inset-inline: 76px;
+
+    overflow: hidden;
+
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: ${token.colorTextSecondary};
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   `,
   toolbar: css`
     pointer-events: none;
@@ -146,12 +171,12 @@ const useStyles = createStyles(({ css, token }) => ({
 
     min-width: 0;
     max-height: 104px;
-    padding-block: 8px;
+    padding-block: 0;
     padding-inline: 0;
     border: none;
 
     font: inherit;
-    line-height: 1.45;
+    line-height: 24px;
     color: ${token.colorText};
 
     background: transparent;
@@ -165,7 +190,10 @@ const useStyles = createStyles(({ css, token }) => ({
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
-const FloatingComposer = memo<{ agentId: string; compact: boolean }>(({ agentId, compact }) => {
+const FloatingComposer = memo<{
+  agentId: string;
+  compact: boolean;
+}>(({ agentId, compact }) => {
   const { styles } = useStyles();
   const { t } = useTranslation('chat');
   const [value, setValue] = useState('');
@@ -174,6 +202,16 @@ const FloatingComposer = memo<{ agentId: string; compact: boolean }>(({ agentId,
     s.stopGenerating,
     s.operationState,
   ]);
+  const councilSettings = useUserStore(
+    (s) =>
+      (settingsSelectors.currentSettings(s) as any).modelCouncil as
+        | ModelCouncilSettings
+        | undefined,
+  );
+  const councilReady =
+    !!councilSettings?.enabled &&
+    (councilSettings?.councilModels?.length || 0) >= 2 &&
+    !!councilSettings?.judgeModel;
   const isGenerating = Boolean(operationState?.isInputLoading || operationState?.isAIGenerating);
   const disabled = !value.trim() || isGenerating;
 
@@ -182,8 +220,12 @@ const FloatingComposer = memo<{ agentId: string; compact: boolean }>(({ agentId,
     if (!message || isGenerating) return;
 
     setValue('');
-    await sendMessage({ message });
-  }, [isGenerating, sendMessage, value]);
+    await sendMessage({
+      message,
+      skipTopicSwitch: true,
+      useModelCouncil: councilReady,
+    });
+  }, [councilReady, isGenerating, sendMessage, value]);
 
   return (
     <ChatInputProvider
@@ -200,11 +242,13 @@ const FloatingComposer = memo<{ agentId: string; compact: boolean }>(({ agentId,
       }}
     >
       <div className={styles.inputShell}>
-        <PlusActions />
+        <ActionBarContext value={{ actionSize: { blockSize: 28, size: 14 }, borderRadius: 999 }}>
+          <PlusActions />
+        </ActionBarContext>
         <textarea
           className={styles.textarea}
           placeholder={t('sendPlaceholder')}
-          rows={compact ? 1 : 2}
+          rows={1}
           value={value}
           onChange={(event) => setValue(event.currentTarget.value)}
           onKeyDown={(event) => {
@@ -227,7 +271,7 @@ const FloatingComposer = memo<{ agentId: string; compact: boolean }>(({ agentId,
             void handleSend();
           }}
         >
-          <SendHorizontal size={18} />
+          <SendHorizontal size={16} />
         </button>
       </div>
     </ChatInputProvider>
@@ -240,20 +284,23 @@ const FloatingChat = memo(() => {
   const { styles, cx } = useStyles();
   const { t } = useTranslation('electron');
   const navigate = useNavigate();
-  const createNewTab = useCreateNewTab();
   const [open, setOpen] = useState(false);
   const [compact, setCompact] = useState(false);
   const [position, setPosition] = useState({ x: 48, y: 48 });
+  const [floatingTopicId, setFloatingTopicId] = useState<string | null>(null);
   const dragRef = useRef<{ offsetX: number; offsetY: number } | null>(null);
 
   const inboxAgentId = useAgentStore(builtinAgentSelectors.inboxAgentId);
   const activeAgentId = useAgentStore((s) => s.activeAgentId);
-  const activeTopicId = useChatStore((s) => s.activeTopicId ?? null);
   const agentId = activeAgentId || inboxAgentId;
+  const topicTitle = useChatStore((s) =>
+    floatingTopicId ? topicSelectors.getTopicById(floatingTopicId)(s)?.title : undefined,
+  );
+  const displayTitle = topicTitle && topicTitle !== LOADING_FLAT ? topicTitle : undefined;
 
   const context = useMemo(
-    () => ({ agentId, scope: 'main' as const, topicId: activeTopicId }),
-    [activeTopicId, agentId],
+    () => ({ agentId, scope: 'main' as const, topicId: floatingTopicId }),
+    [floatingTopicId, agentId],
   );
   const chatKey = useMemo(() => messageMapKey(context), [context]);
   const replaceMessages = useChatStore((s) => s.replaceMessages);
@@ -313,14 +360,14 @@ const FloatingChat = memo(() => {
 
   const handleExpand = useCallback(() => {
     setOpen(false);
-    if (agentId) navigate(`/agent/${agentId}${activeTopicId ? `?topic=${activeTopicId}` : ''}`);
-  }, [activeTopicId, agentId, navigate]);
+    if (agentId) navigate(`/agent/${agentId}${floatingTopicId ? `?topic=${floatingTopicId}` : ''}`);
+  }, [agentId, floatingTopicId, navigate]);
 
-  const handleNewChat = useCallback(async () => {
-    await createNewTab();
+  const handleNewChat = useCallback(() => {
+    setFloatingTopicId(null);
     setCompact(false);
     setOpen(true);
-  }, [createNewTab]);
+  }, []);
 
   if (!open || !agentId) return null;
 
@@ -343,22 +390,30 @@ const FloatingChat = memo(() => {
           title={t('tab.closeCurrentTab')}
           onClick={() => setOpen(false)}
         >
-          <X size={24} />
+          <X size={19} />
         </button>
-        <Flexbox horizontal gap={10}>
-          <button
-            className={styles.topButton}
-            title={t('tab.newTab')}
-            onClick={() => void handleNewChat()}
-          >
-            <MessageSquarePlus size={24} />
+        {displayTitle && !compact && (
+          <div className={styles.title}>
+            <TypewriterEffect
+              cursorCharacter={<LoadingDots size={14} variant={'pulse'} />}
+              cursorFade={false}
+              hideCursorWhileTyping={'afterTyping'}
+              key={displayTitle}
+              sentences={[displayTitle]}
+              typingSpeed={64}
+            />
+          </div>
+        )}
+        <Flexbox horizontal gap={8}>
+          <button className={styles.topButton} title={t('tab.newTab')} onClick={handleNewChat}>
+            <MessageSquarePlus size={18} />
           </button>
           <button
             className={styles.topButton}
             title={t('tab.expandFloatingChat')}
             onClick={handleExpand}
           >
-            <Maximize2 size={24} />
+            <Maximize2 size={18} />
           </button>
         </Flexbox>
       </div>
@@ -367,6 +422,11 @@ const FloatingChat = memo(() => {
         context={context}
         messages={messages ?? []}
         operationState={operationState}
+        hooks={{
+          onAfterMessageCreate: async ({ topicId }) => {
+            if (topicId) setFloatingTopicId(topicId);
+          },
+        }}
         onMessagesChange={(nextMessages, ctx) => {
           replaceMessages(nextMessages, { context: ctx });
         }}

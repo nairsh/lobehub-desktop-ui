@@ -19,7 +19,9 @@ export const sendMessage = (
   set: (partial: Partial<ConversationStore>) => void,
   get: () => ConversationStore,
 ) => {
-  return async (params: SendMessageParams & { useModelCouncil?: boolean }) => {
+  return async (
+    params: SendMessageParams & { skipTopicSwitch?: boolean; useModelCouncil?: boolean },
+  ) => {
     const state = get();
     const { context, hooks, displayMessages } = state;
 
@@ -57,6 +59,7 @@ export const sendMessage = (
       await hooks.onAfterMessageCreate({
         assistantMessageId: result.assistantMessageId,
         createdThreadId: result.createdThreadId,
+        topicId: result.topicId,
         userMessageId: result.userMessageId,
       });
     }

@@ -73,6 +73,7 @@ export interface SendMessageWithContextParams extends SendMessageParams {
    */
   projectKnowledgeBaseId?: string;
   projectSystemPrompt?: string;
+  skipTopicSwitch?: boolean;
   useModelCouncil?: boolean;
 }
 
@@ -84,6 +85,8 @@ export interface SendMessageResult {
   assistantMessageId: string;
   /** The created thread ID (if a new thread was created) */
   createdThreadId?: string;
+  /** The topic ID used for this message, including a newly created topic. */
+  topicId?: string;
   /** The created user message ID */
   userMessageId: string;
 }
@@ -127,6 +130,7 @@ export class ConversationLifecycleActionImpl {
     pageSelections,
     projectKnowledgeBaseId,
     projectSystemPrompt,
+    skipTopicSwitch,
     useModelCouncil,
   }: SendMessageWithContextParams): Promise<SendMessageResult | undefined> => {
     let editorData = inputEditorData;
@@ -439,7 +443,7 @@ export class ConversationLifecycleActionImpl {
           action: 'sendMessage/modelCouncilResponse',
         });
 
-        if (data.isCreateNewTopic && data.topicId) {
+        if (data.isCreateNewTopic && data.topicId && !skipTopicSwitch) {
           await this.#get().switchTopic(data.topicId, {
             clearNewKey: true,
             skipRefreshMessage: true,
@@ -534,6 +538,7 @@ export class ConversationLifecycleActionImpl {
 
         return {
           assistantMessageId: data.judgeMessageId,
+          topicId: data.topicId,
           userMessageId: data.userMessageId,
         };
       } catch (e) {
@@ -674,7 +679,7 @@ export class ConversationLifecycleActionImpl {
         action: 'sendMessage/serverResponse',
       });
 
-      if (data.isCreateNewTopic && data.topicId) {
+      if (data.isCreateNewTopic && data.topicId && !skipTopicSwitch) {
         // clearNewKey: true ensures the _new key data is cleared after topic creation
         await this.#get().switchTopic(data.topicId, {
           clearNewKey: true,
@@ -908,6 +913,7 @@ export class ConversationLifecycleActionImpl {
     return {
       assistantMessageId: data.assistantMessageId,
       createdThreadId: data.createdThreadId,
+      topicId: data.topicId,
       userMessageId: data.userMessageId,
     };
   };
@@ -919,6 +925,7 @@ export class ConversationLifecycleActionImpl {
     const { activeGroupAgentId, activeSessionId, activeTopicId, activeThreadId, activeGroupId } =
       this.#get();
     const activeAgentId = activeGroupAgentId || activeSessionId;
+    if (!activeAgentId) return;
 
     // Create base context for continue operation (using global state)
     const continueContext = {
