@@ -384,7 +384,7 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                     {failed
                       ? judge.error?.message || t('modelCouncil.status.failed')
                       : completed
-                        ? t('modelCouncil.status.completed')
+                        ? t('modelCouncil.status.synthesized')
                         : t('modelCouncil.synthesizing')}
                   </Text>
                 </Flexbox>
