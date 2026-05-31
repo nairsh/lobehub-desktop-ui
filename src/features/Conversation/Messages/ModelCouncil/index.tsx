@@ -110,6 +110,8 @@ const useStyles = createStyles(({ css, token }) => ({
 }));
 
 interface ModelCouncilMessageProps {
+  embedded?: boolean;
+  hideJudgeResponse?: boolean;
   id: string;
   index: number;
 }
@@ -131,186 +133,204 @@ const isFailedStatus = (status?: string) =>
 
 const isTerminalStatus = (status?: string) => status === 'completed' || isFailedStatus(status);
 
-const ModelCouncilMessage = memo<ModelCouncilMessageProps>(({ id }) => {
-  const { t } = useTranslation('chat');
-  const { styles, theme } = useStyles();
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const message = useConversationStore(dataSelectors.getDisplayMessageById(id));
-  const enabledModels = useEnabledChatModels();
-  const children = (message?.children || []) as AssistantContentBlock[];
-  const metadata = (message?.metadata as any) || {};
-  const settingsSnapshot = metadata.settingsSnapshot as ModelCouncilSettings | undefined;
-  const groupStatus = metadata.status as string | undefined;
+const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
+  ({ id, embedded, hideJudgeResponse }) => {
+    const { t } = useTranslation('chat');
+    const { styles, theme } = useStyles();
+    const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+    const message = useConversationStore(dataSelectors.getDisplayMessageById(id));
+    const hasAttachedJudgeMessage = useConversationStore((s) => {
+      if (embedded) return false;
 
-  const modelDisplayMap = useMemo(() => {
-    const map = new Map<string, string>();
+      const groupMessage = s.displayMessages.find((item) => item.id === id);
+      if (!groupMessage || groupMessage.role !== 'compareGroup') return false;
 
-    for (const provider of enabledModels) {
-      for (const model of provider.children) {
-        map.set(
-          modelKey({ model: model.id, provider: provider.id }),
-          (model as any).displayName || model.id,
+      return s.displayMessages.some((item) => {
+        const councilMeta = (item.metadata as any)?.modelCouncil;
+        if (item.role !== 'assistant' || !councilMeta) return false;
+
+        return (
+          groupMessage.children?.some((child) => child.id === item.id) ||
+          (!!item.parentId && item.parentId === groupMessage.parentId)
         );
+      });
+    });
+    const enabledModels = useEnabledChatModels();
+    const children = (message?.children || []) as AssistantContentBlock[];
+    const metadata = (message?.metadata as any) || {};
+    const settingsSnapshot = metadata.settingsSnapshot as ModelCouncilSettings | undefined;
+    const groupStatus = metadata.status as string | undefined;
+
+    const modelDisplayMap = useMemo(() => {
+      const map = new Map<string, string>();
+
+      for (const provider of enabledModels) {
+        for (const model of provider.children) {
+          map.set(
+            modelKey({ model: model.id, provider: provider.id }),
+            (model as any).displayName || model.id,
+          );
+        }
       }
-    }
 
-    for (const model of settingsSnapshot?.councilModels || []) {
-      if (model.label) map.set(modelKey(model), model.label);
-    }
+      for (const model of settingsSnapshot?.councilModels || []) {
+        if (model.label) map.set(modelKey(model), model.label);
+      }
 
-    const judge = settingsSnapshot?.judgeModel;
-    if (judge?.label) map.set(modelKey(judge), judge.label);
+      const judge = settingsSnapshot?.judgeModel;
+      if (judge?.label) map.set(modelKey(judge), judge.label);
 
-    return map;
-  }, [enabledModels, settingsSnapshot]);
+      return map;
+    }, [enabledModels, settingsSnapshot]);
 
-  if (!message) return null;
+    if (!message || hasAttachedJudgeMessage) return null;
 
-  const memberChildren = children.filter((child) => {
-    const role = (getChildModel(child).metadata?.modelCouncil || {}).role;
-    return role !== 'judge';
-  });
-  const judgeChild = children.find((child) => {
-    const role = (getChildModel(child).metadata?.modelCouncil || {}).role;
-    return role === 'judge';
-  });
-  const hasRunningMember = memberChildren.some((child) => {
-    const childModel = getChildModel(child);
-    const status = childModel.error
-      ? 'failed'
-      : ((childModel.metadata?.modelCouncil || {}) as { status?: string }).status || 'waiting';
-
-    return !isTerminalStatus(status);
-  });
-  const judgeStatus = judgeChild
-    ? ((getChildModel(judgeChild).metadata?.modelCouncil || {}) as { status?: string }).status ||
-      'waiting'
-    : undefined;
-  const isJudging =
-    !!judgeChild &&
-    !isTerminalStatus(judgeStatus) &&
-    (groupStatus === 'judging' || !hasRunningMember);
-  const firstTwoMembers = memberChildren.slice(0, Math.min(2, memberChildren.length));
-  const firstTwoMembersFinished =
-    firstTwoMembers.length > 0 &&
-    firstTwoMembers.every((child) => {
+    const memberChildren = children.filter((child) => {
+      const role = (getChildModel(child).metadata?.modelCouncil || {}).role;
+      return role !== 'judge';
+    });
+    const judgeChild = children.find((child) => {
+      const role = (getChildModel(child).metadata?.modelCouncil || {}).role;
+      return role === 'judge';
+    });
+    const hasRunningMember = memberChildren.some((child) => {
       const childModel = getChildModel(child);
       const status = childModel.error
         ? 'failed'
         : ((childModel.metadata?.modelCouncil || {}) as { status?: string }).status || 'waiting';
 
-      return isTerminalStatus(status);
+      return !isTerminalStatus(status);
     });
-  const showSynthesisStatus = firstTwoMembersFinished && (hasRunningMember || isJudging);
-
-  return (
-    <Flexbox gap={12} style={{ marginInline: 'auto', maxWidth: 840, width: '100%' }}>
-      {memberChildren.map((child: AssistantContentBlock) => {
+    const judgeStatus = judgeChild
+      ? ((getChildModel(judgeChild).metadata?.modelCouncil || {}) as { status?: string }).status ||
+        'waiting'
+      : undefined;
+    const isJudging =
+      !!judgeChild &&
+      !isTerminalStatus(judgeStatus) &&
+      (groupStatus === 'judging' || !hasRunningMember);
+    const firstTwoMembers = memberChildren.slice(0, Math.min(2, memberChildren.length));
+    const firstTwoMembersFinished =
+      firstTwoMembers.length > 0 &&
+      firstTwoMembers.every((child) => {
         const childModel = getChildModel(child);
-        const childMeta = (childModel.metadata?.modelCouncil || {}) as { status?: string };
-        const status = childModel.error ? 'failed' : childMeta.status || 'running';
-        const isExpanded = expanded[child.id];
-        const modelId = childModel.model || '';
-        const providerId = childModel.provider || '';
-        const modelLabel =
-          modelDisplayMap.get(modelKey({ model: modelId, provider: providerId })) ||
-          modelId ||
-          providerId ||
-          t('modelCouncil.member');
-        const completed = status === 'completed';
-        const failed = isFailedStatus(status);
-        const reasoningContent = childModel.reasoning?.content?.trim();
-        const livePreview = !completed && !failed ? reasoningContent || child.content : '';
+        const status = childModel.error
+          ? 'failed'
+          : ((childModel.metadata?.modelCouncil || {}) as { status?: string }).status || 'waiting';
 
-        return (
-          <Flexbox className={styles.card} gap={12} key={child.id}>
-            <Flexbox horizontal align={'center'} justify={'space-between'}>
-              <Flexbox horizontal align={'center'} className={styles.pill} gap={8}>
-                <span className={styles.iconCell}>
-                  <ModelIcon model={modelId || modelLabel} size={16} type={'color'} />
-                </span>
-                <Text ellipsis strong>
-                  {modelLabel}
-                  {!completed && !failed ? ` ${t('modelCouncil.status.running')}` : ''}
+        return isTerminalStatus(status);
+      });
+    const showSynthesisStatus = firstTwoMembersFinished && (hasRunningMember || isJudging);
+
+    return (
+      <Flexbox gap={12} style={{ marginInline: 'auto', maxWidth: 840, width: '100%' }}>
+        {memberChildren.map((child: AssistantContentBlock) => {
+          const childModel = getChildModel(child);
+          const childMeta = (childModel.metadata?.modelCouncil || {}) as { status?: string };
+          const status = childModel.error ? 'failed' : childMeta.status || 'running';
+          const isExpanded = expanded[child.id];
+          const modelId = childModel.model || '';
+          const providerId = childModel.provider || '';
+          const modelLabel =
+            modelDisplayMap.get(modelKey({ model: modelId, provider: providerId })) ||
+            modelId ||
+            providerId ||
+            t('modelCouncil.member');
+          const completed = status === 'completed';
+          const failed = isFailedStatus(status);
+          const reasoningContent = childModel.reasoning?.content?.trim();
+          const livePreview = !completed && !failed ? reasoningContent || child.content : '';
+
+          return (
+            <Flexbox className={styles.card} gap={12} key={child.id}>
+              <Flexbox horizontal align={'center'} justify={'space-between'}>
+                <Flexbox horizontal align={'center'} className={styles.pill} gap={8}>
+                  <span className={styles.iconCell}>
+                    <ModelIcon model={modelId || modelLabel} size={16} type={'color'} />
+                  </span>
+                  <Text ellipsis strong>
+                    {modelLabel}
+                    {!completed && !failed ? ` ${t('modelCouncil.status.running')}` : ''}
+                  </Text>
+                </Flexbox>
+                <button
+                  className={styles.expandButton}
+                  type="button"
+                  onClick={() => setExpanded((prev) => ({ ...prev, [child.id]: !isExpanded }))}
+                >
+                  <Flexbox horizontal align={'center'} gap={6}>
+                    {t('modelCouncil.viewResponse')}
+                    <Icon icon={ChevronRight} size={14} />
+                  </Flexbox>
+                </button>
+              </Flexbox>
+              <Flexbox horizontal align={'center'} gap={8}>
+                {completed ? (
+                  <Icon color={theme.colorSuccess} icon={CheckCircle2} size={16} />
+                ) : failed ? (
+                  <Icon color={theme.colorWarning} icon={AlertCircle} size={16} />
+                ) : (
+                  <Icon spin color={theme.colorTextSecondary} icon={Loader2} size={16} />
+                )}
+                <Text type={'secondary'}>
+                  {livePreview
+                    ? reasoningContent
+                      ? t('modelCouncil.reasoning')
+                      : t('modelCouncil.status.running')
+                    : failed
+                      ? childModel.error?.message || t('modelCouncil.status.failed')
+                      : completed
+                        ? t('modelCouncil.status.completed')
+                        : t('modelCouncil.status.running')}
                 </Text>
               </Flexbox>
-              <button
-                className={styles.expandButton}
-                type="button"
-                onClick={() => setExpanded((prev) => ({ ...prev, [child.id]: !isExpanded }))}
-              >
-                <Flexbox horizontal align={'center'} gap={6}>
-                  {t('modelCouncil.viewResponse')}
-                  <Icon icon={ChevronRight} size={14} />
-                </Flexbox>
-              </button>
-            </Flexbox>
-            <Flexbox horizontal align={'center'} gap={8}>
-              {completed ? (
-                <Icon color={theme.colorSuccess} icon={CheckCircle2} size={16} />
-              ) : failed ? (
-                <Icon color={theme.colorWarning} icon={AlertCircle} size={16} />
-              ) : (
-                <Icon spin color={theme.colorTextSecondary} icon={Loader2} size={16} />
+              {livePreview && (
+                <div aria-live="polite" className={styles.streamPreview}>
+                  <Markdown variant={'chat'}>{livePreview}</Markdown>
+                </div>
               )}
-              <Text type={'secondary'}>
-                {livePreview
-                  ? reasoningContent
-                    ? t('modelCouncil.reasoning')
-                    : t('modelCouncil.status.running')
-                  : failed
-                    ? childModel.error?.message || t('modelCouncil.status.failed')
-                    : completed
-                      ? t('modelCouncil.status.completed')
-                      : t('modelCouncil.status.running')}
-              </Text>
+              {isExpanded && child.content && (
+                <div className={styles.content}>
+                  <Markdown variant={'chat'}>{child.content}</Markdown>
+                </div>
+              )}
+              {!isExpanded && !livePreview && child.content && (
+                <div className={styles.contentPreview}>{child.content}</div>
+              )}
             </Flexbox>
-            {livePreview && (
-              <div aria-live="polite" className={styles.streamPreview}>
-                <Markdown variant={'chat'}>{livePreview}</Markdown>
-              </div>
-            )}
-            {isExpanded && child.content && (
-              <div className={styles.content}>
-                <Markdown variant={'chat'}>{child.content}</Markdown>
-              </div>
-            )}
-            {!isExpanded && !livePreview && child.content && (
-              <div className={styles.contentPreview}>{child.content}</div>
-            )}
+          );
+        })}
+        {showSynthesisStatus && (
+          <Flexbox horizontal align={'center'} className={styles.dash} gap={8}>
+            <Icon spin icon={Loader2} size={16} />
+            <Text strong>
+              {hasRunningMember ? t('modelCouncil.thinking') : t('modelCouncil.synthesizing')}
+            </Text>
           </Flexbox>
-        );
-      })}
-      {showSynthesisStatus && (
-        <Flexbox horizontal align={'center'} className={styles.dash} gap={8}>
-          <Icon spin icon={Loader2} size={16} />
-          <Text strong>
-            {hasRunningMember ? t('modelCouncil.thinking') : t('modelCouncil.synthesizing')}
-          </Text>
-        </Flexbox>
-      )}
-      {judgeChild?.content && (
-        <Flexbox className={styles.response} gap={8}>
-          <Flexbox horizontal align={'center'} className={styles.responseHeader}>
-            {memberChildren.map((child) => {
-              const childModel = getChildModel(child);
-              return (
-                <span className={styles.stackIcon} key={child.id}>
-                  <ModelIcon
-                    model={childModel.model || childModel.provider || ''}
-                    size={17}
-                    type={'color'}
-                  />
-                </span>
-              );
-            })}
+        )}
+        {!hideJudgeResponse && judgeChild?.content && (
+          <Flexbox className={styles.response} gap={8}>
+            <Flexbox horizontal align={'center'} className={styles.responseHeader}>
+              {memberChildren.map((child) => {
+                const childModel = getChildModel(child);
+                return (
+                  <span className={styles.stackIcon} key={child.id}>
+                    <ModelIcon
+                      model={childModel.model || childModel.provider || ''}
+                      size={17}
+                      type={'color'}
+                    />
+                  </span>
+                );
+              })}
+            </Flexbox>
+            <Markdown variant={'chat'}>{judgeChild.content}</Markdown>
           </Flexbox>
-          <Markdown variant={'chat'}>{judgeChild.content}</Markdown>
-        </Flexbox>
-      )}
-    </Flexbox>
-  );
-});
+        )}
+      </Flexbox>
+    );
+  },
+);
 
 ModelCouncilMessage.displayName = 'ModelCouncilMessage';
 

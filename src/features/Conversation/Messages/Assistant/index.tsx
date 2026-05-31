@@ -22,6 +22,7 @@ import {
   useSetMessageItemActionElementPortialContext,
   useSetMessageItemActionTypeContext,
 } from '../Contexts/message-action-context';
+import ModelCouncilMessage from '../ModelCouncil';
 import InterruptedHint from './components/InterruptedHint';
 import MessageContent from './components/MessageContent';
 import { AssistantMessageExtra } from './Extra';
@@ -135,10 +136,30 @@ const AssistantMessage = memo<AssistantMessageProps>(({ id, index, disableEditin
 
     return model && provider ? [{ model, provider }] : [];
   }, [model, provider, settingsSnapshot?.councilModels]);
+  const councilGroupId = useConversationStore(
+    useCallback(
+      (s) => {
+        if (!isModelCouncilAssistant) return undefined;
+
+        return s.displayMessages.find((message) => {
+          if (message.role !== 'compareGroup') return false;
+
+          return (
+            message.children?.some((child) => child.id === id) ||
+            (!!item.parentId && item.parentId === message.parentId)
+          );
+        })?.id;
+      },
+      [id, isModelCouncilAssistant, item.parentId],
+    ),
+  );
+  const councilAboveMessage = councilGroupId ? (
+    <ModelCouncilMessage embedded hideJudgeResponse id={councilGroupId} index={index} />
+  ) : null;
 
   return (
     <ChatItem
-      aboveMessage={null}
+      aboveMessage={councilAboveMessage}
       avatar={avatar}
       customErrorRender={(error) => <ErrorMessageExtra data={item} error={error} />}
       editing={editing}
