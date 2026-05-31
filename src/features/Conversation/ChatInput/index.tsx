@@ -231,11 +231,12 @@ const ChatInput = memo<ChatInputProps>(
           editorData,
           files: currentFileList,
           message,
+          overrideCouncil: councilMode && councilReady ? councilSettings : undefined,
           pageSelections,
           useModelCouncil: councilMode && councilReady,
         });
       },
-      [sendMessage, councilReady],
+      [sendMessage, councilReady, councilSettings],
     );
 
     const sendButtonProps: SendButtonProps = {

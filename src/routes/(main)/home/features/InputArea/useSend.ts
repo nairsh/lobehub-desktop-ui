@@ -76,6 +76,7 @@ export const useSend = () => {
               editorData,
               files: fileList,
               message: inputMessage,
+              overrideCouncil: councilMode && councilReady ? councilSettings : undefined,
               useModelCouncil: councilMode && councilReady,
             });
 
@@ -97,6 +98,7 @@ export const useSend = () => {
       inboxAgentId,
       sendMessage,
       councilReady,
+      councilSettings,
       clearChatContextSelections,
       clearChatUploadFileList,
       router,

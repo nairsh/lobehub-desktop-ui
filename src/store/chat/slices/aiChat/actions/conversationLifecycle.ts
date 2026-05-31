@@ -46,6 +46,7 @@ import {
 } from '@/store/project/projectContext';
 import { type StoreSetter } from '@/store/types';
 import { useUserMemoryStore } from '@/store/userMemory';
+import type { ModelCouncilSettings } from '@/types/modelCouncil';
 
 import { dbMessageSelectors, displayMessageSelectors, topicSelectors } from '../../../selectors';
 import { messageMapKey } from '../../../utils/messageMapKey';
@@ -71,6 +72,7 @@ export interface SendMessageWithContextParams extends SendMessageParams {
    * Optional system prompt from the active project.
    * Appended to the agent's system role for the duration of this LLM call.
    */
+  overrideCouncil?: ModelCouncilSettings;
   projectKnowledgeBaseId?: string;
   projectSystemPrompt?: string;
   skipTopicSwitch?: boolean;
@@ -131,6 +133,7 @@ export class ConversationLifecycleActionImpl {
     projectKnowledgeBaseId,
     projectSystemPrompt,
     skipTopicSwitch,
+    overrideCouncil,
     useModelCouncil,
   }: SendMessageWithContextParams): Promise<SendMessageResult | undefined> => {
     let editorData = inputEditorData;
@@ -406,6 +409,7 @@ export class ConversationLifecycleActionImpl {
                   title: message.slice(0, 20) || t('defaultTitle', { ns: 'topic' }),
                 }
               : undefined,
+            overrideCouncil,
             pageSelections,
             parentId,
             prompt: message,

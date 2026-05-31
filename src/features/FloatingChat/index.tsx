@@ -235,10 +235,11 @@ const FloatingComposerBody = memo<{
     setValue('');
     await sendMessage({
       message,
+      overrideCouncil: councilMode && councilReady ? councilSettings : undefined,
       skipTopicSwitch: true,
       useModelCouncil: councilMode && councilReady,
     });
-  }, [councilMode, councilReady, isGenerating, sendMessage, value]);
+  }, [councilMode, councilReady, councilSettings, isGenerating, sendMessage, value]);
 
   return (
     <div className={styles.inputShell}>
