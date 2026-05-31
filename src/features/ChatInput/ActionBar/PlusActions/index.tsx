@@ -1,7 +1,7 @@
 'use client';
 
 import { validateVideoFileSize } from '@lobechat/utils/client';
-import { Flexbox } from '@lobehub/ui';
+import { Block, Flexbox, Icon, Text } from '@lobehub/ui';
 import { Upload } from 'antd';
 import { createStaticStyles, css, cssVar, cx } from 'antd-style';
 import {
@@ -12,9 +12,10 @@ import {
   Gavel,
   Globe,
   LibraryBig,
+  type LucideIcon,
   PlusIcon,
 } from 'lucide-react';
-import { memo, useEffect, useState } from 'react';
+import { memo, type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { message } from '@/components/AntdStaticMethods';
@@ -42,27 +43,32 @@ const prefixCls = 'ant';
 
 const styles = createStaticStyles(({ css }) => ({
   compactDropdownMenu: css`
-    padding-block: 4px !important;
+    padding-block: 6px !important;
     padding-inline: 0 !important;
 
+    &.${prefixCls}-dropdown-menu {
+      border-radius: 14px;
+    }
+
     .${prefixCls}-dropdown-menu, [role='menu'] {
-      padding-block: 4px;
+      padding-block: 6px;
     }
 
     [role='menuitem'] {
       width: auto !important;
-      min-height: 36px;
-      margin-inline: 4px;
-      padding-block: 6px;
+      min-height: 40px;
+      margin-inline: 6px;
+      padding-block: 8px;
       padding-inline: 14px;
+      border-radius: 10px;
 
-      font-size: 12px;
+      font-size: 14px;
       color: ${cssVar.colorText} !important;
     }
 
     [role='menuitem'] svg {
-      width: 13px !important;
-      height: 13px !important;
+      width: 18px !important;
+      height: 18px !important;
       color: ${cssVar.colorText} !important;
     }
 
@@ -81,6 +87,36 @@ const hotArea = css`
     background-color: transparent;
   }
 `;
+
+interface IndicatorTagProps {
+  icon: LucideIcon;
+  label?: ReactNode;
+  onClick?: () => void;
+  title?: string;
+}
+
+// Active toggle shown next to the "+" button as a labeled pill (icon + text).
+const IndicatorTag = memo<IndicatorTagProps>(({ icon, label, onClick, title }) => (
+  <Block
+    clickable
+    horizontal
+    align={'center'}
+    gap={6}
+    height={28}
+    paddingInline={10}
+    style={{ borderRadius: 16 }}
+    title={title}
+    variant={'filled'}
+    onClick={onClick}
+  >
+    <Icon color={cssVar.colorInfo} icon={icon} size={16} />
+    <Text ellipsis fontSize={13} style={{ color: cssVar.colorText, maxWidth: 160 }}>
+      {label}
+    </Text>
+  </Block>
+));
+
+IndicatorTag.displayName = 'IndicatorTag';
 
 const PlusActions = memo(() => {
   const { t } = useTranslation('chat');
@@ -304,16 +340,15 @@ const PlusActions = memo(() => {
           title={t('input.more')}
           dropdown={{
             menu: { className: styles.compactDropdownMenu, items },
-            minWidth: 180,
+            minWidth: 220,
             placement: 'topLeft',
           }}
           onOpenChange={setOpen}
         />
         {showSearchIndicator && (
-          <Action
-            color={cssVar.colorInfo}
+          <IndicatorTag
             icon={Globe}
-            showTooltip={false}
+            label={t('search.title')}
             title={t('search.title')}
             onClick={async () => {
               await updateAgentChatConfig({ searchMode: 'off' });
@@ -321,19 +356,17 @@ const PlusActions = memo(() => {
           />
         )}
         {showLibraryIndicator && (
-          <Action
-            color={cssVar.colorInfo}
+          <IndicatorTag
             icon={LibraryBig}
-            showTooltip={false}
+            label={t('knowledgeBase.title')}
             title={t('knowledgeBase.title')}
             onClick={() => setLibraryOpen(true)}
           />
         )}
         {showProjectIndicator && (
-          <Action
-            color={cssVar.colorInfo}
+          <IndicatorTag
             icon={FolderOpenIcon}
-            showTooltip={false}
+            label={activeProjectDisplay?.name}
             title={activeProjectDisplay?.name}
             onClick={() => {
               if (activeTopicId && effectiveProjectId) {
@@ -345,10 +378,9 @@ const PlusActions = memo(() => {
           />
         )}
         {councilMode && councilReady && (
-          <Action
-            color={cssVar.colorInfo}
+          <IndicatorTag
             icon={Gavel}
-            showTooltip={false}
+            label={t('modelCouncil.title')}
             title={t('modelCouncil.title')}
             onClick={() => setCouncilMode(false)}
           />
