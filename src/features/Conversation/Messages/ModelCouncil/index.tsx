@@ -146,8 +146,7 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
       if (!groupMessage || groupMessage.role !== 'compareGroup') return false;
 
       return s.displayMessages.some((item) => {
-        const councilMeta = (item.metadata as any)?.modelCouncil;
-        if (item.role !== 'assistant' || !councilMeta) return false;
+        if (item.role !== 'assistant') return false;
 
         return (
           groupMessage.children?.some((child) => child.id === item.id) ||

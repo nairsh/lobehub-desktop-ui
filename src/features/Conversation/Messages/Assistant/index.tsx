@@ -139,7 +139,7 @@ const AssistantMessage = memo<AssistantMessageProps>(({ id, index, disableEditin
   const councilGroupId = useConversationStore(
     useCallback(
       (s) => {
-        if (!isModelCouncilAssistant) return undefined;
+        if (role !== 'assistant') return undefined;
 
         return s.displayMessages.find((message) => {
           if (message.role !== 'compareGroup') return false;
@@ -150,7 +150,7 @@ const AssistantMessage = memo<AssistantMessageProps>(({ id, index, disableEditin
           );
         })?.id;
       },
-      [id, isModelCouncilAssistant, item.parentId],
+      [id, item.parentId, role],
     ),
   );
   const councilAboveMessage = councilGroupId ? (
