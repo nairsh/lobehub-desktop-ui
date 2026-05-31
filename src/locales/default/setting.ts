@@ -569,7 +569,9 @@ export default {
   'settingAppearance.themePreset.desc':
     'Apply a curated color theme preset (overrides primary & neutral color)',
   'settingAppearance.themePreset.none': 'None',
-  'settingAppearance.themePreset.perplexity': 'Perplexity',
+  'settingAppearance.themePreset.ember': 'Ember',
+  'settingAppearance.themePreset.graphite': 'Graphite',
+  'settingAppearance.themePreset.ocean': 'Ocean',
   'settingAppearance.themePreset.title': 'Theme Preset',
   'settingAppearance.title': 'Application Appearance',
   'settingChat.autoCreateTopicThreshold.desc':

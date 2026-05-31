@@ -6,7 +6,7 @@ export type AnimationMode = 'disabled' | 'agile' | 'elegant';
 
 export type ContextMenuMode = 'disabled' | 'default';
 
-export type ThemePreset = 'perplexity';
+export type ThemePreset = 'graphite' | 'ocean' | 'ember';
 
 export interface UserGeneralConfig {
   animationMode?: AnimationMode;

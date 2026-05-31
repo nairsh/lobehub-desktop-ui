@@ -25,7 +25,7 @@ import { useUserStore } from '@/store/user';
 import { userGeneralSettingsSelectors } from '@/store/user/selectors';
 import { GlobalStyle } from '@/styles';
 import { setCookie } from '@/utils/client/cookie';
-import { createEnhancedThemeTokens } from '@/utils/customTheme';
+import { createEnhancedThemeTokens, getThemePreset } from '@/utils/customTheme';
 
 const styles = createStaticStyles(({ css, cssVar }) => ({
   app: css`
@@ -151,11 +151,9 @@ const AppTheme = memo<AppThemeProps>(
 
     const currentAppearence = isDark ? 'dark' : 'light';
 
-    // Presets supply their own primary/neutral named colors via customTheme.
-    const resolvedPrimaryColor =
-      themePreset === 'perplexity' ? 'cyan' : (primaryColor ?? defaultPrimaryColor);
-    const resolvedNeutralColor =
-      themePreset === 'perplexity' ? 'slate' : (neutralColor ?? defaultNeutralColor);
+    const preset = getThemePreset(themePreset);
+    const resolvedPrimaryColor = preset?.primaryColor ?? primaryColor ?? defaultPrimaryColor;
+    const resolvedNeutralColor = preset?.neutralColor ?? neutralColor ?? defaultNeutralColor;
 
     const enhancedThemeTokens = useMemo(
       () =>

@@ -2,7 +2,11 @@ import type { ThemePreset } from '@lobechat/types';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { createPresetSwatchBackground, defaultThemeSwatchBackground } from '@/utils/customTheme';
+import {
+  createPresetSwatchBackground,
+  defaultThemeSwatchBackground,
+  themePresetIds,
+} from '@/utils/customTheme';
 
 import ThemeSwatchesBase from './ThemeSwatchesBase';
 
@@ -22,11 +26,11 @@ const ThemePresets = memo<IProps>(({ value, onChange }) => {
           background: defaultThemeSwatchBackground,
           label: t('settingAppearance.themePreset.none'),
         },
-        {
-          background: createPresetSwatchBackground('perplexity'),
-          label: 'Perplexity',
-          value: 'perplexity',
-        },
+        ...themePresetIds.map((preset) => ({
+          background: createPresetSwatchBackground(preset),
+          label: t(`settingAppearance.themePreset.${preset}`),
+          value: preset,
+        })),
       ]}
       onChange={(next) => onChange?.(next as ThemePreset | '')}
     />
