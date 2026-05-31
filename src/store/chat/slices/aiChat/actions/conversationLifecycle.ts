@@ -431,9 +431,12 @@ export class ConversationLifecycleActionImpl {
         const acceptedCouncilCount = data.settingsSnapshot?.councilModels?.length || 0;
 
         if (requestedCouncilCount > 0 && acceptedCouncilCount !== requestedCouncilCount) {
-          throw new Error(
-            `Model Council expected ${requestedCouncilCount} council models, but the backend accepted ${acceptedCouncilCount}. Re-save Model Council settings or check unavailable providers.`,
-          );
+          console.warn('[ModelCouncil] Backend accepted fewer council models than requested', {
+            accepted: data.settingsSnapshot?.councilModels,
+            acceptedCouncilCount,
+            requested: councilOverride?.councilModels,
+            requestedCouncilCount,
+          });
         }
 
         const finalContext = {
