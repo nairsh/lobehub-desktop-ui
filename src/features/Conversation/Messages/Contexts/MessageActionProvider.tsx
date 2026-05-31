@@ -27,31 +27,31 @@ interface SingletonPortalProps {
 const isFailedCouncilStatus = (status?: string) =>
   status === 'failed' || status === 'timeout' || status === 'canceled';
 
-const isTerminalCouncilStatus = (status?: string) =>
-  status === 'completed' || isFailedCouncilStatus(status);
+const canShowCouncilActions = (item: any, contentBlock?: any) => {
+  const councilMeta = item?.metadata?.modelCouncil;
+  if (!councilMeta && item?.role !== 'compareGroup') return true;
 
-const isActiveModelCouncilResponse = (message: any) => {
-  if (!message) return false;
+  const status = councilMeta?.status || item?.metadata?.status;
+  if (item?.role === 'compareGroup') return status === 'completed' || isFailedCouncilStatus(status);
 
-  const metadata = message.metadata || {};
-  const council = metadata.modelCouncil;
+  return (
+    status === 'completed' ||
+    isFailedCouncilStatus(status) ||
+    !!contentBlock?.content ||
+    !!item?.content
+  );
+};
 
-  if (message.role === 'compareGroup') {
-    const groupStatus = metadata.status as string | undefined;
-    if (!isTerminalCouncilStatus(groupStatus)) return true;
+const hasPendingCouncilResponse = (messages: any[], userId: string) => {
+  const councilMessage = messages.find(
+    (message) => message.role === 'compareGroup' && message.parentId === userId,
+  );
+  if (!councilMessage) return false;
 
-    return (message.children || []).some((child: any) => {
-      const status = child.error
-        ? 'failed'
-        : ((child.metadata?.modelCouncil || {}) as { status?: string }).status || 'waiting';
-
-      return !isTerminalCouncilStatus(status);
-    });
-  }
-
-  if (!council) return false;
-
-  return !isTerminalCouncilStatus(council.status);
+  return (
+    !isFailedCouncilStatus(councilMessage.metadata?.status) &&
+    councilMessage.metadata?.status !== 'completed'
+  );
 };
 
 const AssistantActionsRenderer: FC<SingletonPortalProps> = ({ id, index }) => {
@@ -59,17 +59,20 @@ const AssistantActionsRenderer: FC<SingletonPortalProps> = ({ id, index }) => {
   const item = useConversationStore(dataSelectors.getDisplayMessageById(id), isEqual);
 
   if (!item) return null;
+  if (!canShowCouncilActions(item)) return null;
 
   return <AssistantActionsBar actionsConfig={actionsConfig} data={item} id={id} index={index} />;
 };
 
-const UserActionsRenderer: FC<SingletonPortalProps> = ({ id, index }) => {
+const UserActionsRenderer: FC<SingletonPortalProps> = ({ id }) => {
   const actionsConfig = useConversationStore((s) => s.actionsBar?.user);
   const item = useConversationStore(dataSelectors.getDisplayMessageById(id), isEqual);
-  const nextMessage = useConversationStore((s) => s.displayMessages[index + 1], isEqual);
+  const pendingCouncilResponse = useConversationStore((s) =>
+    hasPendingCouncilResponse(s.displayMessages, id),
+  );
 
   if (!item) return null;
-  if (isActiveModelCouncilResponse(nextMessage)) return null;
+  if (pendingCouncilResponse) return null;
 
   return <UserActionsBar actionsConfig={actionsConfig} data={item} id={id} />;
 };
@@ -85,6 +88,7 @@ const AssistantGroupActionsRenderer: FC<SingletonPortalProps> = ({ id }) => {
   const contentId = lastAssistantMsg?.id;
 
   if (!item) return null;
+  if (!canShowCouncilActions(item, lastAssistantMsg)) return null;
 
   return (
     <GroupActionsBar
@@ -159,18 +163,7 @@ const SingletonMessageActionsBar = memo(() => {
   }, []);
 
   const hostEl = hostRef.current;
-  if (!hostEl || !actionType || !portalElement) return null;
-
-  if (portalElement && actionType) {
-    const selector =
-      actionType.type === 'assistant'
-        ? MESSAGE_ACTION_BAR_PORTAL_SELECTORS.assistant
-        : actionType.type === 'assistantGroup'
-          ? MESSAGE_ACTION_BAR_PORTAL_SELECTORS.assistantGroup
-          : MESSAGE_ACTION_BAR_PORTAL_SELECTORS.user;
-
-    if (!portalElement.querySelector(selector)) return null;
-  }
+  if (!hostEl || !actionType) return null;
 
   switch (actionType.type) {
     case 'assistant': {

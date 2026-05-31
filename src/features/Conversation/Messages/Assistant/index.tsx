@@ -76,9 +76,8 @@ const AssistantMessage = memo<AssistantMessageProps>(({ id, index, disableEditin
   const councilMeta = ((metadata as any)?.modelCouncil || undefined) as
     | { role?: string; settingsSnapshot?: ModelCouncilSettings; status?: string }
     | undefined;
-  const settingsSnapshot =
-    ((metadata as any)?.settingsSnapshot as ModelCouncilSettings | undefined) ||
-    councilMeta?.settingsSnapshot;
+  const settingsSnapshot = ((metadata as any)?.settingsSnapshot ||
+    councilMeta?.settingsSnapshot) as ModelCouncilSettings | undefined;
   const isModelCouncilAssistant = !!councilMeta;
   const avatar = useMemo(
     () => (modelDisplayName ? { ...agentMeta, title: modelDisplayName } : agentMeta),
@@ -150,7 +149,7 @@ const AssistantMessage = memo<AssistantMessageProps>(({ id, index, disableEditin
       showTitle={!isModelCouncilAssistant}
       time={createdAt}
       actions={
-        isModelCouncilAssistant ? null : (
+        isModelCouncilAssistant && !councilProcessingDone ? null : (
           <>
             {isDevMode && branch && (
               <MessageBranch
@@ -164,7 +163,7 @@ const AssistantMessage = memo<AssistantMessageProps>(({ id, index, disableEditin
         )
       }
       customAvatarRender={
-        isModelCouncilAssistant
+        isModelCouncilAssistant && councilModels.length > 0
           ? () => (
               <span style={{ display: 'inline-flex', alignItems: 'center' }}>
                 {councilModels.map((item, itemIndex) => (

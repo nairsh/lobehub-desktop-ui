@@ -1,11 +1,9 @@
 'use client';
 
-import { LOADING_FLAT } from '@lobechat/const';
 import type { AssistantContentBlock } from '@lobechat/types';
 import { ModelIcon } from '@lobehub/icons';
 import { Flexbox, Icon, Markdown, Text } from '@lobehub/ui';
 import { createStyles } from 'antd-style';
-import dayjs from 'dayjs';
 import { AlertCircle, CheckCircle2, ChevronRight, Loader2 } from 'lucide-react';
 import { memo, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -71,26 +69,6 @@ const useStyles = createStyles(({ css, token }) => ({
     border-radius: 8px;
     color: ${token.colorTextSecondary};
   `,
-  header: css`
-    min-height: 30px;
-  `,
-  headerStackIcon: css`
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    width: 28px;
-    height: 28px;
-    border: 1px solid ${token.colorBgContainer};
-    border-radius: 50%;
-
-    background: ${token.colorBgElevated};
-
-    &:not(:first-child) {
-      margin-inline-start: -10px;
-    }
-  `,
   pill: css`
     max-width: min(420px, 70vw);
     padding-block: 4px;
@@ -100,20 +78,17 @@ const useStyles = createStyles(({ css, token }) => ({
 
     background: ${token.colorBgContainer};
   `,
-  pillLabel: css`
-    overflow: hidden;
-
-    min-width: 0;
-
-    font-weight: 600;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  `,
   response: css`
     margin-block-start: 4px;
   `,
   responseHeader: css`
     min-height: 28px;
+  `,
+  streamPreview: css`
+    overflow: hidden;
+    max-height: 120px;
+    padding-inline-start: 24px;
+    color: ${token.colorTextSecondary};
   `,
   stackIcon: css`
     overflow: hidden;
@@ -148,16 +123,13 @@ const getChildModel = (child: AssistantContentBlock) =>
     metadata?: Record<string, any>;
     model?: string | null;
     provider?: string | null;
-    reasoning?: { content?: string };
+    reasoning?: { content?: string; duration?: number };
   };
 
 const isFailedStatus = (status?: string) =>
   status === 'failed' || status === 'timeout' || status === 'canceled';
 
 const isTerminalStatus = (status?: string) => status === 'completed' || isFailedStatus(status);
-
-const visibleContent = (content?: string) =>
-  content && content !== LOADING_FLAT ? content.trim() : '';
 
 const ModelCouncilMessage = memo<ModelCouncilMessageProps>(({ id }) => {
   const { t } = useTranslation('chat');
@@ -167,8 +139,7 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(({ id }) => {
   const enabledModels = useEnabledChatModels();
   const children = (message?.children || []) as AssistantContentBlock[];
   const metadata = (message?.metadata as any) || {};
-  const settingsSnapshot = (metadata.settingsSnapshot ||
-    metadata.modelCouncil?.settingsSnapshot) as ModelCouncilSettings | undefined;
+  const settingsSnapshot = metadata.settingsSnapshot as ModelCouncilSettings | undefined;
   const groupStatus = metadata.status as string | undefined;
 
   const modelDisplayMap = useMemo(() => {
@@ -231,41 +202,9 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(({ id }) => {
       return isTerminalStatus(status);
     });
   const showSynthesisStatus = firstTwoMembersFinished && (hasRunningMember || isJudging);
-  const judgeModel = judgeChild ? getChildModel(judgeChild) : undefined;
-  const judgeReasoning = visibleContent(judgeModel?.reasoning?.content);
-  const showSynthesisCard = showSynthesisStatus || !!judgeReasoning;
-  const synthesisExpanded = expanded.__synthesis;
-  const headerModels =
-    settingsSnapshot?.councilModels?.length &&
-    settingsSnapshot.councilModels.map((item) => ({
-      key: modelKey(item),
-      model: item.model,
-      provider: item.provider,
-    }));
-  const stackedHeaderModels =
-    headerModels ||
-    memberChildren.map((child) => {
-      const childModel = getChildModel(child);
-
-      return {
-        key: child.id,
-        model: childModel.model || '',
-        provider: childModel.provider || '',
-      };
-    });
 
   return (
     <Flexbox gap={12} style={{ marginInline: 'auto', maxWidth: 840, width: '100%' }}>
-      <Flexbox horizontal align={'center'} className={styles.header} gap={10}>
-        <Flexbox horizontal align={'center'}>
-          {stackedHeaderModels.map((item) => (
-            <span className={styles.headerStackIcon} key={item.key}>
-              <ModelIcon model={item.model || item.provider || ''} size={19} type={'color'} />
-            </span>
-          ))}
-        </Flexbox>
-        <Text type={'secondary'}>{dayjs(message.createdAt).fromNow()}</Text>
-      </Flexbox>
       {memberChildren.map((child: AssistantContentBlock) => {
         const childModel = getChildModel(child);
         const childMeta = (childModel.metadata?.modelCouncil || {}) as { status?: string };
@@ -280,10 +219,8 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(({ id }) => {
           t('modelCouncil.member');
         const completed = status === 'completed';
         const failed = isFailedStatus(status);
-        const reasoning = visibleContent(childModel.reasoning?.content);
-        const content = visibleContent(child.content);
-        const preview = reasoning || content;
-        const showStatusLine = completed || failed || firstTwoMembersFinished;
+        const reasoningContent = childModel.reasoning?.content?.trim();
+        const livePreview = !completed && !failed ? reasoningContent || child.content : '';
 
         return (
           <Flexbox className={styles.card} gap={12} key={child.id}>
@@ -292,10 +229,10 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(({ id }) => {
                 <span className={styles.iconCell}>
                   <ModelIcon model={modelId || modelLabel} size={16} type={'color'} />
                 </span>
-                <span className={styles.pillLabel}>
+                <Text ellipsis strong>
                   {modelLabel}
                   {!completed && !failed ? ` ${t('modelCouncil.status.running')}` : ''}
-                </span>
+                </Text>
               </Flexbox>
               <button
                 className={styles.expandButton}
@@ -308,83 +245,65 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(({ id }) => {
                 </Flexbox>
               </button>
             </Flexbox>
-            {showStatusLine && (
-              <Flexbox horizontal align={'center'} gap={8}>
-                {completed ? (
-                  <Icon color={theme.colorSuccess} icon={CheckCircle2} size={16} />
-                ) : failed ? (
-                  <Icon color={theme.colorWarning} icon={AlertCircle} size={16} />
-                ) : (
-                  <Icon spin color={theme.colorTextSecondary} icon={Loader2} size={16} />
-                )}
-                <Text type={'secondary'}>
-                  {failed
+            <Flexbox horizontal align={'center'} gap={8}>
+              {completed ? (
+                <Icon color={theme.colorSuccess} icon={CheckCircle2} size={16} />
+              ) : failed ? (
+                <Icon color={theme.colorWarning} icon={AlertCircle} size={16} />
+              ) : (
+                <Icon spin color={theme.colorTextSecondary} icon={Loader2} size={16} />
+              )}
+              <Text type={'secondary'}>
+                {livePreview
+                  ? reasoningContent
+                    ? t('modelCouncil.reasoning')
+                    : t('modelCouncil.status.running')
+                  : failed
                     ? childModel.error?.message || t('modelCouncil.status.failed')
                     : completed
                       ? t('modelCouncil.status.completed')
                       : t('modelCouncil.status.running')}
-                </Text>
-              </Flexbox>
-            )}
-            {isExpanded && reasoning && (
-              <div className={styles.content}>
-                <Markdown variant={'chat'}>{reasoning}</Markdown>
+              </Text>
+            </Flexbox>
+            {livePreview && (
+              <div aria-live="polite" className={styles.streamPreview}>
+                <Markdown variant={'chat'}>{livePreview}</Markdown>
               </div>
             )}
-            {isExpanded && content && (
+            {isExpanded && child.content && (
               <div className={styles.content}>
-                <Markdown variant={'chat'}>{content}</Markdown>
+                <Markdown variant={'chat'}>{child.content}</Markdown>
               </div>
             )}
-            {!isExpanded && preview && <div className={styles.contentPreview}>{preview}</div>}
+            {!isExpanded && !livePreview && child.content && (
+              <div className={styles.contentPreview}>{child.content}</div>
+            )}
           </Flexbox>
         );
       })}
-      {showSynthesisCard && (
-        <Flexbox className={styles.card} gap={12}>
-          <Flexbox horizontal align={'center'} justify={'space-between'}>
-            <Flexbox horizontal align={'center'} className={styles.pill} gap={8}>
-              {isJudging || !judgeReasoning ? (
-                <Icon spin color={theme.colorTextSecondary} icon={Loader2} size={16} />
-              ) : (
-                <Icon color={theme.colorSuccess} icon={CheckCircle2} size={16} />
-              )}
-              <Text strong>{t('modelCouncil.synthesizing')}</Text>
-            </Flexbox>
-            {judgeReasoning && (
-              <button
-                aria-expanded={synthesisExpanded}
-                className={styles.expandButton}
-                type="button"
-                onClick={() =>
-                  setExpanded((prev) => ({ ...prev, __synthesis: !synthesisExpanded }))
-                }
-              >
-                <Flexbox horizontal align={'center'} gap={6}>
-                  {t('modelCouncil.viewResponse')}
-                  <Icon icon={ChevronRight} size={14} />
-                </Flexbox>
-              </button>
-            )}
-          </Flexbox>
-          {synthesisExpanded && judgeReasoning && (
-            <div className={styles.content}>
-              <Markdown variant={'chat'}>{judgeReasoning}</Markdown>
-            </div>
-          )}
-          {!synthesisExpanded && judgeReasoning && (
-            <div className={styles.contentPreview}>{judgeReasoning}</div>
-          )}
+      {showSynthesisStatus && (
+        <Flexbox horizontal align={'center'} className={styles.dash} gap={8}>
+          <Icon spin icon={Loader2} size={16} />
+          <Text strong>
+            {hasRunningMember ? t('modelCouncil.thinking') : t('modelCouncil.synthesizing')}
+          </Text>
         </Flexbox>
       )}
       {judgeChild?.content && (
         <Flexbox className={styles.response} gap={8}>
           <Flexbox horizontal align={'center'} className={styles.responseHeader}>
-            {stackedHeaderModels.map((item) => (
-              <span className={styles.stackIcon} key={item.key}>
-                <ModelIcon model={item.model || item.provider || ''} size={17} type={'color'} />
-              </span>
-            ))}
+            {memberChildren.map((child) => {
+              const childModel = getChildModel(child);
+              return (
+                <span className={styles.stackIcon} key={child.id}>
+                  <ModelIcon
+                    model={childModel.model || childModel.provider || ''}
+                    size={17}
+                    type={'color'}
+                  />
+                </span>
+              );
+            })}
           </Flexbox>
           <Markdown variant={'chat'}>{judgeChild.content}</Markdown>
         </Flexbox>
