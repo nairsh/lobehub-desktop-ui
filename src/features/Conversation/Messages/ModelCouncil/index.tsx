@@ -69,6 +69,12 @@ const useStyles = createStyles(({ css, token }) => ({
     border-radius: 8px;
     color: ${token.colorTextSecondary};
   `,
+  phaseDivider: css`
+    height: 1px;
+    margin-block: 2px;
+    border: 0;
+    background: ${token.colorSplit};
+  `,
   pill: css`
     max-width: min(420px, 70vw);
     padding-block: 4px;
@@ -114,6 +120,8 @@ interface ModelCouncilMessageProps {
   hideJudgeResponse?: boolean;
   id: string;
   index: number;
+  judgeMessage?: AssistantContentBlock;
+  judgeStatus?: string;
 }
 
 const modelKey = (item: Pick<ModelCouncilModelConfig, 'provider' | 'model'>) =>
@@ -134,7 +142,7 @@ const isFailedStatus = (status?: string) =>
 const isTerminalStatus = (status?: string) => status === 'completed' || isFailedStatus(status);
 
 const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
-  ({ id, embedded, hideJudgeResponse }) => {
+  ({ id, embedded, hideJudgeResponse, judgeMessage, judgeStatus }) => {
     const { t } = useTranslation('chat');
     const { styles, theme } = useStyles();
     const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -204,13 +212,21 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
 
       return !isTerminalStatus(status);
     });
-    const judgeStatus = judgeChild
+    const groupJudgeStatus = judgeChild
       ? ((getChildModel(judgeChild).metadata?.modelCouncil || {}) as { status?: string }).status ||
         'waiting'
       : undefined;
+    const activeJudge = judgeChild
+      ? getChildModel(judgeChild)
+      : judgeMessage
+        ? getChildModel(judgeMessage)
+        : undefined;
+    const activeJudgeStatus = judgeChild
+      ? groupJudgeStatus
+      : judgeStatus || (activeJudge?.content ? 'completed' : undefined);
     const isJudging =
-      !!judgeChild &&
-      !isTerminalStatus(judgeStatus) &&
+      !!activeJudge &&
+      !isTerminalStatus(activeJudgeStatus) &&
       (groupStatus === 'judging' || !hasRunningMember);
     const firstTwoMembers = memberChildren.slice(0, Math.min(2, memberChildren.length));
     const firstTwoMembersFinished =
@@ -223,7 +239,9 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
 
         return isTerminalStatus(status);
       });
-    const showSynthesisStatus = firstTwoMembersFinished && (hasRunningMember || isJudging);
+    const showSynthesisStatus =
+      firstTwoMembersFinished && (hasRunningMember || (isJudging && !activeJudge));
+    const showJudgeCard = firstTwoMembersFinished && !!activeJudge && !hasRunningMember;
 
     return (
       <Flexbox gap={12} style={{ marginInline: 'auto', maxWidth: 840, width: '100%' }}>
@@ -303,6 +321,7 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
             </Flexbox>
           );
         })}
+        {(showSynthesisStatus || showJudgeCard) && <div className={styles.phaseDivider} />}
         {showSynthesisStatus && (
           <Flexbox horizontal align={'center'} className={styles.dash} gap={8}>
             <Icon spin icon={Loader2} size={16} />
@@ -311,6 +330,81 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
             </Text>
           </Flexbox>
         )}
+        {showJudgeCard &&
+          (() => {
+            const judge = activeJudge;
+            if (!judge) return null;
+
+            const modelId = judge.model || settingsSnapshot?.judgeModel?.model || '';
+            const providerId = judge.provider || settingsSnapshot?.judgeModel?.provider || '';
+            const modelLabel =
+              modelDisplayMap.get(modelKey({ model: modelId, provider: providerId })) ||
+              settingsSnapshot?.judgeModel?.label ||
+              modelId ||
+              providerId ||
+              t('modelCouncil.synthesizing');
+            const status = activeJudgeStatus || 'running';
+            const isExpanded = expanded[judge.id];
+            const completed = status === 'completed';
+            const failed = isFailedStatus(status);
+            const livePreview = !completed && !failed ? judge.content : '';
+
+            return (
+              <Flexbox className={styles.card} gap={12} key={judge.id}>
+                <Flexbox horizontal align={'center'} justify={'space-between'}>
+                  <Flexbox horizontal align={'center'} className={styles.pill} gap={8}>
+                    <span className={styles.iconCell}>
+                      <ModelIcon model={modelId || modelLabel} size={16} type={'color'} />
+                    </span>
+                    <Text ellipsis strong>
+                      {modelLabel}
+                    </Text>
+                  </Flexbox>
+                  {judge.content && (
+                    <button
+                      className={styles.expandButton}
+                      type="button"
+                      onClick={() => setExpanded((prev) => ({ ...prev, [judge.id]: !isExpanded }))}
+                    >
+                      <Flexbox horizontal align={'center'} gap={6}>
+                        {t('modelCouncil.viewResponse')}
+                        <Icon icon={ChevronRight} size={14} />
+                      </Flexbox>
+                    </button>
+                  )}
+                </Flexbox>
+                <Flexbox horizontal align={'center'} gap={8}>
+                  {completed ? (
+                    <Icon color={theme.colorSuccess} icon={CheckCircle2} size={16} />
+                  ) : failed ? (
+                    <Icon color={theme.colorWarning} icon={AlertCircle} size={16} />
+                  ) : (
+                    <Icon spin color={theme.colorTextSecondary} icon={Loader2} size={16} />
+                  )}
+                  <Text type={'secondary'}>
+                    {failed
+                      ? judge.error?.message || t('modelCouncil.status.failed')
+                      : completed
+                        ? t('modelCouncil.status.synthesized')
+                        : t('modelCouncil.synthesizing')}
+                  </Text>
+                </Flexbox>
+                {livePreview && (
+                  <div aria-live="polite" className={styles.streamPreview}>
+                    <Markdown variant={'chat'}>{livePreview}</Markdown>
+                  </div>
+                )}
+                {isExpanded && judge.content && (
+                  <div className={styles.content}>
+                    <Markdown variant={'chat'}>{judge.content}</Markdown>
+                  </div>
+                )}
+                {!isExpanded && !livePreview && judge.content && (
+                  <div className={styles.contentPreview}>{judge.content}</div>
+                )}
+              </Flexbox>
+            );
+          })()}
         {!hideJudgeResponse && judgeChild?.content && (
           <Flexbox className={styles.response} gap={8}>
             <Flexbox horizontal align={'center'} className={styles.responseHeader}>

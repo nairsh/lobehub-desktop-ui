@@ -158,7 +158,14 @@ const AssistantMessage = memo<AssistantMessageProps>(({ id, index, disableEditin
     ),
   );
   const councilAboveMessage = councilGroupId ? (
-    <ModelCouncilMessage embedded hideJudgeResponse id={councilGroupId} index={index} />
+    <ModelCouncilMessage
+      embedded
+      hideJudgeResponse
+      id={councilGroupId}
+      index={index}
+      judgeMessage={item}
+      judgeStatus={generating || isCreating ? 'running' : 'completed'}
+    />
   ) : null;
 
   return (
@@ -239,7 +246,7 @@ const AssistantMessage = memo<AssistantMessageProps>(({ id, index, disableEditin
       onDoubleClick={onDoubleClick}
       onMouseEnter={onMouseEnter}
     >
-      <MessageContent {...item} />
+      <MessageContent {...item} hideReasoning={!!councilGroupId} />
     </ChatItem>
   );
 }, isEqual);

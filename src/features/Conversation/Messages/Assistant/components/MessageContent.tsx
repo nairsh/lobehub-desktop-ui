@@ -16,8 +16,14 @@ import Reasoning from '../../components/Reasoning';
 import SearchGrounding from '../../components/SearchGrounding';
 import { useMarkdown } from '../useMarkdown';
 
-const MessageContent = memo<UIChatMessage>(
-  ({ id, tools, content, chunksList, search, imageList, metadata, ...props }) => {
+const EMPTY_REACTIONS: NonNullable<NonNullable<UIChatMessage['metadata']>['reactions']> = [];
+
+interface MessageContentProps extends UIChatMessage {
+  hideReasoning?: boolean;
+}
+
+const MessageContent = memo<MessageContentProps>(
+  ({ id, tools, content, chunksList, search, imageList, metadata, hideReasoning, ...props }) => {
     const markdownProps = useMarkdown(id);
     // Use ConversationStore instead of ChatStore
     const generating = useConversationStore(messageStateSelectors.isMessageGenerating(id));
@@ -37,12 +43,13 @@ const MessageContent = memo<UIChatMessage>(
     // remove \n to avoid empty content
     // refs: https://github.com/lobehub/lobe-chat/pull/6153
     const showReasoning =
-      (!!props.reasoning && props.reasoning.content?.trim() !== '') ||
-      (!props.reasoning && isReasoning);
+      !hideReasoning &&
+      ((!!props.reasoning && props.reasoning.content?.trim() !== '') ||
+        (!props.reasoning && isReasoning));
 
     const showFileChunks = !!chunksList && chunksList.length > 0;
 
-    const reactions = metadata?.reactions || [];
+    const reactions = metadata?.reactions || EMPTY_REACTIONS;
 
     const handleReactionClick = useCallback(
       (emoji: string) => {
@@ -53,7 +60,7 @@ const MessageContent = memo<UIChatMessage>(
           addReaction(id, emoji);
         }
       },
-      [id, reactions, addReaction, removeReaction],
+      [id, reactions, addReaction, removeReaction, userId],
     );
 
     const isActive = useCallback(
@@ -61,7 +68,7 @@ const MessageContent = memo<UIChatMessage>(
         const reaction = reactions.find((r) => r.emoji === emoji);
         return !!reaction && reaction.users.includes(userId);
       },
-      [reactions],
+      [reactions, userId],
     );
 
     if (isCollapsed) return <CollapsedMessage content={content} id={id} />;
