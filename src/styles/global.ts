@@ -83,6 +83,7 @@ export default ({ token }: { prefixCls: string; token: Theme }) => css`
     overflow: hidden;
 
     padding-block: 5px !important;
+    padding-inline: 6px !important;
     border: 1px solid ${token.colorBorderSecondary};
     border-radius: 14px !important;
 
@@ -90,18 +91,18 @@ export default ({ token }: { prefixCls: string; token: Theme }) => css`
   }
 
   [role='menu'] [role='menuitem'] {
-    min-height: 36px;
+    min-height: 32px;
     margin-block: 1px;
-    margin-inline: 6px;
-    padding-block: 6px;
+    margin-inline: 0;
+    padding-block: 5px;
     padding-inline: 10px;
     border-radius: 8px;
 
-    font-size: 14px;
+    font-size: 13px;
   }
 
   [role='menu'] [role='separator'] {
-    margin-inline: 10px;
+    margin-inline: 4px;
   }
 
   /* Snappy pop animation for all dropdown/popover menus */

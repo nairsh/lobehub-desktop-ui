@@ -36,20 +36,23 @@ const DEFAULT_PERSONALITY_IDS = [
 
 const useStyles = createStyles(({ css, token }) => ({
   modelRow: css`
-    align-items: center;
-
-    padding-block: 10px;
+    padding-block: 8px;
     padding-inline: 12px;
     border: 1px solid ${token.colorBorderSecondary};
-    border-radius: 8px;
+    border-radius: 10px;
 
     background: ${token.colorBgContainer};
   `,
   muted: css`
     color: ${token.colorTextTertiary};
   `,
+  nameCol: css`
+    flex-shrink: 0;
+    max-width: 180px;
+  `,
   personaSelect: css`
-    min-width: 180px;
+    flex: 1;
+    min-width: 0;
   `,
 }));
 
@@ -241,15 +244,15 @@ const Page = memo(() => {
                         selectedModel.personalityId || getDefaultPersonalityId(index);
 
                       return (
-                        <Flexbox className={styles.modelRow} gap={12} key={modelKey(selectedModel)}>
-                          <Flexbox horizontal align={'center'} gap={12} justify={'space-between'}>
-                            <Flexbox gap={2}>
-                              <Text>
+                        <Flexbox className={styles.modelRow} gap={8} key={modelKey(selectedModel)}>
+                          <Flexbox horizontal align={'center'} gap={10}>
+                            <Flexbox className={styles.nameCol} gap={0}>
+                              <Text ellipsis fontSize={13} weight={500}>
                                 {selectedModel.label ||
                                   fullModel?.displayName ||
                                   selectedModel.model}
                               </Text>
-                              <Text className={styles.muted} type={'secondary'}>
+                              <Text ellipsis className={styles.muted} fontSize={12}>
                                 {fullModel?.providerName || selectedModel.provider}
                               </Text>
                             </Flexbox>
@@ -260,10 +263,10 @@ const Page = memo(() => {
                               onChange={(value) => updateModelPersonality(selectedModel, value)}
                             />
                           </Flexbox>
-                          <Flexbox horizontal align={'center'} gap={8}>
+                          <Flexbox horizontal align={'center'} gap={8} justify={'flex-end'}>
                             {fullModel?.reasoning && (
                               <>
-                                <Text className={styles.muted} type={'secondary'}>
+                                <Text className={styles.muted} fontSize={12}>
                                   {t('modelCouncil.settings.models.reasoning')}
                                 </Text>
                                 <Switch

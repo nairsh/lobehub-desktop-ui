@@ -17,10 +17,15 @@ interface ThemePresetTokenSet {
   colorFillTertiary: string;
   colorInfo: string;
   colorPrimary: string;
+  colorPrimaryActive?: string;
   colorPrimaryBg: string;
   colorPrimaryBgHover: string;
   colorPrimaryBorder: string;
   colorPrimaryBorderHover: string;
+  colorPrimaryHover?: string;
+  colorPrimaryText?: string;
+  colorPrimaryTextActive?: string;
+  colorPrimaryTextHover?: string;
   colorSuccess: string;
   colorText: string;
   colorTextDescription: string;
@@ -286,42 +291,58 @@ export const themePresets: Record<ThemePreset, ThemePresetDefinition> = {
     primaryColor: 'orange',
     swatch: '#a8a29e',
     tokens: {
-      dark: createPresetTokenSet({
-        accent: '#fb923c',
-        background: '#11100e',
-        container: '#1c1917',
-        descriptionText: 'rgba(250, 250, 249, 0.56)',
-        elevated: '#292524',
-        error: '#f87171',
-        isDarkMode: true,
-        layout: '#171412',
-        neutral: '#a8a29e',
-        primaryBg: 'rgba(251, 146, 60, 0.12)',
-        primaryBgHover: 'rgba(251, 146, 60, 0.18)',
-        secondaryText: 'rgba(250, 250, 249, 0.72)',
-        success: '#4ade80',
-        tertiaryText: 'rgba(250, 250, 249, 0.42)',
-        text: '#fafaf9',
-        warning: '#fbbf24',
-      }),
-      light: createPresetTokenSet({
-        accent: '#ea580c',
-        background: '#fffefd',
-        container: '#ffffff',
-        descriptionText: 'rgba(41, 37, 36, 0.5)',
-        elevated: '#ffffff',
-        error: '#dc2626',
-        isDarkMode: false,
-        layout: '#f5f3f0',
-        neutral: '#78716c',
-        primaryBg: 'rgba(234, 88, 12, 0.075)',
-        primaryBgHover: 'rgba(234, 88, 12, 0.12)',
-        secondaryText: 'rgba(41, 37, 36, 0.68)',
-        success: '#16a34a',
-        tertiaryText: 'rgba(41, 37, 36, 0.4)',
-        text: '#292524',
-        warning: '#d97706',
-      }),
+      dark: {
+        ...createPresetTokenSet({
+          accent: '#57534e',
+          background: '#11100e',
+          container: '#1c1917',
+          descriptionText: 'rgba(250, 250, 249, 0.56)',
+          elevated: '#292524',
+          error: '#f87171',
+          info: '#60a5fa',
+          isDarkMode: true,
+          layout: '#171412',
+          neutral: '#a8a29e',
+          primaryBg: 'rgba(168, 162, 158, 0.14)',
+          primaryBgHover: 'rgba(168, 162, 158, 0.2)',
+          secondaryText: 'rgba(250, 250, 249, 0.72)',
+          success: '#4ade80',
+          tertiaryText: 'rgba(250, 250, 249, 0.42)',
+          text: '#fafaf9',
+          warning: '#fbbf24',
+        }),
+        colorPrimaryActive: '#44403c',
+        colorPrimaryHover: '#78716c',
+        colorPrimaryText: '#d6d3d1',
+        colorPrimaryTextActive: '#a8a29e',
+        colorPrimaryTextHover: '#e7e5e4',
+      },
+      light: {
+        ...createPresetTokenSet({
+          accent: '#1c1917',
+          background: '#fffefd',
+          container: '#ffffff',
+          descriptionText: 'rgba(41, 37, 36, 0.5)',
+          elevated: '#ffffff',
+          error: '#dc2626',
+          info: '#2563eb',
+          isDarkMode: false,
+          layout: '#f5f3f0',
+          neutral: '#78716c',
+          primaryBg: 'rgba(28, 25, 23, 0.06)',
+          primaryBgHover: 'rgba(28, 25, 23, 0.1)',
+          secondaryText: 'rgba(41, 37, 36, 0.68)',
+          success: '#16a34a',
+          tertiaryText: 'rgba(41, 37, 36, 0.4)',
+          text: '#292524',
+          warning: '#d97706',
+        }),
+        colorPrimaryActive: '#0c0a09',
+        colorPrimaryHover: '#292524',
+        colorPrimaryText: '#1c1917',
+        colorPrimaryTextActive: '#0c0a09',
+        colorPrimaryTextHover: '#292524',
+      },
     },
   },
   ivory: {

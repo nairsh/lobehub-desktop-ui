@@ -43,36 +43,18 @@ const prefixCls = 'ant';
 
 const styles = createStaticStyles(({ css }) => ({
   compactDropdownMenu: css`
-    padding-block: 6px !important;
-    padding-inline: 0 !important;
-
-    &.${prefixCls}-dropdown-menu {
-      border-radius: 14px;
-    }
-
-    .${prefixCls}-dropdown-menu, [role='menu'] {
-      padding-block: 6px;
-    }
-
     [role='menuitem'] {
-      width: auto !important;
-      min-height: 40px;
-      margin-inline: 6px;
-      padding-block: 8px;
-      padding-inline: 14px;
-      border-radius: 10px;
-
-      font-size: 14px;
       color: ${cssVar.colorText} !important;
     }
 
     [role='menuitem'] svg {
-      width: 18px !important;
-      height: 18px !important;
+      width: 16px !important;
+      height: 16px !important;
       color: ${cssVar.colorText} !important;
     }
 
     [role='menuitem'] .${prefixCls}-upload {
+      font-size: inherit;
       color: ${cssVar.colorText};
     }
   `,
@@ -109,7 +91,7 @@ const IndicatorTag = memo<IndicatorTagProps>(({ icon, label, onClick, title }) =
     variant={'filled'}
     onClick={onClick}
   >
-    <Icon color={cssVar.colorInfo} icon={icon} size={16} />
+    <Icon color={cssVar.colorTextSecondary} icon={icon} size={16} />
     <Text ellipsis fontSize={13} style={{ color: cssVar.colorText, maxWidth: 160 }}>
       {label}
     </Text>
