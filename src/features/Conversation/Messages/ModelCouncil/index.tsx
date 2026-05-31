@@ -347,7 +347,6 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
             const isExpanded = expanded[judge.id];
             const completed = status === 'completed';
             const failed = isFailedStatus(status);
-            const livePreview = !completed && !failed ? judge.content : '';
 
             return (
               <Flexbox className={styles.card} gap={12} key={judge.id}>
@@ -389,18 +388,10 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                         : t('modelCouncil.synthesizing')}
                   </Text>
                 </Flexbox>
-                {livePreview && (
-                  <div aria-live="polite" className={styles.streamPreview}>
-                    <Markdown variant={'chat'}>{livePreview}</Markdown>
-                  </div>
-                )}
                 {isExpanded && judge.content && (
                   <div className={styles.content}>
                     <Markdown variant={'chat'}>{judge.content}</Markdown>
                   </div>
-                )}
-                {!isExpanded && !livePreview && judge.content && (
-                  <div className={styles.contentPreview}>{judge.content}</div>
                 )}
               </Flexbox>
             );
