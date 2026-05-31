@@ -6,6 +6,7 @@ import type {
 } from '@lobechat/electron-client-ipc';
 
 import type { AppBrowsersIdentifiers, WindowTemplateIdentifiers } from '@/appBrowsers';
+import { BrowsersIdentifiers } from '@/appBrowsers';
 import { getIpcContext } from '@/utils/ipc';
 import { findMatchingRoute } from '~common/routes';
 
@@ -22,9 +23,12 @@ export default class BrowserWindowsCtr extends ControllerModule {
 
   @shortcut('openFloatingChat')
   async openFloatingChat() {
-    const mainWindow = this.app.browserManager.getMainWindow();
-    mainWindow.show();
-    mainWindow.broadcast('openFloatingChat');
+    const floatingWindow = this.app.browserManager.retrieveByIdentifier(
+      BrowsersIdentifiers.floatingChat,
+    );
+    floatingWindow.show();
+    floatingWindow.browserWindow.focus();
+    floatingWindow.broadcast('openFloatingChat');
   }
 
   @IpcMethod()

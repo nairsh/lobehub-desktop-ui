@@ -7,6 +7,7 @@ import {
   BusinessDesktopRoutesWithoutMainLayout,
 } from '@/business/client/BusinessDesktopRoutes';
 import DesktopOnboarding from '@/routes/(desktop)/desktop-onboarding';
+import DesktopFloatingChat from '@/routes/(desktop)/floating-chat';
 // Layouts — sync import (Electron local, no network overhead)
 import DesktopMainLayout from '@/routes/(main)/_layout';
 import ImagePage from '@/routes/(main)/(create)/image';
@@ -478,6 +479,12 @@ export const desktopRoutes: RouteObject[] = [
 ];
 
 // Desktop onboarding route (Electron only in .desktop.tsx)
+desktopRoutes.push({
+  element: <DesktopFloatingChat />,
+  errorElement: <ErrorBoundary resetPath="/" />,
+  path: '/floating-chat',
+});
+
 desktopRoutes.push({
   element: <DesktopOnboarding />,
   errorElement: <ErrorBoundary resetPath="/" />,

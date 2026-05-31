@@ -600,6 +600,15 @@ export const desktopRoutes: RouteObject[] = [
 
 desktopRoutes.push({
   element: dynamicElement(
+    () => import('@/routes/(desktop)/floating-chat'),
+    'Desktop > Floating Chat',
+  ),
+  errorElement: <ErrorBoundary resetPath="/" />,
+  path: '/floating-chat',
+});
+
+desktopRoutes.push({
+  element: dynamicElement(
     () => import('@/routes/(desktop)/desktop-onboarding'),
     'Desktop > Onboarding',
   ),

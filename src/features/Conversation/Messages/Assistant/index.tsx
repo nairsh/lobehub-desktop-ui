@@ -11,6 +11,7 @@ import { ChatItem } from '@/features/Conversation/ChatItem';
 import { aiModelSelectors, useAiInfraStore } from '@/store/aiInfra';
 import { useUserStore } from '@/store/user';
 import { userGeneralSettingsSelectors } from '@/store/user/selectors';
+import type { ModelCouncilModelConfig, ModelCouncilSettings } from '@/types/modelCouncil';
 
 import ErrorMessageExtra, { useErrorContent } from '../../Error';
 import { useAgentMeta, useDoubleClickEdit } from '../../hooks';
@@ -28,6 +29,15 @@ import { AssistantMessageExtra } from './Extra';
 const actionBarHolder = (
   <div {...{ [MESSAGE_ACTION_BAR_PORTAL_ATTRIBUTES.assistant]: '' }} style={{ height: '28px' }} />
 );
+
+const isFailedCouncilStatus = (status?: string) =>
+  status === 'failed' || status === 'timeout' || status === 'canceled';
+
+const isTerminalCouncilStatus = (status?: string) =>
+  status === 'completed' || isFailedCouncilStatus(status);
+
+const modelKey = (item: Pick<ModelCouncilModelConfig, 'provider' | 'model'>) =>
+  `${item.provider}/${item.model}`;
 
 interface AssistantMessageProps {
   disableEditing?: boolean;
@@ -63,6 +73,11 @@ const AssistantMessage = memo<AssistantMessageProps>(({ id, index, disableEditin
   const modelDisplayName = model
     ? (modelCard?.displayName ?? (model.includes('/') ? model.split('/').at(-1)! : model))
     : undefined;
+  const councilMeta = ((metadata as any)?.modelCouncil || undefined) as
+    | { role?: string; status?: string }
+    | undefined;
+  const settingsSnapshot = (metadata as any)?.settingsSnapshot as ModelCouncilSettings | undefined;
+  const isModelCouncilAssistant = !!councilMeta;
   const avatar = useMemo(
     () => (modelDisplayName ? { ...agentMeta, title: modelDisplayName } : agentMeta),
     [agentMeta, modelDisplayName],
@@ -73,6 +88,9 @@ const AssistantMessage = memo<AssistantMessageProps>(({ id, index, disableEditin
   const generating = useConversationStore(messageStateSelectors.isMessageGenerating(id));
   const isCreating = useConversationStore(messageStateSelectors.isMessageCreating(id));
   const interrupted = useConversationStore(messageStateSelectors.isMessageInterrupted(id));
+  const councilProcessingDone =
+    isModelCouncilAssistant &&
+    (isTerminalCouncilStatus(councilMeta?.status) || (!generating && !isCreating && !!content));
 
   const errorContent = useErrorContent(error);
 
@@ -95,15 +113,30 @@ const AssistantMessage = memo<AssistantMessageProps>(({ id, index, disableEditin
 
   const onMouseEnter: MouseEventHandler<HTMLDivElement> = useCallback(
     (e) => {
+      if (isModelCouncilAssistant && !councilProcessingDone) return;
+
       setMessageItemActionElementPortialContext(e.currentTarget);
       setMessageItemActionTypeContext({ id, index, type: 'assistant' });
     },
-    [id, index, setMessageItemActionElementPortialContext, setMessageItemActionTypeContext],
+    [
+      councilProcessingDone,
+      id,
+      index,
+      isModelCouncilAssistant,
+      setMessageItemActionElementPortialContext,
+      setMessageItemActionTypeContext,
+    ],
   );
+
+  const councilModels = useMemo(() => {
+    const configuredModels = settingsSnapshot?.councilModels || [];
+    if (configuredModels.length > 0) return configuredModels;
+
+    return model && provider ? [{ model, provider }] : [];
+  }, [model, provider, settingsSnapshot?.councilModels]);
 
   return (
     <ChatItem
-      showTitle
       aboveMessage={null}
       avatar={avatar}
       customErrorRender={(error) => <ErrorMessageExtra data={item} error={error} />}
@@ -112,21 +145,50 @@ const AssistantMessage = memo<AssistantMessageProps>(({ id, index, disableEditin
       loading={generating || isCreating}
       message={message}
       placement={'left'}
+      showTitle={!isModelCouncilAssistant}
       time={createdAt}
       actions={
-        <>
-          {isDevMode && branch && (
-            <MessageBranch
-              activeBranchIndex={branch.activeBranchIndex}
-              count={branch.count}
-              messageId={id}
-            />
-          )}
-          {actionBarHolder}
-        </>
+        isModelCouncilAssistant && !councilProcessingDone ? null : (
+          <>
+            {isDevMode && branch && (
+              <MessageBranch
+                activeBranchIndex={branch.activeBranchIndex}
+                count={branch.count}
+                messageId={id}
+              />
+            )}
+            {actionBarHolder}
+          </>
+        )
       }
       customAvatarRender={
-        model ? (_, defaultNode) => <ModelIcon model={model} size={28} type={'color'} /> : undefined
+        isModelCouncilAssistant
+          ? () => (
+              <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                {councilModels.map((item, itemIndex) => (
+                  <span
+                    key={modelKey(item)}
+                    style={{
+                      alignItems: 'center',
+                      background: 'var(--color-bg-elevated)',
+                      border: '1px solid var(--color-bg-container)',
+                      borderRadius: '50%',
+                      display: 'inline-flex',
+                      height: 28,
+                      justifyContent: 'center',
+                      marginInlineStart: itemIndex === 0 ? 0 : -8,
+                      overflow: 'hidden',
+                      width: 28,
+                    }}
+                  >
+                    <ModelIcon model={item.model || item.provider} size={20} type={'color'} />
+                  </span>
+                ))}
+              </span>
+            )
+          : model
+            ? () => <ModelIcon model={model} size={28} type={'color'} />
+            : undefined
       }
       error={
         errorContent && error && (message === LOADING_FLAT || !message || shouldForceShowError)

@@ -23,6 +23,7 @@ vi.mock('electron', () => ({
 const mockToggleVisible = vi.fn();
 const mockLoadUrl = vi.fn();
 const mockShow = vi.fn();
+const mockFocus = vi.fn();
 const mockBroadcast = vi.fn();
 const mockRedirectToPage = vi.fn();
 const mockCloseWindow = vi.fn();
@@ -86,10 +87,17 @@ describe('BrowserWindowsCtr', () => {
   });
 
   describe('openFloatingChat', () => {
-    it('should show the main window and broadcast openFloatingChat', async () => {
+    it('should show the standalone floating chat window and broadcast openFloatingChat', async () => {
+      mockRetrieveByIdentifier.mockReturnValueOnce({
+        broadcast: mockBroadcast,
+        browserWindow: { focus: mockFocus },
+        show: mockShow,
+      });
+
       await browserWindowsCtr.openFloatingChat();
-      expect(mockGetMainWindow).toHaveBeenCalled();
+      expect(mockRetrieveByIdentifier).toHaveBeenCalledWith('floatingChat');
       expect(mockShow).toHaveBeenCalled();
+      expect(mockFocus).toHaveBeenCalled();
       expect(mockBroadcast).toHaveBeenCalledWith('openFloatingChat');
     });
   });

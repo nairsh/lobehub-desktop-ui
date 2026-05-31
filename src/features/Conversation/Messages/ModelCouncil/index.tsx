@@ -32,6 +32,8 @@ const useStyles = createStyles(({ css, token }) => ({
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
 
+    max-height: 3.2em;
+
     line-height: 1.6;
     color: ${token.colorTextSecondary};
   `,
@@ -181,6 +183,18 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(({ id }) => {
     !!judgeChild &&
     !isTerminalStatus(judgeStatus) &&
     (groupStatus === 'judging' || !hasRunningMember);
+  const firstTwoMembers = memberChildren.slice(0, Math.min(2, memberChildren.length));
+  const firstTwoMembersFinished =
+    firstTwoMembers.length > 0 &&
+    firstTwoMembers.every((child) => {
+      const childModel = getChildModel(child);
+      const status = childModel.error
+        ? 'failed'
+        : ((childModel.metadata?.modelCouncil || {}) as { status?: string }).status || 'waiting';
+
+      return isTerminalStatus(status);
+    });
+  const showSynthesisStatus = firstTwoMembersFinished && (hasRunningMember || isJudging);
 
   return (
     <Flexbox gap={12} style={{ marginInline: 'auto', maxWidth: 840, width: '100%' }}>
@@ -249,7 +263,7 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(({ id }) => {
           </Flexbox>
         );
       })}
-      {(hasRunningMember || isJudging) && (
+      {showSynthesisStatus && (
         <Flexbox horizontal align={'center'} className={styles.dash} gap={8}>
           <Icon spin icon={Loader2} size={16} />
           <Text strong>

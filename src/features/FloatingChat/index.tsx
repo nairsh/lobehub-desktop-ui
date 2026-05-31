@@ -118,6 +118,18 @@ const useStyles = createStyles(({ css, token }) => ({
     min-height: 96px;
     border-radius: 48px;
   `,
+  shellStandalone: css`
+    inset: 0 !important;
+
+    width: 100vw;
+    min-width: 0;
+    height: 100vh;
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
+
+    box-shadow: none;
+  `,
   topButton: css`
     pointer-events: auto;
     cursor: pointer;
@@ -298,11 +310,15 @@ const FloatingComposer = memo<{
 
 FloatingComposer.displayName = 'FloatingComposer';
 
-const FloatingChat = memo(() => {
+interface FloatingChatProps {
+  standalone?: boolean;
+}
+
+const FloatingChat = memo<FloatingChatProps>(({ standalone = false }) => {
   const { styles, cx } = useStyles();
   const { t } = useTranslation('electron');
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(standalone);
   const [compact, setCompact] = useState(false);
   const [position, setPosition] = useState({ x: 48, y: 48 });
   const [floatingTopicId, setFloatingTopicId] = useState<string | null>(null);
@@ -347,18 +363,22 @@ const FloatingChat = memo(() => {
 
   const handlePointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
+      if (standalone) return;
+
       dragRef.current = {
         offsetX: event.clientX - position.x,
         offsetY: event.clientY - position.y,
       };
       event.currentTarget.setPointerCapture(event.pointerId);
     },
-    [position.x, position.y],
+    [position.x, position.y, standalone],
   );
 
   const handlePointerMove = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
       if (!dragRef.current) return;
+      if (standalone) return;
+
       const width = compact
         ? Math.min(780, window.innerWidth - 48)
         : Math.min(560, window.innerWidth - 48);
@@ -368,7 +388,7 @@ const FloatingChat = memo(() => {
         y: clamp(event.clientY - dragRef.current.offsetY, 16, window.innerHeight - height - 16),
       });
     },
-    [compact],
+    [compact, standalone],
   );
 
   const handlePointerUp = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
@@ -378,8 +398,14 @@ const FloatingChat = memo(() => {
 
   const handleExpand = useCallback(() => {
     setOpen(false);
+    if (standalone) {
+      void import('@/services/electron/system').then(({ electronSystemService }) =>
+        electronSystemService.closeWindow(),
+      );
+      return;
+    }
     if (agentId) navigate(`/agent/${agentId}${floatingTopicId ? `?topic=${floatingTopicId}` : ''}`);
-  }, [agentId, floatingTopicId, navigate]);
+  }, [agentId, floatingTopicId, navigate, standalone]);
 
   const handleNewChat = useCallback(() => {
     setFloatingTopicId(null);
@@ -387,13 +413,28 @@ const FloatingChat = memo(() => {
     setOpen(true);
   }, []);
 
+  const handleClose = useCallback(() => {
+    if (standalone) {
+      void import('@/services/electron/system').then(({ electronSystemService }) =>
+        electronSystemService.closeWindow(),
+      );
+      return;
+    }
+
+    setOpen(false);
+  }, [standalone]);
+
   if (!open || !agentId) return null;
 
   return (
     <div
-      className={cx(styles.shell, compact && styles.shellCompact)}
       data-testid="floating-chat"
-      style={{ left: position.x, top: position.y }}
+      style={standalone ? undefined : { left: position.x, top: position.y }}
+      className={cx(
+        styles.shell,
+        compact && !standalone && styles.shellCompact,
+        standalone && styles.shellStandalone,
+      )}
     >
       <div
         className={styles.dragHandle}
@@ -403,11 +444,7 @@ const FloatingChat = memo(() => {
         onPointerUp={handlePointerUp}
       />
       <div className={styles.toolbar}>
-        <button
-          className={styles.topButton}
-          title={t('tab.closeCurrentTab')}
-          onClick={() => setOpen(false)}
-        >
+        <button className={styles.topButton} title={t('tab.closeCurrentTab')} onClick={handleClose}>
           <X size={19} />
         </button>
         {displayTitle && !compact && (

@@ -5,6 +5,7 @@ import type { BrowserWindowOpts } from './core/browser/Browser';
 export const BrowsersIdentifiers = {
   app: 'app',
   devtools: 'devtools',
+  floatingChat: 'floatingChat',
 };
 
 export const appBrowsers = {
@@ -31,6 +32,24 @@ export const appBrowsers = {
     path: '/desktop/devtools',
     titleBarStyle: 'hiddenInset',
     width: 1000,
+  },
+  floatingChat: {
+    alwaysOnTop: true,
+    autoHideMenuBar: true,
+    fullscreenable: false,
+    height: 700,
+    identifier: 'floatingChat',
+    keepAlive: false,
+    maximizable: false,
+    minHeight: 440,
+    minWidth: 360,
+    path: '/floating-chat',
+    resizable: true,
+    showOnInit: false,
+    skipTaskbar: true,
+    title: 'Floating Chat',
+    titleBarStyle: 'hidden',
+    width: 560,
   },
 } satisfies Record<string, BrowserWindowOpts>;
 
