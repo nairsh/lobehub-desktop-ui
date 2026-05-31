@@ -1,6 +1,6 @@
 import { LoadingOutlined } from '@ant-design/icons';
 import { ModelIcon } from '@lobehub/icons';
-import { Flexbox, Text } from '@lobehub/ui';
+import { Flexbox } from '@lobehub/ui';
 import { Spin } from 'antd';
 import { createStaticStyles, cssVar, cx } from 'antd-style';
 import { ChevronDown, Settings2Icon } from 'lucide-react';
@@ -46,6 +46,17 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
         scale: 0.8;
       }
     }
+  `,
+  modelLabel: css`
+    overflow: hidden;
+
+    max-width: 180px;
+
+    font-size: 14px;
+    font-weight: 500;
+    color: ${cssVar.colorTextSecondary};
+    text-overflow: ellipsis;
+    white-space: nowrap;
   `,
   reasoningLabel: css`
     flex-shrink: 0;
@@ -159,13 +170,7 @@ const ModelSwitch = memo(() => {
               <div className={styles.icon}>
                 <ModelIcon model={model} size={18} type={'color'} />
               </div>
-              <Text
-                ellipsis
-                color={cssVar.colorTextSecondary}
-                style={{ fontSize: 14, fontWeight: 500 }}
-              >
-                {modelDisplayName}
-              </Text>
+              <span className={styles.modelLabel}>{modelDisplayName}</span>
             </>
           )}
           {!councilActive && reasoning && reasoning.value !== 'none' && (

@@ -1,6 +1,8 @@
 import { fetchEventSource } from '@lobechat/utils/client';
 import debug from 'debug';
 
+import { withElectronProtocolIfElectron } from '@/const/protocol';
+
 import { type StreamConnectionOptions, type StreamEvent } from './type';
 
 const log = debug('lobe-agent-runtime:client');
@@ -9,7 +11,7 @@ const log = debug('lobe-agent-runtime:client');
  * Agent Client Service for communicating with durable agents
  */
 class AgentRuntimeClient {
-  private baseUrl = '/api/agent';
+  private baseUrl = withElectronProtocolIfElectron('/api/agent');
 
   /**
    * Create a streaming connection to receive real-time agent events
@@ -50,6 +52,8 @@ class AgentRuntimeClient {
       },
       onmessage: (event) => {
         try {
+          if (!event.data?.trim()) return;
+
           const data = JSON.parse(event.data) as StreamEvent;
           log(`Received event: ${event.event || 'message'}`, event.data);
 

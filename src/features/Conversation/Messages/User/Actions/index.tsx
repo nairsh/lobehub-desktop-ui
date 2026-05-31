@@ -88,7 +88,13 @@ export const UserActionsBar = memo<UserActionsProps>(({ actionsConfig, id, data 
       defaultActions.copy,
     ];
     return [...base, ...extraBarItems];
-  }, [actionsConfig?.bar, defaultActions.regenerate, defaultActions.edit, extraBarItems]);
+  }, [
+    actionsConfig?.bar,
+    defaultActions.regenerate,
+    defaultActions.edit,
+    defaultActions.copy,
+    extraBarItems,
+  ]);
 
   const menuItems = useMemo(() => {
     const base = actionsConfig?.menu ?? [
@@ -117,7 +123,6 @@ export const UserActionsBar = memo<UserActionsProps>(({ actionsConfig, id, data 
   // Strip handleClick for DOM safety
   const items = useMemo(() => barItems.map(stripHandleClick), [barItems]);
   const menu = useMemo(() => menuItems.map(stripHandleClick), [menuItems]);
-
   // Build actions map for click handling
   const allActions = useMemo(
     () => buildActionsMap([...barItems, ...menuItems]),

@@ -31,7 +31,14 @@ vi.mock('@/shortcuts', () => ({
   DEFAULT_SHORTCUTS_CONFIG: {
     showApp: 'Control+E',
     openSettings: 'CommandOrControl+,',
-    openFloatingChat: 'CommandOrControl+Shift+K',
+    openFloatingChat: 'CommandOrControl+K',
+  },
+  FALLBACK_FLOATING_CHAT_SHORTCUT: 'Control+Alt+K',
+  LEGACY_FLOATING_CHAT_SHORTCUT: 'CommandOrControl+Shift+K',
+  ShortcutActionEnum: {
+    openFloatingChat: 'openFloatingChat',
+    openSettings: 'openSettings',
+    showApp: 'showApp',
   },
 }));
 
@@ -125,7 +132,7 @@ describe('ShortcutManager', () => {
         expect.any(Function),
       );
       expect(globalShortcut.register).toHaveBeenCalledWith(
-        'CommandOrControl+Shift+K',
+        'CommandOrControl+K',
         expect.any(Function),
       );
     });
@@ -403,8 +410,9 @@ describe('ShortcutManager', () => {
 
     it('should not save config if no invalid keys were found', () => {
       const validConfig = {
-        showApp: 'Alt+E',
+        openFloatingChat: 'CommandOrControl+K',
         openSettings: 'Ctrl+P',
+        showApp: 'Alt+E',
       };
       mockStoreManager.get.mockReturnValue(validConfig);
 
@@ -457,6 +465,11 @@ describe('ShortcutManager', () => {
     });
 
     it('should register all configured shortcuts', () => {
+      shortcutManager['shortcutsConfig'] = {
+        showApp: 'Alt+E',
+        openSettings: 'Ctrl+P',
+        openFloatingChat: 'CommandOrControl+K',
+      };
       vi.mocked(globalShortcut.register).mockReturnValue(true);
 
       shortcutManager['registerConfiguredShortcuts']();
@@ -464,6 +477,11 @@ describe('ShortcutManager', () => {
       expect(globalShortcut.unregisterAll).toHaveBeenCalled();
       expect(globalShortcut.register).toHaveBeenCalledWith('Alt+E', expect.any(Function));
       expect(globalShortcut.register).toHaveBeenCalledWith('Ctrl+P', expect.any(Function));
+      expect(globalShortcut.register).toHaveBeenCalledWith(
+        'CommandOrControl+K',
+        expect.any(Function),
+      );
+      expect(globalShortcut.register).toHaveBeenCalledWith('Control+Alt+K', expect.any(Function));
     });
 
     it('should skip shortcuts not in DEFAULT_SHORTCUTS_CONFIG', () => {
@@ -524,7 +542,7 @@ describe('ShortcutManager', () => {
       expect(config.openSettings).toBe('Ctrl+Shift+P');
       expect(config.invalidKey).toBeUndefined();
 
-      expect(globalShortcut.register).toHaveBeenCalledTimes(3);
+      expect(globalShortcut.register).toHaveBeenCalledTimes(4);
       expect(mockStoreManager.set).toHaveBeenCalledWith('shortcuts', config);
     });
 

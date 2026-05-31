@@ -45,14 +45,19 @@ const Action = memo<ActionProps>(
     });
     const mobile = useServerConfigStore((s) => s.isMobile);
     const { actionSize, borderRadius, dropdownPlacement } = useActionBarContext();
+    const tooltipTitle = isUndefined(showTooltip)
+      ? mobile || dropdown || popover
+        ? undefined
+        : title
+      : showTooltip
+        ? title
+        : undefined;
     const iconNode = (
       <ActionIcon
         disabled={disabled}
         icon={icon}
         loading={loading}
-        title={
-          isUndefined(showTooltip) ? (mobile ? undefined : title) : showTooltip ? title : undefined
-        }
+        title={tooltipTitle}
         tooltipProps={{
           placement: 'bottom',
         }}

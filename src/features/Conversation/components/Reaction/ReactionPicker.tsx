@@ -2,7 +2,7 @@
 
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
-import { ActionIcon, Flexbox, Tooltip } from '@lobehub/ui';
+import { Flexbox, Icon } from '@lobehub/ui';
 import { Popover } from 'antd';
 import { createStaticStyles, useTheme } from 'antd-style';
 import { PlusIcon, SmilePlus } from 'lucide-react';
@@ -59,6 +59,29 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
   `,
   pickerContainer: css`
     padding: 4px;
+  `,
+  triggerButton: css`
+    cursor: pointer;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: ${cssVar.borderRadius}px;
+
+    color: ${cssVar.colorTextTertiary};
+
+    background: transparent;
+
+    &:hover,
+    &[data-popup-open] {
+      color: ${cssVar.colorText};
+      background: ${cssVar.colorFillSecondary};
+    }
   `,
 }));
 
@@ -119,11 +142,14 @@ const ReactionPicker: FC<ReactionPickerProps> = memo(({ messageId, trigger }) =>
       onOpenChange={handleOpenChange}
     >
       {trigger || (
-        <span {...(open ? { 'data-popup-open': '' } : {})}>
-          <Tooltip title={t('messageAction.reaction')}>
-            <ActionIcon icon={SmilePlus} size="small" />
-          </Tooltip>
-        </span>
+        <button
+          aria-label={t('messageAction.reaction')}
+          className={styles.triggerButton}
+          type="button"
+          {...(open ? { 'data-popup-open': '' } : {})}
+        >
+          <Icon icon={SmilePlus} size={16} />
+        </button>
       )}
     </Popover>
   );

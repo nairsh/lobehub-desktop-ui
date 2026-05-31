@@ -454,7 +454,9 @@ export class ConversationLifecycleActionImpl {
         if (data.topicId) this.#get().internal_updateTopicLoading(data.topicId, true);
 
         const contentByMessageId = new Map<string, string>();
+        const reasoningByMessageId = new Map<string, string>();
         agentRuntimeClient.createStreamConnection(data.operationId, {
+          includeHistory: true,
           onDisconnect: async () => {
             if (data.topicId) this.#get().internal_updateTopicLoading(data.topicId, false);
             await this.#get().refreshMessages(finalContext);
@@ -474,12 +476,34 @@ export class ConversationLifecycleActionImpl {
                 );
                 return;
               }
+              case 'model_council_member_thinking':
+              case 'model_council_judge_thinking': {
+                const messageId = eventData.messageId;
+                if (!messageId) return;
+                const nextReasoning = `${reasoningByMessageId.get(messageId) || ''}${eventData.text || ''}`;
+                reasoningByMessageId.set(messageId, nextReasoning);
+                this.#get().internal_dispatchMessage(
+                  {
+                    id: messageId,
+                    type: 'updateMessage',
+                    value: {
+                      metadata: { modelCouncil: { status: 'running' } } as any,
+                      reasoning: { content: nextReasoning },
+                    },
+                  },
+                  { operationId },
+                );
+                return;
+              }
               case 'model_council_member_end':
               case 'model_council_judge_end': {
                 const messageId = eventData.messageId;
                 if (!messageId) return;
                 const content = eventData.content || contentByMessageId.get(messageId) || '';
+                const reasoning =
+                  eventData.reasoning || reasoningByMessageId.get(messageId) || undefined;
                 contentByMessageId.set(messageId, content);
+                if (reasoning) reasoningByMessageId.set(messageId, reasoning);
                 this.#get().internal_dispatchMessage(
                   {
                     id: messageId,
@@ -492,6 +516,7 @@ export class ConversationLifecycleActionImpl {
                           usage: eventData.usage,
                         },
                       } as any,
+                      ...(reasoning ? { reasoning: { content: reasoning } } : {}),
                     },
                   },
                   { operationId },
@@ -553,6 +578,11 @@ export class ConversationLifecycleActionImpl {
                   },
                   { operationId },
                 );
+                return;
+              }
+              case 'agent_runtime_end': {
+                if (data.topicId) this.#get().internal_updateTopicLoading(data.topicId, false);
+                void this.#get().refreshMessages(finalContext);
                 return;
               }
             }

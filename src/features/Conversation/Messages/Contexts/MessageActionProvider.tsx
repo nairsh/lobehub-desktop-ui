@@ -24,6 +24,36 @@ interface SingletonPortalProps {
   index: number;
 }
 
+const isFailedCouncilStatus = (status?: string) =>
+  status === 'failed' || status === 'timeout' || status === 'canceled';
+
+const isTerminalCouncilStatus = (status?: string) =>
+  status === 'completed' || isFailedCouncilStatus(status);
+
+const isActiveModelCouncilResponse = (message: any) => {
+  if (!message) return false;
+
+  const metadata = message.metadata || {};
+  const council = metadata.modelCouncil;
+
+  if (message.role === 'compareGroup') {
+    const groupStatus = metadata.status as string | undefined;
+    if (!isTerminalCouncilStatus(groupStatus)) return true;
+
+    return (message.children || []).some((child: any) => {
+      const status = child.error
+        ? 'failed'
+        : ((child.metadata?.modelCouncil || {}) as { status?: string }).status || 'waiting';
+
+      return !isTerminalCouncilStatus(status);
+    });
+  }
+
+  if (!council) return false;
+
+  return !isTerminalCouncilStatus(council.status);
+};
+
 const AssistantActionsRenderer: FC<SingletonPortalProps> = ({ id, index }) => {
   const actionsConfig = useConversationStore((s) => s.actionsBar?.assistant);
   const item = useConversationStore(dataSelectors.getDisplayMessageById(id), isEqual);
@@ -33,11 +63,13 @@ const AssistantActionsRenderer: FC<SingletonPortalProps> = ({ id, index }) => {
   return <AssistantActionsBar actionsConfig={actionsConfig} data={item} id={id} index={index} />;
 };
 
-const UserActionsRenderer: FC<SingletonPortalProps> = ({ id }) => {
+const UserActionsRenderer: FC<SingletonPortalProps> = ({ id, index }) => {
   const actionsConfig = useConversationStore((s) => s.actionsBar?.user);
   const item = useConversationStore(dataSelectors.getDisplayMessageById(id), isEqual);
+  const nextMessage = useConversationStore((s) => s.displayMessages[index + 1], isEqual);
 
   if (!item) return null;
+  if (isActiveModelCouncilResponse(nextMessage)) return null;
 
   return <UserActionsBar actionsConfig={actionsConfig} data={item} id={id} />;
 };
@@ -115,7 +147,7 @@ const SingletonMessageActionsBar = memo(() => {
     // No valid placeholder: attach to body to keep DOM owned, but hidden.
     if (document.body && hostEl.parentElement !== document.body) document.body.append(hostEl);
     hostEl.style.display = 'none';
-  }, [portalElement, actionType?.id, actionType?.index, actionType?.type]);
+  }, [portalElement, actionType]);
 
   useEffect(() => {
     const hostEl = hostRef.current;
@@ -127,7 +159,18 @@ const SingletonMessageActionsBar = memo(() => {
   }, []);
 
   const hostEl = hostRef.current;
-  if (!hostEl || !actionType) return null;
+  if (!hostEl || !actionType || !portalElement) return null;
+
+  if (portalElement && actionType) {
+    const selector =
+      actionType.type === 'assistant'
+        ? MESSAGE_ACTION_BAR_PORTAL_SELECTORS.assistant
+        : actionType.type === 'assistantGroup'
+          ? MESSAGE_ACTION_BAR_PORTAL_SELECTORS.assistantGroup
+          : MESSAGE_ACTION_BAR_PORTAL_SELECTORS.user;
+
+    if (!portalElement.querySelector(selector)) return null;
+  }
 
   switch (actionType.type) {
     case 'assistant': {

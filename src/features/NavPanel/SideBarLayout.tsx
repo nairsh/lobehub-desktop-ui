@@ -1,4 +1,4 @@
-import { Flexbox, ScrollShadow, TooltipGroup } from '@lobehub/ui';
+import { Flexbox, ScrollShadow } from '@lobehub/ui';
 import { type ReactNode } from 'react';
 import { memo, Suspense } from 'react';
 
@@ -14,9 +14,7 @@ const SideBarLayout = memo<SidebarLayoutProps>(({ header, body }) => {
     <Flexbox gap={4} style={{ height: '100%', overflow: 'hidden' }}>
       <Suspense fallback={<SkeletonItem height={44} style={{ marginTop: 8 }} />}>{header}</Suspense>
       <ScrollShadow size={2} style={{ height: '100%' }}>
-        <TooltipGroup>
-          <Suspense fallback={<SkeletonList paddingBlock={8} />}>{body}</Suspense>
-        </TooltipGroup>
+        <Suspense fallback={<SkeletonList paddingBlock={8} />}>{body}</Suspense>
       </ScrollShadow>
     </Flexbox>
   );

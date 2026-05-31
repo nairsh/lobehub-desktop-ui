@@ -1,7 +1,7 @@
 'use client';
 
+import { INBOX_SESSION_ID } from '@lobechat/const';
 import { HotkeysProvider } from 'react-hotkeys-hook';
-import { Navigate } from 'react-router-dom';
 
 import FloatingChat from '@/features/FloatingChat';
 import { useAgentStore } from '@/store/agent';
@@ -11,8 +11,11 @@ import { HotkeyScopeEnum } from '@/types/hotkey';
 const DesktopFloatingChat = () => {
   const inboxAgentId = useAgentStore(builtinAgentSelectors.inboxAgentId);
   const activeAgentId = useAgentStore((s) => s.activeAgentId);
+  const useInitBuiltinAgent = useAgentStore((s) => s.useInitBuiltinAgent);
 
-  if (!activeAgentId && !inboxAgentId) return <Navigate replace to="/desktop-onboarding" />;
+  useInitBuiltinAgent(INBOX_SESSION_ID);
+
+  if (!activeAgentId && !inboxAgentId) return null;
 
   return (
     <HotkeysProvider initiallyActiveScopes={[HotkeyScopeEnum.Global]}>

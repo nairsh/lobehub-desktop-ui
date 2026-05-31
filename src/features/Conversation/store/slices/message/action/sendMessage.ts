@@ -68,5 +68,7 @@ export const sendMessage = (
     if (hooks.onAfterSendMessage) {
       await hooks.onAfterSendMessage();
     }
+
+    return result;
   };
 };

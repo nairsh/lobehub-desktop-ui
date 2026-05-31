@@ -21,6 +21,35 @@ import Actions from './Actions';
 import UserMessageContent from './components/MessageContent';
 import { UserMessageExtra } from './Extra';
 
+const isFailedCouncilStatus = (status?: string) =>
+  status === 'failed' || status === 'timeout' || status === 'canceled';
+
+const isTerminalCouncilStatus = (status?: string) =>
+  status === 'completed' || isFailedCouncilStatus(status);
+
+const isActiveModelCouncilResponse = (message: any) => {
+  if (!message) return false;
+
+  const metadata = message.metadata || {};
+  const council = metadata.modelCouncil;
+  if (message.role === 'compareGroup') {
+    const groupStatus = metadata.status as string | undefined;
+    if (!isTerminalCouncilStatus(groupStatus)) return true;
+
+    return (message.children || []).some((child: any) => {
+      const status = child.error
+        ? 'failed'
+        : ((child.metadata?.modelCouncil || {}) as { status?: string }).status || 'waiting';
+
+      return !isTerminalCouncilStatus(status);
+    });
+  }
+
+  if (!council) return false;
+
+  return !isTerminalCouncilStatus(council.status);
+};
+
 interface UserMessageProps {
   disableEditing?: boolean;
   id: string;
@@ -30,7 +59,9 @@ interface UserMessageProps {
 const UserMessage = memo<UserMessageProps>(({ id, disableEditing, index }) => {
   const item = useConversationStore(dataSelectors.getDisplayMessageById(id), isEqual)!;
   const actionsConfig = useConversationStore((s) => s.actionsBar?.user);
+  const nextMessage = useConversationStore((s) => s.displayMessages[index + 1], isEqual);
   const { content, createdAt, error, role, extra, targetId } = item;
+  const suppressActions = disableEditing || isActiveModelCouncilResponse(nextMessage);
 
   const { t } = useTranslation('chat');
   const avatar = useUserAvatar();
@@ -61,16 +92,16 @@ const UserMessage = memo<UserMessageProps>(({ id, disableEditing, index }) => {
 
   const onMouseEnter: MouseEventHandler<HTMLDivElement> = useCallback(
     (e) => {
-      if (disableEditing) return;
+      if (suppressActions) return;
       setMessageItemActionElementPortialContext(e.currentTarget);
       setMessageItemActionTypeContext({ id, index, type: 'user' });
     },
     [
-      disableEditing,
       id,
       index,
       setMessageItemActionElementPortialContext,
       setMessageItemActionTypeContext,
+      suppressActions,
     ],
   );
 
@@ -90,7 +121,7 @@ const UserMessage = memo<UserMessageProps>(({ id, disableEditing, index }) => {
         <Actions
           actionsConfig={actionsConfig}
           data={item}
-          disableEditing={disableEditing}
+          disableEditing={suppressActions}
           id={id}
           index={index}
         />

@@ -69,6 +69,7 @@ export const AssistantActionsBar = memo<AssistantActionsBarProps>(
   ({ actionsConfig, id, data, index }) => {
     const { error, tools } = data;
     const store = useConversationStoreApi();
+    const isModelCouncilMessage = !!(data.metadata as any)?.modelCouncil;
 
     const handleOpenShareModal = useCallback(() => {
       createRawModal(
@@ -180,7 +181,6 @@ export const AssistantActionsBar = memo<AssistantActionsBarProps>(
       [barItems],
     );
     const menu = useMemo(() => menuItems.map(stripHandleClick), [menuItems]);
-
     // Build actions map for click handling
     const allActions = useMemo(
       () => buildActionsMap([...barItems, ...menuItems]),
@@ -207,6 +207,8 @@ export const AssistantActionsBar = memo<AssistantActionsBarProps>(
       },
       [allActions],
     );
+
+    if (isModelCouncilMessage) return null;
 
     if (error) return <ErrorActionsBar actions={defaultActions} onActionClick={handleAction} />;
 

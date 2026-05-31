@@ -1,7 +1,7 @@
 import { isDesktop } from '@lobechat/const';
 import { type RuntimeEnvMode } from '@lobechat/types';
 import { Github } from '@lobehub/icons';
-import { ActionIcon, Flexbox, Icon, Popover, Skeleton, Tooltip } from '@lobehub/ui';
+import { ActionIcon, Flexbox, Icon, Popover, Skeleton } from '@lobehub/ui';
 import { createStaticStyles, cx } from 'antd-style';
 import {
   Check,
@@ -218,17 +218,7 @@ const RuntimeConfig = memo(() => {
           trigger="click"
           onOpenChange={setDirPopoverOpen}
         >
-          <div>
-            {dirPopoverOpen ? (
-              dirButton
-            ) : (
-              <Tooltip
-                title={effectiveWorkingDirectory || tPlugin('localSystem.workingDirectory.notSet')}
-              >
-                {dirButton}
-              </Tooltip>
-            )}
-          </div>
+          <div>{dirButton}</div>
         </Popover>
       );
     }
@@ -248,24 +238,16 @@ const RuntimeConfig = memo(() => {
           trigger="click"
           onOpenChange={setModePopoverOpen}
         >
-          <div>
-            {modePopoverOpen ? (
-              modeButton
-            ) : (
-              <Tooltip title={t('runtimeEnv.selectMode')}>{modeButton}</Tooltip>
-            )}
-          </div>
+          <div>{modeButton}</div>
         </Popover>
         {rightContent()}
         {runtimeMode === 'cloud' && (
-          <Tooltip title={t('runtimeEnv.openTerminalWorkspace')}>
-            <ActionIcon
-              icon={TerminalIcon}
-              size={'small'}
-              title={t('runtimeEnv.openTerminalWorkspace')}
-              onClick={openTerminalWorkspace}
-            />
-          </Tooltip>
+          <ActionIcon
+            icon={TerminalIcon}
+            size={'small'}
+            title={t('runtimeEnv.openTerminalWorkspace')}
+            onClick={openTerminalWorkspace}
+          />
         )}
       </Flexbox>
 

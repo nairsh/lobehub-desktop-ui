@@ -2,6 +2,7 @@ import { INBOX_SESSION_ID } from '@lobechat/const';
 import { HotkeyEnum } from '@lobechat/types';
 import { useEffect } from 'react';
 
+import { isDesktop } from '@/const/version';
 import { useCreateNewTab } from '@/features/Electron/titlebar/TabBar/hooks/useCreateNewTab';
 import { useNavigateToAgent } from '@/hooks/useNavigateToAgent';
 import { usePinnedAgentState } from '@/hooks/usePinnedAgentState';
@@ -57,6 +58,7 @@ export const useCommandPaletteHotkey = () => {
 
   return useHotkeyById(HotkeyEnum.CommandPalette, () => toggleCommandMenu(), {
     enableOnContentEditable: true,
+    enabled: !isDesktop,
   });
 };
 

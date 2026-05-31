@@ -1,4 +1,4 @@
-import { Flexbox, TooltipGroup } from '@lobehub/ui';
+import { Flexbox } from '@lobehub/ui';
 import React, { memo, Suspense, useEffect, useState } from 'react';
 
 import DragUploadZone, { useUploadFiles } from '@/components/DragUploadZone';
@@ -43,9 +43,7 @@ const ChatConversation = memo(() => {
         >
           <Flexbox flex={1} height={'100%'} style={{ minWidth: 0 }}>
             {showHeader && <ChatHeader />}
-            <TooltipGroup>
-              <ConversationArea />
-            </TooltipGroup>
+            <ConversationArea />
           </Flexbox>
           <AgentWorkingSidebar
             selectedDocumentId={selectedDocumentId}

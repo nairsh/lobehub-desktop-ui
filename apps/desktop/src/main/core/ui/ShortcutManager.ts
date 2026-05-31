@@ -1,6 +1,11 @@
 import { globalShortcut } from 'electron';
 
-import { DEFAULT_SHORTCUTS_CONFIG } from '@/shortcuts';
+import {
+  DEFAULT_SHORTCUTS_CONFIG,
+  FALLBACK_FLOATING_CHAT_SHORTCUT,
+  LEGACY_FLOATING_CHAT_SHORTCUT,
+  ShortcutActionEnum,
+} from '@/shortcuts';
 import { createLogger } from '@/utils/logger';
 
 import type { App } from '../App';
@@ -236,13 +241,13 @@ export class ShortcutManager {
       } else {
         // Filter out invalid shortcuts that are not in DEFAULT_SHORTCUTS_CONFIG
         const filteredConfig: Record<string, string> = {};
-        let hasInvalidKeys = false;
+        let shouldSaveConfig = false;
 
         Object.entries(config).forEach(([id, accelerator]) => {
           if (DEFAULT_SHORTCUTS_CONFIG[id]) {
             filteredConfig[id] = accelerator;
           } else {
-            hasInvalidKeys = true;
+            shouldSaveConfig = true;
             logger.debug(`Filtering out invalid shortcut ID: ${id}`);
           }
         });
@@ -251,15 +256,23 @@ export class ShortcutManager {
         Object.entries(DEFAULT_SHORTCUTS_CONFIG).forEach(([id, defaultAccelerator]) => {
           if (!(id in filteredConfig)) {
             filteredConfig[id] = defaultAccelerator;
+            shouldSaveConfig = true;
             logger.debug(`Adding missing default shortcut: ${id} = ${defaultAccelerator}`);
           }
         });
 
+        if (filteredConfig[ShortcutActionEnum.openFloatingChat] === LEGACY_FLOATING_CHAT_SHORTCUT) {
+          filteredConfig[ShortcutActionEnum.openFloatingChat] =
+            DEFAULT_SHORTCUTS_CONFIG[ShortcutActionEnum.openFloatingChat];
+          shouldSaveConfig = true;
+          logger.debug('Migrating floating chat shortcut to CommandOrControl+K');
+        }
+
         this.shortcutsConfig = filteredConfig;
 
-        // Save the filtered configuration back to storage if we removed invalid keys
-        if (hasInvalidKeys) {
-          logger.debug('Saving filtered shortcuts config to remove invalid keys');
+        // Save normalized configuration so the settings UI reflects migrations.
+        if (shouldSaveConfig) {
+          logger.debug('Saving normalized shortcuts config');
           this.saveShortcutsConfig();
         }
       }
@@ -303,7 +316,23 @@ export class ShortcutManager {
 
       const method = this.shortcuts.get(id);
       if (accelerator && method) {
-        this.registerShortcut(accelerator, method);
+        const registered = this.registerShortcut(accelerator, method);
+
+        if (id === ShortcutActionEnum.openFloatingChat) {
+          if (!registered && accelerator !== LEGACY_FLOATING_CHAT_SHORTCUT) {
+            logger.debug(
+              `Falling back to ${LEGACY_FLOATING_CHAT_SHORTCUT} for floating chat shortcut`,
+            );
+            this.registerShortcut(LEGACY_FLOATING_CHAT_SHORTCUT, method);
+          }
+
+          if (accelerator !== FALLBACK_FLOATING_CHAT_SHORTCUT) {
+            logger.debug(
+              `Registering fallback floating chat shortcut: ${FALLBACK_FLOATING_CHAT_SHORTCUT}`,
+            );
+            this.registerShortcut(FALLBACK_FLOATING_CHAT_SHORTCUT, method);
+          }
+        }
       }
     });
   }

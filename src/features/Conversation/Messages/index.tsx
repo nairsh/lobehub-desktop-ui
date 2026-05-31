@@ -191,6 +191,7 @@ const MessageItem = memo<MessageItemProps>(
     }, [role, defaultWorkflowExpanded, disableEditing, id, index, isLatestItem]);
 
     if (!role) return;
+    if ((message?.metadata as any)?.modelCouncil) return null;
 
     return (
       <>

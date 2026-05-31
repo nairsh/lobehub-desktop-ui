@@ -74,9 +74,11 @@ const AssistantMessage = memo<AssistantMessageProps>(({ id, index, disableEditin
     ? (modelCard?.displayName ?? (model.includes('/') ? model.split('/').at(-1)! : model))
     : undefined;
   const councilMeta = ((metadata as any)?.modelCouncil || undefined) as
-    | { role?: string; status?: string }
+    | { role?: string; settingsSnapshot?: ModelCouncilSettings; status?: string }
     | undefined;
-  const settingsSnapshot = (metadata as any)?.settingsSnapshot as ModelCouncilSettings | undefined;
+  const settingsSnapshot =
+    ((metadata as any)?.settingsSnapshot as ModelCouncilSettings | undefined) ||
+    councilMeta?.settingsSnapshot;
   const isModelCouncilAssistant = !!councilMeta;
   const avatar = useMemo(
     () => (modelDisplayName ? { ...agentMeta, title: modelDisplayName } : agentMeta),
@@ -148,7 +150,7 @@ const AssistantMessage = memo<AssistantMessageProps>(({ id, index, disableEditin
       showTitle={!isModelCouncilAssistant}
       time={createdAt}
       actions={
-        isModelCouncilAssistant && !councilProcessingDone ? null : (
+        isModelCouncilAssistant ? null : (
           <>
             {isDevMode && branch && (
               <MessageBranch

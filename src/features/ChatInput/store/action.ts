@@ -41,8 +41,6 @@ export const store: CreateStore = (publicState) => (set, get) => ({
     if (!editor) return;
     const councilMode = get().councilMode;
 
-    if (councilMode) set({ councilMode: false });
-
     get().onSend?.({
       clearContent: () => editor?.cleanDocument(),
       councilMode,

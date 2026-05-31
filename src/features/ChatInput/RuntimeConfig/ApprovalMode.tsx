@@ -1,5 +1,5 @@
 import { type DropdownItem, type MenuProps } from '@lobehub/ui';
-import { Button, DropdownMenu, Icon, Tooltip } from '@lobehub/ui';
+import { Button, DropdownMenu, Icon } from '@lobehub/ui';
 import { createStaticStyles } from 'antd-style';
 import { Check, ChevronDown } from 'lucide-react';
 import { memo, useCallback, useMemo, useState } from 'react';
@@ -89,13 +89,7 @@ const ModeSelector = memo(() => {
       placement="bottomLeft"
       onOpenChange={setDropdownOpen}
     >
-      <div>
-        {dropdownOpen ? (
-          button
-        ) : (
-          <Tooltip title={t('tool.intervention.approvalMode')}>{button}</Tooltip>
-        )}
-      </div>
+      <div>{button}</div>
     </DropdownMenu>
   );
 });

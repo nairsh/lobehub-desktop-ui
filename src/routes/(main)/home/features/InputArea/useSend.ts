@@ -32,8 +32,9 @@ export const useSend = () => {
     !!councilSettings?.judgeModel;
 
   const send = useCallback<SendButtonHandler>(
-    async ({ councilMode, getEditorData }) => {
-      const { inputMessage, mainInputEditor } = useChatStore.getState();
+    async ({ councilMode, getEditorData, getMarkdownContent }) => {
+      const { mainInputEditor } = useChatStore.getState();
+      const inputMessage = getMarkdownContent?.() ?? '';
       const editorData = getEditorData?.() ?? mainInputEditor?.getJSONState();
       const fileList = fileChatSelectors.chatUploadFileList(useFileStore.getState());
       const contextList = fileChatSelectors.chatContextSelections(useFileStore.getState());
@@ -69,7 +70,7 @@ export const useSend = () => {
             // Default inbox behavior
             if (!inboxAgentId) return;
 
-            sendMessage({
+            const result = await sendMessage({
               context: { agentId: inboxAgentId },
               contexts: contextList,
               editorData,
@@ -78,7 +79,11 @@ export const useSend = () => {
               useModelCouncil: councilMode && councilReady,
             });
 
-            router.push(SESSION_CHAT_URL(inboxAgentId, false));
+            router.push(
+              `${SESSION_CHAT_URL(inboxAgentId, false)}${
+                result?.topicId ? `?topic=${result.topicId}` : ''
+              }`,
+            );
           }
         }
       } finally {
