@@ -1,7 +1,7 @@
 'use client';
 
 import { Button, Flexbox, Form, Icon, Skeleton, Text } from '@lobehub/ui';
-import { Switch } from '@lobehub/ui/base-ui';
+import { Select, Switch } from '@lobehub/ui/base-ui';
 import { createStyles } from 'antd-style';
 import isEqual from 'fast-deep-equal';
 import { Gavel, Loader2Icon, Plus, Trash2 } from 'lucide-react';
@@ -25,8 +25,19 @@ const DEFAULT_COUNCIL: ModelCouncilSettings = {
   showIntermediates: 'collapsed',
 };
 
+const DEFAULT_PERSONALITY_IDS = [
+  'analyst',
+  'skeptic',
+  'creative',
+  'pragmatic',
+  'researcher',
+  'risk',
+];
+
 const useStyles = createStyles(({ css, token }) => ({
   modelRow: css`
+    align-items: center;
+
     padding-block: 10px;
     padding-inline: 12px;
     border: 1px solid ${token.colorBorderSecondary};
@@ -36,6 +47,9 @@ const useStyles = createStyles(({ css, token }) => ({
   `,
   muted: css`
     color: ${token.colorTextTertiary};
+  `,
+  personaSelect: css`
+    min-width: 180px;
   `,
 }));
 
@@ -88,6 +102,23 @@ const Page = memo(() => {
 
   const selectedKeys = useMemo(() => new Set(council.councilModels.map(modelKey)), [council]);
 
+  const personalityOptions = useMemo(
+    () => [
+      { label: t('modelCouncil.personality.analyst'), value: 'analyst' },
+      { label: t('modelCouncil.personality.skeptic'), value: 'skeptic' },
+      { label: t('modelCouncil.personality.creative'), value: 'creative' },
+      { label: t('modelCouncil.personality.pragmatic'), value: 'pragmatic' },
+      { label: t('modelCouncil.personality.researcher'), value: 'researcher' },
+      { label: t('modelCouncil.personality.risk'), value: 'risk' },
+    ],
+    [t],
+  );
+
+  const getDefaultPersonalityId = useCallback(
+    (index: number) => DEFAULT_PERSONALITY_IDS[index % DEFAULT_PERSONALITY_IDS.length],
+    [],
+  );
+
   const addModel = useCallback(async () => {
     if (
       !pendingModel ||
@@ -96,9 +127,19 @@ const Page = memo(() => {
     )
       return;
 
-    await save({ ...council, councilModels: [...council.councilModels, pendingModel] });
+    await save({
+      ...council,
+      councilModels: [
+        ...council.councilModels,
+        {
+          ...pendingModel,
+          personalityId:
+            pendingModel.personalityId || getDefaultPersonalityId(council.councilModels.length),
+        },
+      ],
+    });
     setPendingModel(undefined);
-  }, [council, pendingModel, save, selectedKeys]);
+  }, [council, getDefaultPersonalityId, pendingModel, save, selectedKeys]);
 
   const removeModel = useCallback(
     async (model: ModelCouncilModelConfig) => {
@@ -116,6 +157,18 @@ const Page = memo(() => {
         ...council,
         councilModels: council.councilModels.map((item) =>
           modelKey(item) === modelKey(target) ? { ...item, reasoning } : item,
+        ),
+      });
+    },
+    [council, save],
+  );
+
+  const updateModelPersonality = useCallback(
+    async (target: ModelCouncilModelConfig, personalityId: string) => {
+      await save({
+        ...council,
+        councilModels: council.councilModels.map((item) =>
+          modelKey(item) === modelKey(target) ? { ...item, personalityId } : item,
         ),
       });
     },
@@ -178,38 +231,48 @@ const Page = memo(() => {
                         {t('modelCouncil.settings.models.add')}
                       </Button>
                     </Flexbox>
-                    {council.councilModels.map((selectedModel) => {
+                    {council.councilModels.map((selectedModel, index) => {
                       const fullModel = flatModels.find(
                         (model) =>
                           model.provider === selectedModel.provider &&
                           model.id === selectedModel.model,
                       );
+                      const personalityId =
+                        selectedModel.personalityId || getDefaultPersonalityId(index);
 
                       return (
-                        <Flexbox
-                          horizontal
-                          align={'center'}
-                          className={styles.modelRow}
-                          gap={12}
-                          justify={'space-between'}
-                          key={modelKey(selectedModel)}
-                        >
-                          <Flexbox gap={2}>
-                            <Text>
-                              {selectedModel.label || fullModel?.displayName || selectedModel.model}
-                            </Text>
-                            <Text className={styles.muted} type={'secondary'}>
-                              {fullModel?.providerName || selectedModel.provider}
-                            </Text>
+                        <Flexbox className={styles.modelRow} gap={12} key={modelKey(selectedModel)}>
+                          <Flexbox horizontal align={'center'} gap={12} justify={'space-between'}>
+                            <Flexbox gap={2}>
+                              <Text>
+                                {selectedModel.label ||
+                                  fullModel?.displayName ||
+                                  selectedModel.model}
+                              </Text>
+                              <Text className={styles.muted} type={'secondary'}>
+                                {fullModel?.providerName || selectedModel.provider}
+                              </Text>
+                            </Flexbox>
+                            <Select
+                              className={styles.personaSelect}
+                              options={personalityOptions}
+                              value={personalityId}
+                              onChange={(value) => updateModelPersonality(selectedModel, value)}
+                            />
                           </Flexbox>
                           <Flexbox horizontal align={'center'} gap={8}>
                             {fullModel?.reasoning && (
-                              <Switch
-                                checked={selectedModel.reasoning}
-                                onChange={(reasoning) =>
-                                  updateModelReasoning(selectedModel, reasoning)
-                                }
-                              />
+                              <>
+                                <Text className={styles.muted} type={'secondary'}>
+                                  {t('modelCouncil.settings.models.reasoning')}
+                                </Text>
+                                <Switch
+                                  checked={selectedModel.reasoning}
+                                  onChange={(reasoning) =>
+                                    updateModelReasoning(selectedModel, reasoning)
+                                  }
+                                />
+                              </>
                             )}
                             <Button
                               icon={<Icon icon={Trash2} />}

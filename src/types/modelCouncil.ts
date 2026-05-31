@@ -1,8 +1,13 @@
 export interface ModelCouncilModelConfig {
   label?: string;
   model: string;
+  personalityId?: string;
   provider: string;
   reasoning?: boolean;
+  systemPrompt?: string;
+  temperature?: number;
+  topK?: number;
+  topP?: number;
 }
 
 export interface ModelCouncilSettings {
