@@ -16,23 +16,10 @@ import { isMacOS } from '@/utils/platform';
 import { useNavPanelSizeChangeHandler } from '../hooks/useNavPanel';
 import { BACK_BUTTON_ID } from './BackButton';
 
-const panelBackground = `linear-gradient(
-  180deg,
-  ${cssVar.colorPrimaryBg} 0%,
-  ${cssVar.colorFillQuaternary} 18%,
-  ${cssVar.colorBgLayout} 42%,
-  ${cssVar.colorBgLayout} 100%
-)`;
-
-const macOSPanelBackground = `linear-gradient(
-  180deg,
-  color-mix(in srgb, ${cssVar.colorPrimaryBg} 72%, transparent) 0%,
-  color-mix(in srgb, ${cssVar.colorFillQuaternary} 64%, transparent) 18%,
-  color-mix(in srgb, ${cssVar.colorBgLayout} 52%, transparent) 42%,
-  color-mix(in srgb, ${cssVar.colorBgLayout} 58%, transparent) 100%
-)`;
-
-const panelSurfaceBackground = isDesktop && isMacOS() ? macOSPanelBackground : panelBackground;
+const panelSurfaceBackground =
+  isDesktop && isMacOS()
+    ? `color-mix(in srgb, ${cssVar.colorBgLayout} 82%, transparent)`
+    : cssVar.colorBgLayout;
 
 const draggableStyles = createStaticStyles(({ css, cssVar }) => ({
   content: css`

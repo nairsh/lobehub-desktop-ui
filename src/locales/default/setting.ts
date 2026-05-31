@@ -570,8 +570,13 @@ export default {
     'Apply a curated color theme preset (overrides primary & neutral color)',
   'settingAppearance.themePreset.none': 'None',
   'settingAppearance.themePreset.ember': 'Ember',
+  'settingAppearance.themePreset.forest': 'Forest',
   'settingAppearance.themePreset.graphite': 'Graphite',
+  'settingAppearance.themePreset.ivory': 'Ivory',
   'settingAppearance.themePreset.ocean': 'Ocean',
+  'settingAppearance.themePreset.slate': 'Slate',
+  'settingAppearance.themePreset.stone': 'Stone',
+  'settingAppearance.themePreset.zinc': 'Zinc',
   'settingAppearance.themePreset.title': 'Theme Preset',
   'settingAppearance.title': 'Application Appearance',
   'settingChat.autoCreateTopicThreshold.desc':

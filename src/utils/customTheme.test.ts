@@ -29,7 +29,7 @@ describe('customTheme', () => {
     }
   });
 
-  it('creates visible swatch gradients', () => {
+  it('creates visible custom color swatch gradients', () => {
     expect(createThemeSwatchBackground('#e34ba9')).toContain('linear-gradient');
     expect(defaultThemeSwatchBackground).toContain('linear-gradient');
   });
@@ -48,7 +48,16 @@ describe('customTheme', () => {
   });
 
   it('provides full light and dark token sets for theme presets', () => {
-    expect(themePresetIds).toEqual(['ember', 'graphite', 'ocean']);
+    expect(themePresetIds).toEqual([
+      'graphite',
+      'slate',
+      'zinc',
+      'stone',
+      'ivory',
+      'ocean',
+      'forest',
+      'ember',
+    ]);
 
     const lightTokens = createEnhancedThemeTokens({ isDarkMode: false, themePreset: 'ocean' });
     const darkTokens = createEnhancedThemeTokens({ isDarkMode: true, themePreset: 'ocean' });
@@ -65,7 +74,7 @@ describe('customTheme', () => {
     ).toEqual({});
   });
 
-  it('creates preset swatches from the preset registry', () => {
-    expect(createPresetSwatchBackground('graphite')).toContain('#64748b');
+  it('creates solid preset swatches from the preset registry', () => {
+    expect(createPresetSwatchBackground('graphite')).toBe('#64748b');
   });
 });
