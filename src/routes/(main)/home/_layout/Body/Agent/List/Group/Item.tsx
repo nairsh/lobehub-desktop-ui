@@ -7,7 +7,7 @@ import React, { memo, useCallback, useMemo, useState } from 'react';
 import { useHomeStore } from '@/store/home';
 
 import { useCreateMenuItems } from '../../../../hooks';
-import { useAgentModal } from '../../ModalProvider';
+import { useAgentModal } from '../../context';
 import SessionList from '../List';
 import Actions from './Actions';
 import { useGroupDropdownMenu } from './useDropdownMenu';

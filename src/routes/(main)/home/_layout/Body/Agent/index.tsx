@@ -14,8 +14,8 @@ import { useFetchAgentList } from '@/hooks/useFetchAgentList';
 
 import { useCreateMenuItems } from '../../hooks';
 import Actions from './Actions';
+import { useAgentModal } from './context';
 import List from './List';
-import { useAgentModal } from './ModalProvider';
 import { useAgentActionsDropdownMenu } from './useDropdownMenu';
 
 interface AgentProps {

@@ -19,7 +19,7 @@ import { useHomeStore } from '@/store/home';
 import { featureFlagsSelectors, useServerConfigStore } from '@/store/serverConfig';
 import { prefetchRoute } from '@/utils/router';
 
-import { useAgentModal } from '../../ModalProvider';
+import { useAgentModal } from '../../context';
 import Actions from '../Item/Actions';
 import Avatar from './Avatar';
 import { useAgentDropdownMenu } from './useDropdownMenu';

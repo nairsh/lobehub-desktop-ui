@@ -1,7 +1,7 @@
 'use client';
 
 import { type ReactNode, useCallback } from 'react';
-import { createContext, memo, use, useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { ChatGroupWizard } from '@/components/ChatGroupWizard';
@@ -12,47 +12,14 @@ import { useAgentStore } from '@/store/agent';
 import { builtinAgentSelectors } from '@/store/agent/selectors';
 import { useHomeStore } from '@/store/home';
 
+import {
+  AgentModalContext,
+  type AgentModalContextValue,
+  type GroupWizardCallbacks,
+  type MemberSelectionCallbacks,
+} from './context';
 import ConfigGroupModal from './Modals/ConfigGroupModal';
 import CreateGroupModal from './Modals/CreateGroupModal';
-
-interface AgentModalContextValue {
-  closeAllModals: () => void;
-  closeConfigGroupModal: () => void;
-  closeCreateGroupModal: () => void;
-  closeGroupWizardModal: () => void;
-  closeMemberSelectionModal: () => void;
-  openConfigGroupModal: () => void;
-  openCreateGroupModal: (sessionId: string) => void;
-  openCreateModal: (type: 'agent' | 'group') => void;
-  openGroupWizardModal: (callbacks: GroupWizardCallbacks) => void;
-  openMemberSelectionModal: (callbacks: MemberSelectionCallbacks) => void;
-  setGroupWizardLoading: (loading: boolean) => void;
-}
-
-interface GroupWizardCallbacks {
-  onCancel?: () => void;
-  onCreateCustom?: (selectedAgents: string[]) => Promise<void>;
-  onCreateFromTemplate?: (templateId: string, selectedMemberTitles?: string[]) => Promise<void>;
-}
-
-interface MemberSelectionCallbacks {
-  onCancel?: () => void;
-  onConfirm?: (selectedAgents: string[]) => Promise<void>;
-}
-
-const AgentModalContext = createContext<AgentModalContextValue | null>(null);
-
-export const useAgentModal = () => {
-  const context = use(AgentModalContext);
-  if (!context) {
-    throw new Error('useAgentModal must be used within AgentModalProvider');
-  }
-  return context;
-};
-
-export const useOptionalAgentModal = () => {
-  return use(AgentModalContext);
-};
 
 interface CreateModalRendererProps {
   onClose: () => void;
