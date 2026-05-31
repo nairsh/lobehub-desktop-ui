@@ -20,7 +20,7 @@ const WelcomeText = memo(() => {
     <Center
       style={{
         fontSize: 28,
-        fontWeight: 'bold',
+        fontWeight: 500,
         marginBlock: '36px 24px',
       }}
     >

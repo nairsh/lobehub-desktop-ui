@@ -563,7 +563,7 @@ export const desktopRoutes: RouteObject[] = [
         path: 'page',
       },
 
-      // Default route - home page (handled by persistent layout)
+      // Default route - home page is handled by the persistent layout.
       {
         element: <></>,
         index: true,

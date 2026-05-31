@@ -53,8 +53,15 @@ const styles = createStaticStyles(({ css }) => ({
       color: ${cssVar.colorText} !important;
     }
 
-    [role='menuitem'] .${prefixCls}-upload {
-      font-size: inherit;
+    [role='menuitem']
+      .${prefixCls}-upload-wrapper,
+      [role='menuitem']
+      .${prefixCls}-upload,
+      [role='menuitem']
+      .${prefixCls}-upload
+      * {
+      font-size: 13px !important;
+      line-height: inherit !important;
       color: ${cssVar.colorText};
     }
   `,
