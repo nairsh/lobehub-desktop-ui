@@ -54,6 +54,15 @@ const styles = createStaticStyles(({ css, cssVar }) => ({
 
     background: ${cssVar.colorBgContainer};
   `,
+  hideScrollbar: css`
+    scrollbar-width: none;
+
+    -ms-overflow-style: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  `,
   inputFullscreen: css`
     border: none;
     border-radius: 0 !important;
@@ -169,6 +178,7 @@ const DesktopChatInput = memo<DesktopChatInputProps>(
             updateSystemStatus({ chatInputHeight: height });
           }}
           {...inputContainerProps}
+          classNames={{ body: styles.hideScrollbar }}
           className={cx(
             styles.inputRounded,
             expand && styles.inputFullscreen,
