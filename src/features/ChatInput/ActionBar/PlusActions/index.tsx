@@ -5,7 +5,6 @@ import { Block, Flexbox, Icon, Text } from '@lobehub/ui';
 import { Upload } from 'antd';
 import { createStaticStyles, css, cssVar, cx } from 'antd-style';
 import {
-  Blocks,
   FileUp,
   FolderOpenIcon,
   FolderUp,
@@ -21,7 +20,6 @@ import { useTranslation } from 'react-i18next';
 import { message } from '@/components/AntdStaticMethods';
 import { AttachKnowledgeModal } from '@/features/LibraryModal';
 import { useProjectModal } from '@/features/Project';
-import { createSkillStoreModal } from '@/features/SkillStore';
 import { useAgentStore } from '@/store/agent';
 import { agentByIdSelectors, chatConfigByIdSelectors } from '@/store/agent/selectors';
 import { useChatStore } from '@/store/chat';
@@ -109,7 +107,6 @@ IndicatorTag.displayName = 'IndicatorTag';
 
 const PlusActions = memo(() => {
   const { t } = useTranslation('chat');
-  const { t: tSetting } = useTranslation('setting');
   const [open, setOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
 
@@ -294,14 +291,6 @@ const PlusActions = memo(() => {
       },
     },
     {
-      icon: Blocks,
-      key: 'tools',
-      label: tSetting('tools.title'),
-      onClick: () => {
-        createSkillStoreModal();
-      },
-    },
-    {
       disabled: !councilReady,
       icon:
         councilMode && councilReady ? (
@@ -329,7 +318,7 @@ const PlusActions = memo(() => {
           title={t('input.more')}
           dropdown={{
             menu: { className: styles.compactDropdownMenu, items },
-            minWidth: 220,
+            minWidth: 160,
             placement: 'topLeft',
           }}
           onOpenChange={setOpen}
