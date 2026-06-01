@@ -265,7 +265,7 @@ export class ShortcutManager {
           filteredConfig[ShortcutActionEnum.openFloatingChat] =
             DEFAULT_SHORTCUTS_CONFIG[ShortcutActionEnum.openFloatingChat];
           shouldSaveConfig = true;
-          logger.debug('Migrating floating chat shortcut to CommandOrControl+K');
+          logger.debug('Migrating floating chat shortcut to CommandOrControl+Shift+K');
         }
 
         this.shortcutsConfig = filteredConfig;

@@ -12,7 +12,8 @@ export const ShortcutActionEnum = {
 
 export type ShortcutActionType = (typeof ShortcutActionEnum)[keyof typeof ShortcutActionEnum];
 
-export const LEGACY_FLOATING_CHAT_SHORTCUT = 'CommandOrControl+Shift+K';
+// Interim default we shipped briefly; migrate any stored value forward to Cmd+Shift+K.
+export const LEGACY_FLOATING_CHAT_SHORTCUT = 'CommandOrControl+K';
 export const FALLBACK_FLOATING_CHAT_SHORTCUT = 'Control+Alt+K';
 
 /**
@@ -20,6 +21,6 @@ export const FALLBACK_FLOATING_CHAT_SHORTCUT = 'Control+Alt+K';
  */
 export const DEFAULT_SHORTCUTS_CONFIG: Record<ShortcutActionType, string> = {
   [ShortcutActionEnum.openSettings]: 'CommandOrControl+,',
-  [ShortcutActionEnum.openFloatingChat]: 'CommandOrControl+K',
+  [ShortcutActionEnum.openFloatingChat]: 'CommandOrControl+Shift+K',
   [ShortcutActionEnum.showApp]: 'Control+E',
 };

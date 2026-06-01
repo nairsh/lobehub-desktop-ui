@@ -39,11 +39,11 @@ export const appBrowsers = {
     fullscreenable: false,
     // Opens as a compact "pill" (just the input bar); the renderer grows the
     // window to its full height once the first message is sent.
-    height: 116,
+    height: 76,
     identifier: 'floatingChat',
     keepAlive: false,
     maximizable: false,
-    minHeight: 116,
+    minHeight: 76,
     minWidth: 360,
     path: '/floating-chat',
     resizable: true,

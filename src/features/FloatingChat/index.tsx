@@ -17,7 +17,6 @@ import ModelAction from '@/features/ChatInput/ActionBar/Model';
 import PlusActions from '@/features/ChatInput/ActionBar/PlusActions';
 import { useChatInputStore } from '@/features/ChatInput/store';
 import { ChatList, ConversationProvider, useConversationStore } from '@/features/Conversation';
-import { isEditableShortcutTarget, isFloatingChatEvent } from '@/hooks/useHotkeys/shortcutGuards';
 import { useOperationState } from '@/hooks/useOperationState';
 import { useAgentStore } from '@/store/agent';
 import { builtinAgentSelectors } from '@/store/agent/selectors';
@@ -29,7 +28,7 @@ import { settingsSelectors } from '@/store/user/selectors';
 import type { ModelCouncilSettings } from '@/types/modelCouncil';
 
 const FLOATING_WIDTH = 560;
-const FLOATING_PILL_HEIGHT = 116;
+const FLOATING_PILL_HEIGHT = 76;
 const FLOATING_EXPANDED_HEIGHT = 720;
 
 const useStyles = createStyles(({ css, token }) => ({
@@ -41,8 +40,12 @@ const useStyles = createStyles(({ css, token }) => ({
   chatList: css`
     overflow: auto;
     flex: 1;
+
     min-height: 0;
     padding-block: 64px 12px;
+
+    /* Allow scrolling/text selection inside the standalone window's drag region. */
+    -webkit-app-region: no-drag;
   `,
   dragHandle: css`
     cursor: grab;
@@ -61,6 +64,10 @@ const useStyles = createStyles(({ css, token }) => ({
     padding: 12px;
     background: linear-gradient(180deg, transparent, ${token.colorBgContainer} 20%);
   `,
+  inputDockPill: css`
+    padding: 0;
+    background: none;
+  `,
   inputShell: css`
     display: flex;
     gap: 8px;
@@ -74,6 +81,12 @@ const useStyles = createStyles(({ css, token }) => ({
 
     background: ${token.colorBgElevated};
     box-shadow: 0 16px 40px rgb(0 0 0 / 8%);
+  `,
+  inputShellStandalonePill: css`
+    height: 100%;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
   `,
   sendButton: css`
     cursor: pointer;
@@ -121,6 +134,12 @@ const useStyles = createStyles(({ css, token }) => ({
     min-height: 0;
     border-radius: 32px;
   `,
+  shellPill: css`
+    overflow: visible;
+    border: none;
+    background: none;
+    box-shadow: none;
+  `,
   shellCompact: css`
     width: min(780px, calc(100vw - 48px));
     height: 96px;
@@ -138,6 +157,19 @@ const useStyles = createStyles(({ css, token }) => ({
     border-radius: 0;
 
     box-shadow: none;
+
+    /* Drag the frameless OS window by its background; keep controls clickable. */
+    -webkit-app-region: drag;
+
+    textarea,
+    input,
+    button,
+    a,
+    [role='button'],
+    [role='menuitem'],
+    [contenteditable='true'] {
+      -webkit-app-region: no-drag;
+    }
   `,
   topButton: css`
     pointer-events: auto;
@@ -212,11 +244,17 @@ const useStyles = createStyles(({ css, token }) => ({
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
+// Pressing on these should focus/click them, not start a window drag.
+const isInteractiveDragTarget = (target: EventTarget | null) =>
+  target instanceof Element &&
+  !!target.closest('textarea, input, button, a, [role="menuitem"], [contenteditable="true"]');
+
 const FloatingComposerBody = memo<{
   compact: boolean;
+  fillPill?: boolean;
   onSubmit?: () => void;
-}>(({ compact, onSubmit }) => {
-  const { styles } = useStyles();
+}>(({ compact, fillPill, onSubmit }) => {
+  const { styles, cx } = useStyles();
   const { t } = useTranslation('chat');
   const [value, setValue] = useState('');
   const councilMode = useChatInputStore((s) => s.councilMode);
@@ -254,7 +292,7 @@ const FloatingComposerBody = memo<{
   }, [councilMode, councilReady, councilSettings, isGenerating, onSubmit, sendMessage, value]);
 
   return (
-    <div className={styles.inputShell}>
+    <div className={cx(styles.inputShell, fillPill && styles.inputShellStandalonePill)}>
       <ActionBarContext value={{ actionSize: { blockSize: 28, size: 14 }, borderRadius: 999 }}>
         <PlusActions />
       </ActionBarContext>
@@ -295,8 +333,9 @@ FloatingComposerBody.displayName = 'FloatingComposerBody';
 const FloatingComposer = memo<{
   agentId: string;
   compact: boolean;
+  fillPill?: boolean;
   onSubmit?: () => void;
-}>(({ agentId, compact, onSubmit }) => {
+}>(({ agentId, compact, fillPill, onSubmit }) => {
   const [stopGenerating, operationState] = useConversationStore((s) => [
     s.stopGenerating,
     s.operationState,
@@ -317,7 +356,7 @@ const FloatingComposer = memo<{
         shape: 'round',
       }}
     >
-      <FloatingComposerBody compact={compact} onSubmit={onSubmit} />
+      <FloatingComposerBody compact={compact} fillPill={fillPill} onSubmit={onSubmit} />
     </ChatInputProvider>
   );
 });
@@ -381,24 +420,13 @@ const FloatingChat = memo<FloatingChatProps>(({ standalone = false }) => {
     setCompact(false);
   }, []);
 
+  // The main process opens/focuses this window via the global shortcut, then broadcasts.
   useWatchBroadcast('openFloatingChat', openOverlay);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (!isFloatingChatEvent(event)) return;
-      if (isEditableShortcutTarget(event.target)) return;
-
-      event.preventDefault();
-      openOverlay();
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [openOverlay]);
 
   const handlePointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
       if (standalone) return;
+      if (isInteractiveDragTarget(event.target)) return;
 
       dragRef.current = {
         offsetX: event.clientX - position.x,
@@ -460,9 +488,9 @@ const FloatingChat = memo<FloatingChatProps>(({ standalone = false }) => {
     setOpen(false);
   }, [standalone]);
 
-  // Esc closes the standalone floating window — the pill hides the toolbar's close button.
+  // Esc closes the floating chat — needed for the pill, which has no toolbar close button.
   useEffect(() => {
-    if (!standalone || !open) return;
+    if (!open) return;
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       event.preventDefault();
@@ -470,7 +498,7 @@ const FloatingChat = memo<FloatingChatProps>(({ standalone = false }) => {
     };
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [standalone, open, handleClose]);
+  }, [open, handleClose]);
 
   if (!open || !agentId) return null;
 
@@ -482,6 +510,7 @@ const FloatingChat = memo<FloatingChatProps>(({ standalone = false }) => {
         styles.shell,
         compact && !standalone && styles.shellCompact,
         !isExpanded && !standalone && styles.shellCollapsed,
+        !isExpanded && !standalone && styles.shellPill,
         standalone && styles.shellStandalone,
       )}
     >
@@ -548,10 +577,16 @@ const FloatingChat = memo<FloatingChatProps>(({ standalone = false }) => {
             <ChatList disableActionsBar />
           </div>
         )}
-        <div className={styles.inputDock}>
+        <div
+          className={cx(styles.inputDock, !isExpanded && styles.inputDockPill)}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+        >
           <FloatingComposer
             agentId={agentId}
             compact={compact}
+            fillPill={!isExpanded && standalone}
             onSubmit={() => setExpanded(true)}
           />
         </div>
