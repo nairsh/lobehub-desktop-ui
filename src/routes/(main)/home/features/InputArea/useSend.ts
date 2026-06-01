@@ -70,21 +70,22 @@ export const useSend = () => {
             // Default inbox behavior
             if (!inboxAgentId) return;
 
-            const result = await sendMessage({
+            await sendMessage({
               context: { agentId: inboxAgentId },
               contexts: contextList,
               editorData,
               files: fileList,
               message: inputMessage,
+              // Switch into the chat view as soon as the conversation is created,
+              // without waiting for the AI response to finish streaming.
+              onConversationStart: ({ topicId }) => {
+                router.push(
+                  `${SESSION_CHAT_URL(inboxAgentId, false)}${topicId ? `?topic=${topicId}` : ''}`,
+                );
+              },
               overrideCouncil: councilMode && councilReady ? councilSettings : undefined,
               useModelCouncil: councilMode && councilReady,
             });
-
-            router.push(
-              `${SESSION_CHAT_URL(inboxAgentId, false)}${
-                result?.topicId ? `?topic=${result.topicId}` : ''
-              }`,
-            );
           }
         }
       } finally {

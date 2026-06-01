@@ -28,6 +28,10 @@ import { useUserStore } from '@/store/user';
 import { settingsSelectors } from '@/store/user/selectors';
 import type { ModelCouncilSettings } from '@/types/modelCouncil';
 
+const FLOATING_WIDTH = 560;
+const FLOATING_PILL_HEIGHT = 116;
+const FLOATING_EXPANDED_HEIGHT = 720;
+
 const useStyles = createStyles(({ css, token }) => ({
   body: css`
     overflow: hidden;
@@ -111,6 +115,11 @@ const useStyles = createStyles(({ css, token }) => ({
     box-shadow:
       0 28px 80px ${token.colorFillSecondary},
       0 10px 34px rgb(0 0 0 / 18%);
+  `,
+  shellCollapsed: css`
+    height: auto;
+    min-height: 0;
+    border-radius: 32px;
   `,
   shellCompact: css`
     width: min(780px, calc(100vw - 48px));
@@ -205,7 +214,8 @@ const clamp = (value: number, min: number, max: number) => Math.min(Math.max(val
 
 const FloatingComposerBody = memo<{
   compact: boolean;
-}>(({ compact }) => {
+  onSubmit?: () => void;
+}>(({ compact, onSubmit }) => {
   const { styles } = useStyles();
   const { t } = useTranslation('chat');
   const [value, setValue] = useState('');
@@ -233,13 +243,15 @@ const FloatingComposerBody = memo<{
     if (!message || isGenerating) return;
 
     setValue('');
+    // Expand into the full chat pane immediately, before the response streams.
+    onSubmit?.();
     await sendMessage({
       message,
       overrideCouncil: councilMode && councilReady ? councilSettings : undefined,
       skipTopicSwitch: true,
       useModelCouncil: councilMode && councilReady,
     });
-  }, [councilMode, councilReady, councilSettings, isGenerating, sendMessage, value]);
+  }, [councilMode, councilReady, councilSettings, isGenerating, onSubmit, sendMessage, value]);
 
   return (
     <div className={styles.inputShell}>
@@ -283,7 +295,8 @@ FloatingComposerBody.displayName = 'FloatingComposerBody';
 const FloatingComposer = memo<{
   agentId: string;
   compact: boolean;
-}>(({ agentId, compact }) => {
+  onSubmit?: () => void;
+}>(({ agentId, compact, onSubmit }) => {
   const [stopGenerating, operationState] = useConversationStore((s) => [
     s.stopGenerating,
     s.operationState,
@@ -304,7 +317,7 @@ const FloatingComposer = memo<{
         shape: 'round',
       }}
     >
-      <FloatingComposerBody compact={compact} />
+      <FloatingComposerBody compact={compact} onSubmit={onSubmit} />
     </ChatInputProvider>
   );
 });
@@ -321,6 +334,7 @@ const FloatingChat = memo<FloatingChatProps>(({ standalone = false }) => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(standalone);
   const [compact, setCompact] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [position, setPosition] = useState({ x: 48, y: 48 });
   const [floatingTopicId, setFloatingTopicId] = useState<string | null>(null);
   const dragRef = useRef<{ offsetX: number; offsetY: number } | null>(null);
@@ -341,6 +355,26 @@ const FloatingChat = memo<FloatingChatProps>(({ standalone = false }) => {
   const replaceMessages = useChatStore((s) => s.replaceMessages);
   const messages = useChatStore((s) => s.dbMessagesMap[chatKey]);
   const operationState = useOperationState(context);
+
+  // Pill until a conversation exists; `expanded` flips true optimistically on send.
+  const hasConversation = (messages?.length ?? 0) > 0;
+  const isExpanded = expanded || hasConversation;
+
+  // Grow/shrink the standalone Electron window to match the pill/expanded state.
+  useEffect(() => {
+    if (!standalone || !open) return;
+    let cancelled = false;
+    void import('@/services/electron/system').then(({ electronSystemService }) => {
+      if (cancelled) return;
+      electronSystemService.setWindowSize({
+        height: isExpanded ? FLOATING_EXPANDED_HEIGHT : FLOATING_PILL_HEIGHT,
+        width: FLOATING_WIDTH,
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [standalone, open, isExpanded]);
 
   const openOverlay = useCallback(() => {
     setOpen(true);
@@ -411,6 +445,7 @@ const FloatingChat = memo<FloatingChatProps>(({ standalone = false }) => {
   const handleNewChat = useCallback(() => {
     setFloatingTopicId(null);
     setCompact(false);
+    setExpanded(false);
     setOpen(true);
   }, []);
 
@@ -425,6 +460,18 @@ const FloatingChat = memo<FloatingChatProps>(({ standalone = false }) => {
     setOpen(false);
   }, [standalone]);
 
+  // Esc closes the standalone floating window — the pill hides the toolbar's close button.
+  useEffect(() => {
+    if (!standalone || !open) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      handleClose();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [standalone, open, handleClose]);
+
   if (!open || !agentId) return null;
 
   return (
@@ -434,45 +481,54 @@ const FloatingChat = memo<FloatingChatProps>(({ standalone = false }) => {
       className={cx(
         styles.shell,
         compact && !standalone && styles.shellCompact,
+        !isExpanded && !standalone && styles.shellCollapsed,
         standalone && styles.shellStandalone,
       )}
     >
-      <div
-        className={styles.dragHandle}
-        onDoubleClick={() => setCompact((value) => !value)}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-      />
-      <div className={styles.toolbar}>
-        <button className={styles.topButton} title={t('tab.closeCurrentTab')} onClick={handleClose}>
-          <X size={19} />
-        </button>
-        {displayTitle && !compact && (
-          <div className={styles.title}>
-            <TypewriterEffect
-              cursorCharacter={<LoadingDots size={14} variant={'pulse'} />}
-              cursorFade={false}
-              hideCursorWhileTyping={'afterTyping'}
-              key={displayTitle}
-              sentences={[displayTitle]}
-              typingSpeed={64}
-            />
-          </div>
-        )}
-        <Flexbox horizontal gap={8}>
-          <button className={styles.topButton} title={t('tab.newTab')} onClick={handleNewChat}>
-            <MessageSquarePlus size={18} />
-          </button>
+      {isExpanded && (
+        <div
+          className={styles.dragHandle}
+          onDoubleClick={() => setCompact((value) => !value)}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+        />
+      )}
+      {isExpanded && (
+        <div className={styles.toolbar}>
           <button
             className={styles.topButton}
-            title={t('tab.expandFloatingChat')}
-            onClick={handleExpand}
+            title={t('tab.closeCurrentTab')}
+            onClick={handleClose}
           >
-            <Maximize2 size={18} />
+            <X size={19} />
           </button>
-        </Flexbox>
-      </div>
+          {displayTitle && !compact && (
+            <div className={styles.title}>
+              <TypewriterEffect
+                cursorCharacter={<LoadingDots size={14} variant={'pulse'} />}
+                cursorFade={false}
+                hideCursorWhileTyping={'afterTyping'}
+                key={displayTitle}
+                sentences={[displayTitle]}
+                typingSpeed={64}
+              />
+            </div>
+          )}
+          <Flexbox horizontal gap={8}>
+            <button className={styles.topButton} title={t('tab.newTab')} onClick={handleNewChat}>
+              <MessageSquarePlus size={18} />
+            </button>
+            <button
+              className={styles.topButton}
+              title={t('tab.expandFloatingChat')}
+              onClick={handleExpand}
+            >
+              <Maximize2 size={18} />
+            </button>
+          </Flexbox>
+        </div>
+      )}
       <ConversationProvider
         hasInitMessages
         context={context}
@@ -487,13 +543,17 @@ const FloatingChat = memo<FloatingChatProps>(({ standalone = false }) => {
           replaceMessages(nextMessages, { context: ctx });
         }}
       >
-        {!compact && (
+        {!compact && isExpanded && (
           <div className={styles.chatList}>
             <ChatList disableActionsBar />
           </div>
         )}
         <div className={styles.inputDock}>
-          <FloatingComposer agentId={agentId} compact={compact} />
+          <FloatingComposer
+            agentId={agentId}
+            compact={compact}
+            onSubmit={() => setExpanded(true)}
+          />
         </div>
       </ConversationProvider>
     </div>

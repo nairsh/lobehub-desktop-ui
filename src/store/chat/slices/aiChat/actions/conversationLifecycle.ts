@@ -74,6 +74,12 @@ export interface SendMessageWithContextParams extends SendMessageParams {
    * Optional system prompt from the active project.
    * Appended to the agent's system role for the duration of this LLM call.
    */
+  /**
+   * Fired once the conversation is persisted server-side and the topic is known,
+   * BEFORE the AI response streams. Lets callers switch into the chat view
+   * immediately instead of waiting for the full response to finish.
+   */
+  onConversationStart?: (info: { topicId?: string }) => void;
   overrideCouncil?: ModelCouncilSettings;
   projectKnowledgeBaseId?: string;
   projectSystemPrompt?: string;
@@ -142,6 +148,7 @@ export class ConversationLifecycleActionImpl {
     skipTopicSwitch,
     overrideCouncil,
     useModelCouncil,
+    onConversationStart,
   }: SendMessageWithContextParams): Promise<SendMessageResult | undefined> => {
     let editorData = inputEditorData;
     const { internal_execAgentRuntime, mainInputEditor } = this.#get();
@@ -609,6 +616,8 @@ export class ConversationLifecycleActionImpl {
 
         if (ENABLE_BUSINESS_FEATURES) markUserValidAction();
 
+        onConversationStart?.({ topicId: data.topicId });
+
         return {
           assistantMessageId: data.judgeMessageId,
           topicId: data.topicId,
@@ -759,6 +768,10 @@ export class ConversationLifecycleActionImpl {
           skipRefreshMessage: true,
         });
       }
+
+      // Notify the caller as soon as the conversation exists server-side, so the
+      // chat view can be shown immediately rather than after streaming completes.
+      onConversationStart?.({ topicId: finalTopicId ?? undefined });
     } catch (e) {
       console.error(e);
       // Fail operation on error
