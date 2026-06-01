@@ -58,7 +58,7 @@ export const styles = createStaticStyles(({ css, cssVar }) => ({
     overflow: hidden;
     flex-shrink: 0;
 
-    width: 420px;
+    width: 560px;
     padding-inline-end: 120px;
 
     background: ${cssVar.colorBgLayout};
