@@ -27,6 +27,12 @@ const useStyles = createStyles(({ css, token }) => ({
     line-height: 1.7;
     color: ${token.colorTextSecondary};
   `,
+  sectionLabel: css`
+    font-size: 12px;
+    font-weight: 600;
+    color: ${token.colorTextTertiary};
+    text-transform: uppercase;
+  `,
   contentPreview: css`
     overflow: hidden;
     display: -webkit-box;
@@ -315,10 +321,22 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                   <Markdown variant={'chat'}>{livePreview}</Markdown>
                 </div>
               )}
-              {isExpanded && visibleContent && (
-                <div className={styles.content}>
-                  <Markdown variant={'chat'}>{visibleContent}</Markdown>
-                </div>
+              {isExpanded && (
+                <Flexbox gap={8}>
+                  {reasoningContent && (
+                    <Flexbox gap={4}>
+                      <Text className={styles.sectionLabel}>{t('modelCouncil.reasoning')}</Text>
+                      <div className={styles.content}>
+                        <Markdown variant={'chat'}>{reasoningContent}</Markdown>
+                      </div>
+                    </Flexbox>
+                  )}
+                  {visibleContent && (
+                    <div className={styles.content}>
+                      <Markdown variant={'chat'}>{visibleContent}</Markdown>
+                    </div>
+                  )}
+                </Flexbox>
               )}
               {!isExpanded && !livePreview && visibleContent && (
                 <div className={styles.contentPreview}>{visibleContent}</div>
@@ -405,10 +423,22 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                     <Markdown variant={'chat'}>{judgeLivePreview}</Markdown>
                   </div>
                 )}
-                {isExpanded && judgeContent && (
-                  <div className={styles.content}>
-                    <Markdown variant={'chat'}>{judgeContent}</Markdown>
-                  </div>
+                {isExpanded && (
+                  <Flexbox gap={8}>
+                    {judgeReasoning && (
+                      <Flexbox gap={4}>
+                        <Text className={styles.sectionLabel}>{t('modelCouncil.reasoning')}</Text>
+                        <div className={styles.content}>
+                          <Markdown variant={'chat'}>{judgeReasoning}</Markdown>
+                        </div>
+                      </Flexbox>
+                    )}
+                    {judgeContent && (
+                      <div className={styles.content}>
+                        <Markdown variant={'chat'}>{judgeContent}</Markdown>
+                      </div>
+                    )}
+                  </Flexbox>
                 )}
                 {!isExpanded && !judgeLivePreview && judgeContent && (
                   <div className={styles.contentPreview}>{judgeContent}</div>
