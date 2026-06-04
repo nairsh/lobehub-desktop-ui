@@ -316,7 +316,7 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                         : t('modelCouncil.status.running')}
                 </Text>
               </Flexbox>
-              {livePreview && (
+              {isExpanded && livePreview && (
                 <div aria-live="polite" className={styles.streamPreview}>
                   <Markdown variant={'chat'}>{livePreview}</Markdown>
                 </div>
@@ -337,9 +337,6 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                     </div>
                   )}
                 </Flexbox>
-              )}
-              {!isExpanded && !livePreview && visibleContent && (
-                <div className={styles.contentPreview}>{visibleContent}</div>
               )}
             </Flexbox>
           );
@@ -418,7 +415,7 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                           : t('modelCouncil.synthesizing')}
                   </Text>
                 </Flexbox>
-                {judgeLivePreview && (
+                {isExpanded && judgeLivePreview && (
                   <div aria-live="polite" className={styles.streamPreview}>
                     <Markdown variant={'chat'}>{judgeLivePreview}</Markdown>
                   </div>
@@ -439,9 +436,6 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                       </div>
                     )}
                   </Flexbox>
-                )}
-                {!isExpanded && !judgeLivePreview && judgeContent && (
-                  <div className={styles.contentPreview}>{judgeContent}</div>
                 )}
               </Flexbox>
             );
