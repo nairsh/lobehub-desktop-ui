@@ -7,6 +7,7 @@ import { buildDir } from '@/const/dir';
 import { isDev, isLinux, isMac, isWindows } from '@/const/env';
 import { createLogger } from '@/utils/logger';
 
+import { BrowsersIdentifiers } from '../../appBrowsers';
 import {
   BACKGROUND_DARK,
   BACKGROUND_LIGHT,
@@ -96,6 +97,16 @@ export class WindowThemeManager {
       return this.getWindowsConfig(this.isDarkMode);
     }
     if (isMac) {
+      // The floating chat must be a genuinely transparent window so the renderer
+      // can draw a rounded "pill". Applying vibrancy here fills it with an opaque
+      // frosted material; traffic-light buttons would also bleed into the pill.
+      if (this.identifier === BrowsersIdentifiers.floatingChat) {
+        return {
+          hasShadow: false,
+          transparent: true,
+        };
+      }
+
       // Calculate traffic light position to center vertically in title bar
       // Traffic light buttons are approximately 12px tall
       const trafficLightY = Math.round((TITLE_BAR_HEIGHT - 12) / 2);

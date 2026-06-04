@@ -38,6 +38,8 @@ export default {
   'loadMore': 'Load More',
   'searchPlaceholder': 'Search Topics...',
   'searchResultEmpty': 'No search results found.',
+  'summaryError': 'Auto rename failed',
+  'summaryErrorWithReason': 'Auto rename failed: {{reason}}',
   'temp': 'Temporary',
   'title': 'Topic',
 };

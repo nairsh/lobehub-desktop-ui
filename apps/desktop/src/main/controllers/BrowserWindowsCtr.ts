@@ -26,9 +26,13 @@ export default class BrowserWindowsCtr extends ControllerModule {
     const floatingWindow = this.app.browserManager.retrieveByIdentifier(
       BrowsersIdentifiers.floatingChat,
     );
+    const freshOpen = !floatingWindow.browserWindow.isVisible();
+    // Always restore pill size before showing so the expanded state from a
+    // previous session never flashes before the renderer can resize.
+    floatingWindow.setWindowSize({ height: 76, width: 560 });
     floatingWindow.show();
     floatingWindow.browserWindow.focus();
-    floatingWindow.broadcast('openFloatingChat');
+    floatingWindow.broadcast('openFloatingChat', { freshOpen });
   }
 
   @IpcMethod()

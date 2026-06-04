@@ -46,6 +46,17 @@ export const useTabNavigation = () => {
 
     const { tabs, activeTabId } = useElectronStore.getState();
 
+    // If the active tab already represents the current URL, leave it untouched.
+    // This keeps a freshly created tab (e.g. a new Home tab opened via "+") from
+    // being re-pointed or having focus stolen by another tab that maps to the
+    // same URL during route sync.
+    if (activeTabId) {
+      const activeTab = tabs.find((t) => t.id === activeTabId);
+      if (activeTab && pluginRegistry.generateUrl(activeTab) === currentUrl) {
+        return;
+      }
+    }
+
     // If this exact page is already a tab, activate it
     const existing = tabs.find((t) => t.id === reference.id);
     if (existing) {

@@ -112,6 +112,27 @@ export default ({ token }: { prefixCls: string; token: Theme }) => css`
     --lobe-dropdown-animation-ease-in: cubic-bezier(0.4, 0, 1, 1) !important;
   }
 
+  /* Slash command menu (Pages editor) — match the Plus dropdown pop.
+     The editor's slash menu mounts/unmounts (no data-open state), so it uses a
+     keyframe. The positioned wrapper carries the translate transform, so the pop
+     scales the inner popup child instead. */
+  @keyframes lobe-slash-menu-pop {
+    from {
+      transform: scale(0.92);
+      opacity: 0;
+    }
+
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  [data-resloved-placement] > * {
+    transform-origin: top center;
+    animation: lobe-slash-menu-pop 110ms cubic-bezier(0.25, 1.4, 0.5, 1);
+  }
+
   [data-placement][data-open] > * {
     transform: scale(1) !important;
     opacity: 1;

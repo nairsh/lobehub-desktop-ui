@@ -147,16 +147,23 @@ const useStyles = createStyles(({ css, token }) => ({
     border-radius: 48px;
   `,
   shellStandalone: css`
-    inset: 0 !important;
+    /* The OS window is transparent; inset the card so its rounded corners and
+       drop shadow are visible against the transparent margin. */
+    inset: 8px !important;
 
-    width: 100vw;
+    justify-content: center;
+
+    width: auto;
     min-width: 0;
-    height: 100vh;
+    height: auto;
     min-height: 0;
-    border: 0;
-    border-radius: 0;
+    border: 1px solid ${token.colorBorderSecondary};
+    border-radius: 24px;
 
-    box-shadow: none;
+    background: ${token.colorBgContainer};
+    box-shadow:
+      0 22px 60px rgb(0 0 0 / 24%),
+      0 6px 18px rgb(0 0 0 / 16%);
 
     /* Drag the frameless OS window by its background; keep controls clickable. */
     -webkit-app-region: drag;
@@ -170,6 +177,10 @@ const useStyles = createStyles(({ css, token }) => ({
     [contenteditable='true'] {
       -webkit-app-region: no-drag;
     }
+  `,
+  shellStandalonePill: css`
+    /* Collapsed standalone state: a fully rounded pill around the input bar. */
+    border-radius: 999px;
   `,
   topButton: css`
     pointer-events: auto;
@@ -252,8 +263,9 @@ const isInteractiveDragTarget = (target: EventTarget | null) =>
 const FloatingComposerBody = memo<{
   compact: boolean;
   fillPill?: boolean;
+  onConversationStart?: (info: { topicId?: string }) => void;
   onSubmit?: () => void;
-}>(({ compact, fillPill, onSubmit }) => {
+}>(({ compact, fillPill, onConversationStart, onSubmit }) => {
   const { styles, cx } = useStyles();
   const { t } = useTranslation('chat');
   const [value, setValue] = useState('');
@@ -285,11 +297,21 @@ const FloatingComposerBody = memo<{
     onSubmit?.();
     await sendMessage({
       message,
+      onConversationStart,
       overrideCouncil: councilMode && councilReady ? councilSettings : undefined,
       skipTopicSwitch: true,
       useModelCouncil: councilMode && councilReady,
     });
-  }, [councilMode, councilReady, councilSettings, isGenerating, onSubmit, sendMessage, value]);
+  }, [
+    councilMode,
+    councilReady,
+    councilSettings,
+    isGenerating,
+    onConversationStart,
+    onSubmit,
+    sendMessage,
+    value,
+  ]);
 
   return (
     <div className={cx(styles.inputShell, fillPill && styles.inputShellStandalonePill)}>
@@ -334,8 +356,9 @@ const FloatingComposer = memo<{
   agentId: string;
   compact: boolean;
   fillPill?: boolean;
+  onConversationStart?: (info: { topicId?: string }) => void;
   onSubmit?: () => void;
-}>(({ agentId, compact, fillPill, onSubmit }) => {
+}>(({ agentId, compact, fillPill, onConversationStart, onSubmit }) => {
   const [stopGenerating, operationState] = useConversationStore((s) => [
     s.stopGenerating,
     s.operationState,
@@ -356,7 +379,12 @@ const FloatingComposer = memo<{
         shape: 'round',
       }}
     >
-      <FloatingComposerBody compact={compact} fillPill={fillPill} onSubmit={onSubmit} />
+      <FloatingComposerBody
+        compact={compact}
+        fillPill={fillPill}
+        onConversationStart={onConversationStart}
+        onSubmit={onSubmit}
+      />
     </ChatInputProvider>
   );
 });
@@ -390,6 +418,9 @@ const FloatingChat = memo<FloatingChatProps>(({ standalone = false }) => {
     () => ({ agentId, scope: 'main' as const, topicId: floatingTopicId }),
     [floatingTopicId, agentId],
   );
+  const handleConversationStart = useCallback((info: { topicId?: string }) => {
+    if (info.topicId) setFloatingTopicId(info.topicId);
+  }, []);
   const chatKey = useMemo(() => messageMapKey(context), [context]);
   const replaceMessages = useChatStore((s) => s.replaceMessages);
   const messages = useChatStore((s) => s.dbMessagesMap[chatKey]);
@@ -415,10 +446,20 @@ const FloatingChat = memo<FloatingChatProps>(({ standalone = false }) => {
     };
   }, [standalone, open, isExpanded]);
 
-  const openOverlay = useCallback(() => {
-    setOpen(true);
-    setCompact(false);
-  }, []);
+  const openOverlay = useCallback(
+    (data?: { freshOpen?: boolean }) => {
+      if (data?.freshOpen) {
+        // Window was hidden — reset to a fresh pill so the user always starts
+        // with a clean input, not a stale conversation from the previous session.
+        replaceMessages([], { context: { agentId, scope: 'main', topicId: null } });
+        setFloatingTopicId(null);
+        setExpanded(false);
+      }
+      setCompact(false);
+      setOpen(true);
+    },
+    [agentId, replaceMessages],
+  );
 
   // The main process opens/focuses this window via the global shortcut, then broadcasts.
   useWatchBroadcast('openFloatingChat', openOverlay);
@@ -471,11 +512,12 @@ const FloatingChat = memo<FloatingChatProps>(({ standalone = false }) => {
   }, [agentId, floatingTopicId, navigate, standalone]);
 
   const handleNewChat = useCallback(() => {
+    replaceMessages([], { context: { agentId, scope: 'main', topicId: null } });
     setFloatingTopicId(null);
     setCompact(false);
     setExpanded(false);
     setOpen(true);
-  }, []);
+  }, [agentId, replaceMessages]);
 
   const handleClose = useCallback(() => {
     if (standalone) {
@@ -512,6 +554,7 @@ const FloatingChat = memo<FloatingChatProps>(({ standalone = false }) => {
         !isExpanded && !standalone && styles.shellCollapsed,
         !isExpanded && !standalone && styles.shellPill,
         standalone && styles.shellStandalone,
+        !isExpanded && standalone && styles.shellStandalonePill,
       )}
     >
       {isExpanded && (
@@ -587,6 +630,7 @@ const FloatingChat = memo<FloatingChatProps>(({ standalone = false }) => {
             agentId={agentId}
             compact={compact}
             fillPill={!isExpanded && standalone}
+            onConversationStart={handleConversationStart}
             onSubmit={() => setExpanded(true)}
           />
         </div>

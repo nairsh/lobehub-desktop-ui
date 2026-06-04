@@ -289,6 +289,23 @@ export class BrowserManager {
   }
 
   /**
+   * Map a window's current webContents to its identifier so sender-scoped IPCs
+   * (closeWindow, setWindowSize, …) can resolve it. Must run every time a
+   * window is created — keepAlive:false windows (e.g. the floating chat) are
+   * destroyed on close and get a fresh webContents on reopen, which would
+   * otherwise never be registered. The mapping is cleaned up automatically when
+   * the webContents is destroyed.
+   */
+  registerWebContents(webContents: WebContents, identifier: string): void {
+    this.webContentsMap.set(webContents, identifier);
+    webContents.once('destroyed', () => {
+      if (this.webContentsMap.get(webContents) === identifier) {
+        this.webContentsMap.delete(webContents);
+      }
+    });
+  }
+
+  /**
    * Handle application theme mode changes and reapply visual effects to all windows
    */
   handleAppThemeChange(): void {

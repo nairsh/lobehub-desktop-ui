@@ -29,6 +29,11 @@ export interface BrowserWindowOpts extends BrowserWindowConstructorOptions {
   keepAlive?: boolean;
   parentIdentifier?: string;
   path: string;
+  /**
+   * Always open at the configured size and never persist bounds. Used for the
+   * floating chat pill so it can't reopen at a previous session's grown size.
+   */
+  resetSizeOnOpen?: boolean;
   showOnInit?: boolean;
   title?: string;
   width?: number;
@@ -71,6 +76,7 @@ export default class Browser {
     this.stateManager = new WindowStateManager(application, {
       identifier: options.identifier,
       keepAlive: options.keepAlive,
+      resetSizeOnOpen: options.resetSizeOnOpen,
     });
     this.themeManager = new WindowThemeManager(options.identifier);
 
@@ -93,6 +99,12 @@ export default class Browser {
     this._browserWindow = browserWindow;
 
     this.setupWindow(browserWindow);
+
+    // Register the (possibly recreated) webContents so sender-scoped IPCs like
+    // closeWindow / setWindowSize resolve this window. keepAlive:false windows
+    // are destroyed on close and get a fresh webContents on reopen, which
+    // BrowserManager only registers on first creation.
+    this.app.browserManager.registerWebContents(browserWindow.webContents, this.identifier);
 
     logger.debug(`[${this.identifier}] retrieveOrInitialize completed.`);
     return browserWindow;

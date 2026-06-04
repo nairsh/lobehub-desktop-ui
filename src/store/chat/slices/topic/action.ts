@@ -196,8 +196,21 @@ export class ChatTopicActionImpl {
 
   summaryTopicTitle = async (topicId: string, messages: UIChatMessage[]): Promise<void> => {
     const { internal_updateTopicTitleInSummary, internal_updateTopicLoading } = this.#get();
-    const topic = topicSelectors.getTopicById(topicId)(this.#get());
-    if (!topic) return;
+    // Resolve the topic by active-context key first; if the chat was started from
+    // the home page the active-context fields are still undefined when this runs,
+    // so fall back to scanning every topic container for the id.
+    let resolved = topicSelectors.getTopicById(topicId)(this.#get());
+    if (!resolved) {
+      for (const data of Object.values(this.#get().topicDataMap)) {
+        const found = data?.items?.find((t) => t.id === topicId);
+        if (found) {
+          resolved = found;
+          break;
+        }
+      }
+    }
+    if (!resolved) return;
+    const topic = resolved;
 
     internal_updateTopicTitleInSummary(topicId, LOADING_FLAT);
 
@@ -208,8 +221,15 @@ export class ChatTopicActionImpl {
 
     // Automatically summarize the topic title
     await chatService.fetchPresetTaskResult({
-      onError: () => {
+      onError: (error, rawError) => {
         internal_updateTopicTitleInSummary(topicId, topic.title);
+
+        const reason = rawError?.type || rawError?.message || error?.message;
+        message.error({
+          content: reason
+            ? t('summaryErrorWithReason', { ns: 'topic', reason })
+            : t('summaryError', { ns: 'topic' }),
+        });
       },
       onFinish: async (text) => {
         await this.#get().internal_updateTopic(topicId, { title: text });
@@ -548,7 +568,7 @@ export class ChatTopicActionImpl {
     }
 
     this.#set(
-      { activeTopicId: !id ? (null as any) : id, activeThreadId: undefined },
+      { activeTopicId: id || (null as any), activeThreadId: undefined },
       false,
       n('toggleTopic'),
     );
@@ -696,10 +716,24 @@ export class ChatTopicActionImpl {
 
   internal_dispatchTopic = (payload: ChatTopicDispatch, action?: any): void => {
     const { activeGroupAgentId, activeGroupId, activeSessionId } = this.#get();
-    const key = topicMapKey({
+    const topicDataMap = this.#get().topicDataMap;
+    let key = topicMapKey({
       agentId: activeGroupAgentId || activeSessionId,
       groupId: activeGroupId,
     });
+
+    // For id-targeted ops (update/delete), the active context may not match the
+    // container that holds the topic — e.g. a chat started from the home page
+    // summarizes its title before the agent route mounts. Fall back to the
+    // container that actually contains the id.
+    const targetId = 'id' in payload ? payload.id : undefined;
+    if (targetId && !topicDataMap[key]?.items?.some((t) => t.id === targetId)) {
+      const ownerKey = Object.keys(topicDataMap).find((k) =>
+        topicDataMap[k]?.items?.some((t) => t.id === targetId),
+      );
+      if (ownerKey) key = ownerKey;
+    }
+
     const currentData = this.#get().topicDataMap[key];
     const nextItems = topicReducer(currentData?.items, payload);
 

@@ -355,12 +355,25 @@ export class GatewayActionImpl {
       onSessionComplete: () => {
         this.#get().completeOperation(gatewayOpId);
         if (result.topicId) {
-          this.#get().internal_updateTopicLoading(result.topicId, false);
+          const topicId = result.topicId;
+          this.#get().internal_updateTopicLoading(topicId, false);
           // Clear running operation from topic metadata (best-effort from frontend;
           // if browser was closed, reconnect logic will handle stale entries)
-          topicService
-            .updateTopicMetadata(result.topicId, { runningOperation: null })
-            .catch(() => {});
+          topicService.updateTopicMetadata(topicId, { runningOperation: null }).catch(() => {});
+
+          // The gateway path creates topics server-side but never summarizes
+          // their title, so new topics would keep the raw first message. Mirror
+          // the legacy client flow and auto-generate a title for fresh topics.
+          // refreshTopic() must run first: the server-created topic is not yet in
+          // the client topic list (switchTopic ran with skipRefreshMessage), and
+          // summaryTopicTitle early-returns when getTopicById can't find it.
+          if (isCreateNewTopic) {
+            void this.#get()
+              .refreshTopic()
+              .then(() => messageService.getMessages(execContext))
+              .then((messages) => this.#get().summaryTopicTitle(topicId, messages))
+              .catch(console.error);
+          }
         }
         onComplete?.();
       },

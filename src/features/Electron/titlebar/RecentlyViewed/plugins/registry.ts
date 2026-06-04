@@ -218,6 +218,15 @@ class PluginRegistry {
   }
 
   /**
+   * Generate the navigation URL for a reference via its plugin.
+   * Returns null when no plugin handles the reference type.
+   */
+  generateUrl(reference: PageReference): string | null {
+    const plugin = this.plugins.get(reference.type);
+    return plugin ? plugin.generateUrl(reference) : null;
+  }
+
+  /**
    * Notify the matching plugin that a tab was activated.
    * Plugins use this to perform store-level state transitions.
    */

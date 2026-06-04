@@ -1,4 +1,4 @@
-import type { BrowserWindow} from 'electron';
+import type { BrowserWindow } from 'electron';
 import type Electron from 'electron';
 import { screen } from 'electron';
 
@@ -18,6 +18,13 @@ export interface WindowState {
 export interface WindowStateManagerOptions {
   identifier: string;
   keepAlive?: boolean;
+  /**
+   * When true, the window always opens at its configured size instead of the
+   * last persisted bounds, and its bounds are never saved. Used for the
+   * floating chat, which must always open as a compact pill regardless of how
+   * large it grew in the previous session.
+   */
+  resetSizeOnOpen?: boolean;
 }
 
 /**
@@ -28,12 +35,14 @@ export class WindowStateManager {
   private readonly identifier: string;
   private readonly stateKey: string;
   private readonly keepAlive: boolean;
+  private readonly resetSizeOnOpen: boolean;
 
   constructor(app: App, options: WindowStateManagerOptions) {
     this.app = app;
     this.identifier = options.identifier;
     this.stateKey = `windowSize_${options.identifier}`;
     this.keepAlive = options.keepAlive ?? false;
+    this.resetSizeOnOpen = options.resetSizeOnOpen ?? false;
   }
 
   // ==================== State Persistence ====================
@@ -51,12 +60,18 @@ export class WindowStateManager {
   saveState(browserWindow: BrowserWindow, context: 'quit' | 'close' | 'hide' = 'close'): void {
     try {
       const bounds = browserWindow.getBounds();
-      const state: WindowState = {
-        height: bounds.height,
-        width: bounds.width,
-        x: bounds.x,
-        y: bounds.y,
-      };
+      // Ephemeral-size windows (e.g. the floating pill) persist only their
+      // position, never their size — otherwise a session that grew the window
+      // would reopen oversized. Position is still remembered so the pill
+      // reappears where the user last left it.
+      const state: WindowState = this.resetSizeOnOpen
+        ? { x: bounds.x, y: bounds.y }
+        : {
+            height: bounds.height,
+            width: bounds.width,
+            x: bounds.x,
+            y: bounds.y,
+          };
       logger.debug(
         `[${this.identifier}] Saving window state on ${context}: ${JSON.stringify(state)}`,
       );
@@ -74,6 +89,17 @@ export class WindowStateManager {
    */
   resolveState(fallback: { height?: number; width?: number }): WindowState {
     const savedState = this.loadState();
+
+    // Ephemeral-size windows persist only position, so the saved state carries
+    // no width/height and resolveWindowState falls back to the configured size
+    // while still restoring (and clamping) the last on-screen position.
+    if (this.resetSizeOnOpen) {
+      return this.resolveWindowState(
+        savedState ? { x: savedState.x, y: savedState.y } : undefined,
+        fallback,
+      );
+    }
+
     return this.resolveWindowState(savedState, fallback);
   }
 

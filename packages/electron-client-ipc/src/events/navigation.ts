@@ -55,6 +55,8 @@ export interface NavigationBroadcastEvents {
   /**
    * Ask renderer to open and focus the compact floating chat overlay.
    * Triggered by the desktop global floating-chat shortcut.
+   * freshOpen: true  → window was hidden; renderer should reset to a fresh pill.
+   * freshOpen: false → window was already visible; just focus, don't reset.
    */
-  openFloatingChat: () => void;
+  openFloatingChat: (data?: { freshOpen?: boolean }) => void;
 }

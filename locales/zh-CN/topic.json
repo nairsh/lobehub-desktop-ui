@@ -36,6 +36,8 @@
   "loadMore": "更多",
   "searchPlaceholder": "搜索话题…",
   "searchResultEmpty": "暂无搜索结果",
+  "summaryError": "自动重命名失败",
+  "summaryErrorWithReason": "自动重命名失败：{{reason}}",
   "temp": "临时",
   "title": "话题"
 }

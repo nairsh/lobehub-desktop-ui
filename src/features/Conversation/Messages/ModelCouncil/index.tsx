@@ -316,11 +316,6 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                         : t('modelCouncil.status.running')}
                 </Text>
               </Flexbox>
-              {isExpanded && livePreview && (
-                <div aria-live="polite" className={styles.streamPreview}>
-                  <Markdown variant={'chat'}>{livePreview}</Markdown>
-                </div>
-              )}
               {isExpanded && (
                 <Flexbox gap={8}>
                   {reasoningContent && (
@@ -370,6 +365,7 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
             const judgeContent = getVisibleContent(judge.content);
             const judgeReasoning = judge.reasoning?.content?.trim();
             const judgeLivePreview = !completed && !failed ? judgeReasoning || judgeContent : '';
+            const hasJudgeDetail = !!(judgeContent || judgeReasoning || judgeLivePreview);
 
             return (
               <Flexbox className={styles.card} gap={12} key={judge.id}>
@@ -382,7 +378,7 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                       {modelLabel}
                     </Text>
                   </Flexbox>
-                  {judgeContent && (
+                  {hasJudgeDetail && (
                     <button
                       className={styles.expandButton}
                       type="button"
@@ -415,11 +411,6 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                           : t('modelCouncil.synthesizing')}
                   </Text>
                 </Flexbox>
-                {isExpanded && judgeLivePreview && (
-                  <div aria-live="polite" className={styles.streamPreview}>
-                    <Markdown variant={'chat'}>{judgeLivePreview}</Markdown>
-                  </div>
-                )}
                 {isExpanded && (
                   <Flexbox gap={8}>
                     {judgeReasoning && (

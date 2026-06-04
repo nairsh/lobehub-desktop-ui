@@ -1,6 +1,7 @@
 import { type SendMessageParams } from '@lobechat/types';
 
 import { useChatStore } from '@/store/chat';
+import type { ModelCouncilSettings } from '@/types/modelCouncil';
 
 import { isLocalOnlyMessage } from '../../../../utils/localMessages';
 import { type Store as ConversationStore } from '../../../action';
@@ -20,7 +21,12 @@ export const sendMessage = (
   get: () => ConversationStore,
 ) => {
   return async (
-    params: SendMessageParams & { skipTopicSwitch?: boolean; useModelCouncil?: boolean },
+    params: SendMessageParams & {
+      onConversationStart?: (info: { topicId?: string }) => void;
+      overrideCouncil?: ModelCouncilSettings;
+      skipTopicSwitch?: boolean;
+      useModelCouncil?: boolean;
+    },
   ) => {
     const state = get();
     const { context, hooks, displayMessages } = state;
