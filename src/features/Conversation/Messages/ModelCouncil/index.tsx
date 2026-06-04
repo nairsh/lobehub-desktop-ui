@@ -1,5 +1,6 @@
 'use client';
 
+import { LOADING_FLAT } from '@lobechat/const';
 import type { AssistantContentBlock } from '@lobechat/types';
 import { ModelIcon } from '@lobehub/icons';
 import { Flexbox, Icon, Markdown, Text } from '@lobehub/ui';
@@ -141,6 +142,9 @@ const isFailedStatus = (status?: string) =>
 
 const isTerminalStatus = (status?: string) => status === 'completed' || isFailedStatus(status);
 
+const getVisibleContent = (content?: string | null) =>
+  content && content !== LOADING_FLAT ? content : '';
+
 const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
   ({ id, embedded, hideJudgeResponse, judgeMessage, judgeStatus }) => {
     const { t } = useTranslation('chat');
@@ -260,7 +264,8 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
           const completed = status === 'completed';
           const failed = isFailedStatus(status);
           const reasoningContent = childModel.reasoning?.content?.trim();
-          const livePreview = !completed && !failed ? reasoningContent || child.content : '';
+          const visibleContent = getVisibleContent(child.content);
+          const livePreview = !completed && !failed ? reasoningContent || visibleContent : '';
 
           return (
             <Flexbox className={styles.card} gap={12} key={child.id}>
@@ -310,13 +315,13 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                   <Markdown variant={'chat'}>{livePreview}</Markdown>
                 </div>
               )}
-              {isExpanded && child.content && (
+              {isExpanded && visibleContent && (
                 <div className={styles.content}>
-                  <Markdown variant={'chat'}>{child.content}</Markdown>
+                  <Markdown variant={'chat'}>{visibleContent}</Markdown>
                 </div>
               )}
-              {!isExpanded && !livePreview && child.content && (
-                <div className={styles.contentPreview}>{child.content}</div>
+              {!isExpanded && !livePreview && visibleContent && (
+                <div className={styles.contentPreview}>{visibleContent}</div>
               )}
             </Flexbox>
           );
@@ -347,6 +352,9 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
             const isExpanded = expanded[judge.id];
             const completed = status === 'completed';
             const failed = isFailedStatus(status);
+            const judgeContent = getVisibleContent(judge.content);
+            const judgeReasoning = judge.reasoning?.content?.trim();
+            const judgeLivePreview = !completed && !failed ? judgeReasoning || judgeContent : '';
 
             return (
               <Flexbox className={styles.card} gap={12} key={judge.id}>
@@ -359,7 +367,7 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                       {modelLabel}
                     </Text>
                   </Flexbox>
-                  {judge.content && (
+                  {judgeContent && (
                     <button
                       className={styles.expandButton}
                       type="button"
@@ -381,17 +389,29 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                     <Icon spin color={theme.colorTextSecondary} icon={Loader2} size={16} />
                   )}
                   <Text type={'secondary'}>
-                    {failed
-                      ? judge.error?.message || t('modelCouncil.status.failed')
-                      : completed
-                        ? t('modelCouncil.status.synthesized')
-                        : t('modelCouncil.synthesizing')}
+                    {judgeLivePreview
+                      ? judgeReasoning
+                        ? t('modelCouncil.reasoning')
+                        : t('modelCouncil.synthesizing')
+                      : failed
+                        ? judge.error?.message || t('modelCouncil.status.failed')
+                        : completed
+                          ? t('modelCouncil.status.synthesized')
+                          : t('modelCouncil.synthesizing')}
                   </Text>
                 </Flexbox>
-                {isExpanded && judge.content && (
-                  <div className={styles.content}>
-                    <Markdown variant={'chat'}>{judge.content}</Markdown>
+                {judgeLivePreview && (
+                  <div aria-live="polite" className={styles.streamPreview}>
+                    <Markdown variant={'chat'}>{judgeLivePreview}</Markdown>
                   </div>
+                )}
+                {isExpanded && judgeContent && (
+                  <div className={styles.content}>
+                    <Markdown variant={'chat'}>{judgeContent}</Markdown>
+                  </div>
+                )}
+                {!isExpanded && !judgeLivePreview && judgeContent && (
+                  <div className={styles.contentPreview}>{judgeContent}</div>
                 )}
               </Flexbox>
             );
