@@ -268,10 +268,21 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
             providerId ||
             t('modelCouncil.member');
           const completed = status === 'completed';
+          const timedOut = status === 'timeout';
           const failed = isFailedStatus(status);
           const reasoningContent = childModel.reasoning?.content?.trim();
           const visibleContent = getVisibleContent(child.content);
           const livePreview = !completed && !failed ? reasoningContent || visibleContent : '';
+          const errorMessage = childModel.error?.message;
+          const hasExpandableContent = !!(
+            reasoningContent ||
+            visibleContent ||
+            (failed && errorMessage)
+          );
+
+          const failedStatusLabel = timedOut
+            ? t('modelCouncil.status.timeout')
+            : t('modelCouncil.status.failed');
 
           return (
             <Flexbox className={styles.card} gap={12} key={child.id}>
@@ -285,16 +296,18 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                     {!completed && !failed ? ` ${t('modelCouncil.status.running')}` : ''}
                   </Text>
                 </Flexbox>
-                <button
-                  className={styles.expandButton}
-                  type="button"
-                  onClick={() => setExpanded((prev) => ({ ...prev, [child.id]: !isExpanded }))}
-                >
-                  <Flexbox horizontal align={'center'} gap={6}>
-                    {t('modelCouncil.viewResponse')}
-                    <Icon icon={ChevronRight} size={14} />
-                  </Flexbox>
-                </button>
+                {hasExpandableContent && (
+                  <button
+                    className={styles.expandButton}
+                    type="button"
+                    onClick={() => setExpanded((prev) => ({ ...prev, [child.id]: !isExpanded }))}
+                  >
+                    <Flexbox horizontal align={'center'} gap={6}>
+                      {t('modelCouncil.viewResponse')}
+                      <Icon icon={ChevronRight} size={14} />
+                    </Flexbox>
+                  </button>
+                )}
               </Flexbox>
               <Flexbox horizontal align={'center'} gap={8}>
                 {completed ? (
@@ -310,7 +323,7 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                       ? t('modelCouncil.reasoning')
                       : t('modelCouncil.status.running')
                     : failed
-                      ? childModel.error?.message || t('modelCouncil.status.failed')
+                      ? errorMessage || failedStatusLabel
                       : completed
                         ? t('modelCouncil.status.completed')
                         : t('modelCouncil.status.running')}
@@ -330,6 +343,14 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                     <div className={styles.content}>
                       <Markdown variant={'chat'}>{visibleContent}</Markdown>
                     </div>
+                  )}
+                  {failed && errorMessage && !visibleContent && (
+                    <Flexbox gap={4}>
+                      <Text className={styles.sectionLabel}>{t('modelCouncil.errorDetail')}</Text>
+                      <Text className={styles.content} type={'secondary'}>
+                        {errorMessage}
+                      </Text>
+                    </Flexbox>
                   )}
                 </Flexbox>
               )}

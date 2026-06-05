@@ -10,10 +10,12 @@ export default {
   'modelCouncil.status.failed': 'Failed',
   'modelCouncil.status.running': 'Thinking',
   'modelCouncil.status.synthesized': 'Synthesized',
+  'modelCouncil.status.timeout': 'No response received',
   'modelCouncil.synthesizing': 'Synthesizing responses...',
   'modelCouncil.thinking': 'Thinking',
   'modelCouncil.title': 'Model Council',
   'modelCouncil.viewResponse': 'View response',
+  'modelCouncil.errorDetail': 'Error detail',
   'agentBuilder.installPlugin.authRequired': 'Cloud MCP requires sign-in to continue',
   'agentBuilder.installPlugin.cancel': 'Cancel',
   'agentBuilder.installPlugin.clickApproveToConnect':
