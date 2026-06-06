@@ -181,6 +181,19 @@ const collectModelCouncilSteps = (item: { children?: any[]; id?: string; metadat
   return entries;
 };
 
+const collectModelCouncilMessageIds = (item: { children?: any[]; id?: string; metadata?: any }) => {
+  const ids: string[] = [];
+  const role = item.metadata?.modelCouncil?.role;
+
+  if (item.id && (role === 'judge' || role === 'member')) ids.push(item.id);
+
+  if (Array.isArray(item.children)) {
+    for (const child of item.children) ids.push(...collectModelCouncilMessageIds(child));
+  }
+
+  return ids;
+};
+
 const getModelCouncilStepKey = (step: any) => {
   const grounding = step?.grounding;
   if (grounding?.synthetic) {
@@ -555,6 +568,9 @@ export class ConversationLifecycleActionImpl {
         const reasoningByMessageId = new Map<string, string>();
         const statusByMessageId = new Map<string, string>();
         const stepsByMessageId = new Map<string, any[]>();
+        const modelCouncilMessageIds = seededMessages.flatMap((item) =>
+          collectModelCouncilMessageIds(item),
+        );
         for (const item of seededMessages) {
           for (const [messageId, steps] of collectModelCouncilSteps(item)) {
             stepsByMessageId.set(messageId, steps);
@@ -565,6 +581,46 @@ export class ConversationLifecycleActionImpl {
           onDisconnect: async () => {
             if (data.topicId) this.#get().internal_updateTopicLoading(data.topicId, false);
             await this.#get().refreshMessages(finalContext);
+          },
+          onError: (error) => {
+            if (data.topicId) this.#get().internal_updateTopicLoading(data.topicId, false);
+
+            const message =
+              error instanceof Error ? error.message : t('error.unknownError', 'Stream error');
+
+            for (const messageId of modelCouncilMessageIds) {
+              if (isTerminalStatus(statusByMessageId.get(messageId))) continue;
+
+              statusByMessageId.set(messageId, 'failed');
+              this.#get().internal_dispatchMessage(
+                {
+                  id: messageId,
+                  type: 'updateMessage',
+                  value: {
+                    error: {
+                      message,
+                      type: 'ModelCouncilStreamError' as any,
+                    },
+                    metadata: {
+                      modelCouncil: {
+                        status: 'failed',
+                        steps: stepsByMessageId.get(messageId),
+                      },
+                    } as any,
+                  },
+                },
+                { operationId },
+              );
+            }
+
+            this.#get().internal_dispatchMessage(
+              {
+                id: data.assistantMessageId,
+                type: 'updateMessageGroupMetadata',
+                value: { status: 'failed' },
+              },
+              { operationId },
+            );
           },
           onEvent: (event: any) => {
             const eventData = event.data || {};
