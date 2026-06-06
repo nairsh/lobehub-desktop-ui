@@ -567,6 +567,7 @@ export class ConversationLifecycleActionImpl {
                 if (!messageId) return;
                 const content = eventData.content || contentByMessageId.get(messageId) || '';
                 const reasoning = eventData.reasoning || reasoningByMessageId.get(messageId);
+                const steps = stepsByMessageId.get(messageId);
                 contentByMessageId.set(messageId, content);
                 statusByMessageId.set(messageId, 'completed');
                 this.#get().internal_dispatchMessage(
@@ -579,6 +580,7 @@ export class ConversationLifecycleActionImpl {
                       metadata: {
                         modelCouncil: {
                           status: 'completed',
+                          steps,
                           usage: eventData.usage,
                         },
                       } as any,

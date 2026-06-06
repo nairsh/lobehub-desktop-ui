@@ -203,9 +203,13 @@ const getStepLabel = (t: any, step: any) => {
 const getStepText = (step: any) => {
   if (step?.grounding) {
     const grounding = step.grounding;
+    if (grounding.synthetic && typeof grounding.title === 'string') return grounding.title;
+
     const queries = grounding.searchQueries || grounding.queries || grounding.query;
     if (Array.isArray(queries) && queries.length > 0) return queries.join(', ');
     if (typeof queries === 'string') return queries;
+    if (typeof grounding.title === 'string') return grounding.title;
+    if (typeof grounding.status === 'string') return grounding.status;
   }
 
   const tools = step?.toolsCalling;
@@ -217,6 +221,17 @@ const getStepText = (step: any) => {
   }
 
   return '';
+};
+
+const getLiveStepStatus = (t: any, steps: any[]) => {
+  const latestStep = steps.at(-1);
+  if (!latestStep) return;
+
+  const stepText = getStepText(latestStep);
+  const stepLabel = getStepLabel(t, latestStep);
+  const clippedStepText = stepText.length > 96 ? `${stepText.slice(0, 93)}...` : stepText;
+
+  return clippedStepText ? `${stepLabel}: ${clippedStepText}` : stepLabel;
 };
 
 const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
@@ -350,6 +365,8 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
           const stepItems = childMeta.steps || [];
           const visibleContent = getVisibleContent(child.content);
           const livePreview = !completed && !failed ? reasoningContent || visibleContent : '';
+          const liveStepStatus =
+            !completed && !failed ? getLiveStepStatus(t, stepItems) : undefined;
           const errorMessage = childModel.error?.message;
           const hasExpandableContent = !!(
             reasoningContent ||
@@ -361,6 +378,18 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
           const failedStatusLabel = timedOut
             ? t('modelCouncil.status.timeout')
             : t('modelCouncil.status.failed');
+          let statusLabel = t('modelCouncil.status.running');
+          if (liveStepStatus) {
+            statusLabel = liveStepStatus;
+          } else if (livePreview) {
+            statusLabel = reasoningContent
+              ? t('modelCouncil.reasoning')
+              : t('modelCouncil.status.running');
+          } else if (failed) {
+            statusLabel = errorMessage || failedStatusLabel;
+          } else if (completed) {
+            statusLabel = t('modelCouncil.status.completed');
+          }
 
           return (
             <Flexbox className={styles.card} gap={12} key={child.id}>
@@ -371,7 +400,9 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                   </span>
                   <Text ellipsis weight={500}>
                     {modelLabel}
-                    {!completed && !failed ? ` ${t('modelCouncil.status.running')}` : ''}
+                    {!completed && !failed
+                      ? ` ${liveStepStatus ? getStepLabel(t, stepItems.at(-1)) : t('modelCouncil.status.running')}`
+                      : ''}
                   </Text>
                   {reasoningLevel && <Text className={styles.reasoningTag}>{reasoningLevel}</Text>}
                 </Flexbox>
@@ -396,17 +427,7 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                 ) : (
                   <Icon spin color={theme.colorTextSecondary} icon={Loader2} size={16} />
                 )}
-                <Text type={'secondary'}>
-                  {livePreview
-                    ? reasoningContent
-                      ? t('modelCouncil.reasoning')
-                      : t('modelCouncil.status.running')
-                    : failed
-                      ? errorMessage || failedStatusLabel
-                      : completed
-                        ? t('modelCouncil.status.completed')
-                        : t('modelCouncil.status.running')}
-                </Text>
+                <Text type={'secondary'}>{statusLabel}</Text>
               </Flexbox>
               {isExpanded && (
                 <Flexbox gap={8}>
@@ -488,12 +509,26 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
             const judgeReasoning = judge.reasoning?.content?.trim();
             const judgeSteps = judgeMeta.steps || [];
             const judgeLivePreview = !completed && !failed ? judgeReasoning || judgeContent : '';
+            const judgeLiveStepStatus =
+              !completed && !failed ? getLiveStepStatus(t, judgeSteps) : undefined;
             const hasJudgeDetail = !!(
               judgeContent ||
               judgeReasoning ||
               judgeLivePreview ||
               judgeSteps.length > 0
             );
+            let judgeStatusLabel = t('modelCouncil.synthesizing');
+            if (judgeLiveStepStatus) {
+              judgeStatusLabel = judgeLiveStepStatus;
+            } else if (judgeLivePreview) {
+              judgeStatusLabel = judgeReasoning
+                ? t('modelCouncil.reasoning')
+                : t('modelCouncil.synthesizing');
+            } else if (failed) {
+              judgeStatusLabel = judge.error?.message || t('modelCouncil.status.failed');
+            } else if (completed) {
+              judgeStatusLabel = t('modelCouncil.status.synthesized');
+            }
 
             return (
               <Flexbox className={styles.card} gap={12} key={judge.id}>
@@ -530,17 +565,7 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                   ) : (
                     <Icon spin color={theme.colorTextSecondary} icon={Loader2} size={16} />
                   )}
-                  <Text type={'secondary'}>
-                    {judgeLivePreview
-                      ? judgeReasoning
-                        ? t('modelCouncil.reasoning')
-                        : t('modelCouncil.synthesizing')
-                      : failed
-                        ? judge.error?.message || t('modelCouncil.status.failed')
-                        : completed
-                          ? t('modelCouncil.status.synthesized')
-                          : t('modelCouncil.synthesizing')}
-                  </Text>
+                  <Text type={'secondary'}>{judgeStatusLabel}</Text>
                 </Flexbox>
                 {isExpanded && (
                   <Flexbox gap={8}>
