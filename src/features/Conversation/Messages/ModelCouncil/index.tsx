@@ -10,7 +10,9 @@ import { memo, type ReactNode, useEffect, useMemo, useRef, useState } from 'reac
 import { useTranslation } from 'react-i18next';
 
 import { useEnabledChatModels } from '@/hooks/useEnabledChatModels';
+import { useAiInfraStore } from '@/store/aiInfra';
 import type { ModelCouncilModelConfig, ModelCouncilSettings } from '@/types/modelCouncil';
+import { findReasoningConfig, formatReasoningLabel } from '@/utils/modelReasoning';
 
 import { dataSelectors, useConversationStore } from '../../store';
 
@@ -197,10 +199,10 @@ const getVisibleContent = (content?: string | null) =>
   content && content !== LOADING_FLAT ? content : '';
 
 const getStepLabel = (t: any, step: any) => {
-  if (step?.stepType === 'grounding') return t('modelCouncil.steps.search');
-  if (step?.stepType === 'tools_calling') return t('modelCouncil.steps.tool');
+  if (step?.stepType === 'grounding') return t('modelCouncil.steps.search', 'Searching');
+  if (step?.stepType === 'tools_calling') return t('modelCouncil.steps.tool', 'Using tool');
 
-  return t('modelCouncil.steps.step');
+  return t('modelCouncil.steps.step', 'Step');
 };
 
 const getStepText = (step: any) => {
@@ -242,7 +244,7 @@ const getFallbackSearchStep = (t: any) => ({
     source: 'model_builtin_search',
     status: 'enabled',
     synthetic: true,
-    title: t('modelCouncil.steps.searchEnabled'),
+    title: t('modelCouncil.steps.searchEnabled', 'Web search enabled'),
   },
   stepType: 'grounding',
 });
@@ -273,6 +275,7 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
       });
     });
     const enabledModels = useEnabledChatModels();
+    const enabledAiModels = useAiInfraStore((s) => s.enabledAiModels);
     const children = (message?.children || []) as AssistantContentBlock[];
     const metadata = (message?.metadata as any) || {};
     const settingsSnapshot = metadata.settingsSnapshot as ModelCouncilSettings | undefined;
@@ -299,6 +302,30 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
 
       return map;
     }, [enabledModels, settingsSnapshot]);
+
+    const modelReasoningLabelMap = useMemo(() => {
+      const map = new Map<string, string>();
+
+      for (const provider of enabledModels) {
+        for (const model of provider.children) {
+          const enabledModel = enabledAiModels?.find(
+            (item) => item.id === model.id && item.providerId === provider.id,
+          );
+          const reasoningConfig = findReasoningConfig(
+            (model as any).settings?.extendParams || enabledModel?.settings?.extendParams,
+          );
+
+          if (reasoningConfig?.defaultValue) {
+            map.set(
+              modelKey({ model: model.id, provider: provider.id }),
+              formatReasoningLabel(reasoningConfig.defaultValue),
+            );
+          }
+        }
+      }
+
+      return map;
+    }, [enabledAiModels, enabledModels]);
 
     if (!message || hasAttachedJudgeMessage) return null;
 
@@ -371,6 +398,11 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
             (item) => item.model === modelId && item.provider === providerId,
           );
           const reasoningLevel = childMeta.reasoningLevel || configuredModel?.reasoningLevel;
+          const reasoningLabel = reasoningLevel
+            ? formatReasoningLabel(reasoningLevel)
+            : configuredModel?.reasoning
+              ? modelReasoningLabelMap.get(modelKey({ model: modelId, provider: providerId }))
+              : undefined;
           const completed = status === 'completed';
           const timedOut = status === 'timeout';
           const failed = isFailedStatus(status);
@@ -417,9 +449,9 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                       ? ` ${liveStepStatus ? getStepLabel(t, stepItems.at(-1)) : t('modelCouncil.status.running')}`
                       : ''}
                   </Text>
-                  {reasoningLevel && (
+                  {reasoningLabel && (
                     <Text className={styles.reasoningTag}>
-                      {t('modelCouncil.reasoning')}: {reasoningLevel}
+                      {t('modelCouncil.reasoning')}: {reasoningLabel}
                     </Text>
                   )}
                 </Flexbox>
@@ -523,6 +555,11 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
             };
             const reasoningLevel =
               judgeMeta.reasoningLevel || settingsSnapshot?.judgeModel?.reasoningLevel;
+            const reasoningLabel = reasoningLevel
+              ? formatReasoningLabel(reasoningLevel)
+              : settingsSnapshot?.judgeModel?.reasoning
+                ? modelReasoningLabelMap.get(modelKey({ model: modelId, provider: providerId }))
+                : undefined;
             const judgeReasoning = judge.reasoning?.content?.trim();
             const judgeSteps = judgeMeta.steps?.length
               ? judgeMeta.steps
@@ -559,9 +596,9 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                     <Text ellipsis className={styles.titleText}>
                       {modelLabel}
                     </Text>
-                    {reasoningLevel && (
+                    {reasoningLabel && (
                       <Text className={styles.reasoningTag}>
-                        {t('modelCouncil.reasoning')}: {reasoningLevel}
+                        {t('modelCouncil.reasoning')}: {reasoningLabel}
                       </Text>
                     )}
                   </Flexbox>
