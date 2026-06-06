@@ -138,24 +138,48 @@ const createModelCouncilSearchStep = (prompt: string, role: 'judge' | 'member') 
   stepType: 'grounding',
 });
 
-const seedModelCouncilSearchSteps = <T extends { metadata?: any }>(messages: T[], prompt: string) =>
-  messages.map((item) => {
-    const modelCouncil = item.metadata?.modelCouncil;
-    const role = modelCouncil?.role;
+const seedModelCouncilSearchStep = <T extends { children?: any[]; metadata?: any }>(
+  item: T,
+  prompt: string,
+) => {
+  const nextChildren = Array.isArray(item.children)
+    ? item.children.map((child) => seedModelCouncilSearchStep(child, prompt))
+    : item.children;
+  const withChildren = nextChildren === item.children ? item : { ...item, children: nextChildren };
+  const modelCouncil = withChildren.metadata?.modelCouncil;
+  const role = modelCouncil?.role;
 
-    if ((role !== 'judge' && role !== 'member') || modelCouncil?.steps?.length) return item;
+  if ((role !== 'judge' && role !== 'member') || modelCouncil?.steps?.length) return withChildren;
 
-    return {
-      ...item,
-      metadata: {
-        ...item.metadata,
-        modelCouncil: {
-          ...modelCouncil,
-          steps: [createModelCouncilSearchStep(prompt, role)],
-        },
+  return {
+    ...withChildren,
+    metadata: {
+      ...withChildren.metadata,
+      modelCouncil: {
+        ...modelCouncil,
+        steps: [createModelCouncilSearchStep(prompt, role)],
       },
-    };
-  });
+    },
+  };
+};
+
+const seedModelCouncilSearchSteps = <T extends { children?: any[]; metadata?: any }>(
+  messages: T[],
+  prompt: string,
+) => messages.map((item) => seedModelCouncilSearchStep(item, prompt));
+
+const collectModelCouncilSteps = (item: { children?: any[]; id?: string; metadata?: any }) => {
+  const entries: [string, any[]][] = [];
+  const steps = item.metadata?.modelCouncil?.steps;
+
+  if (item.id && Array.isArray(steps) && steps.length > 0) entries.push([item.id, steps]);
+
+  if (Array.isArray(item.children)) {
+    for (const child of item.children) entries.push(...collectModelCouncilSteps(child));
+  }
+
+  return entries;
+};
 
 const getModelCouncilStepKey = (step: any) => {
   const grounding = step?.grounding;
@@ -532,8 +556,9 @@ export class ConversationLifecycleActionImpl {
         const statusByMessageId = new Map<string, string>();
         const stepsByMessageId = new Map<string, any[]>();
         for (const item of seededMessages) {
-          const steps = (item.metadata?.modelCouncil as any)?.steps;
-          if (Array.isArray(steps) && steps.length > 0) stepsByMessageId.set(item.id, steps);
+          for (const [messageId, steps] of collectModelCouncilSteps(item)) {
+            stepsByMessageId.set(messageId, steps);
+          }
         }
         agentRuntimeClient.createStreamConnection(data.operationId, {
           includeHistory: true,

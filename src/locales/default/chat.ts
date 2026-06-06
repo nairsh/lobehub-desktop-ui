@@ -7,6 +7,7 @@ export default {
   'modelCouncil.notConfigured': 'Choose at least two council models and one judge in settings.',
   'modelCouncil.reasoning': 'Reasoning',
   'modelCouncil.steps.search': 'Searching',
+  'modelCouncil.steps.searchEnabled': 'Web search enabled',
   'modelCouncil.steps.step': 'Step',
   'modelCouncil.steps.tool': 'Using tool',
   'modelCouncil.status.completed': 'Completed',
