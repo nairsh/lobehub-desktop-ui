@@ -46,6 +46,13 @@ class RemoteServerService {
   };
 
   /**
+   * Refresh the remote server access token
+   */
+  refreshAccessToken = async () => {
+    return ensureElectronIpc().auth.refreshAccessToken();
+  };
+
+  /**
    * Setup subscription webview session with OIDC token injection
    * This configures the webview partition session to inject authentication tokens
    * for requests to the official domain.

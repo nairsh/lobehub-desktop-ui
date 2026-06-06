@@ -404,6 +404,7 @@ export default class AuthCtr extends ControllerModule {
    * Refresh access token
    * This method includes retry mechanism via RemoteServerConfigCtr.refreshAccessToken()
    */
+  @IpcMethod()
   async refreshAccessToken() {
     logger.info('Starting to refresh access token');
     try {
