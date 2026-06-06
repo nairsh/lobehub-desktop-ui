@@ -6,7 +6,7 @@ import { ModelIcon } from '@lobehub/icons';
 import { Flexbox, Icon, Markdown, Text } from '@lobehub/ui';
 import { createStyles } from 'antd-style';
 import { AlertCircle, CheckCircle2, ChevronRight, Loader2 } from 'lucide-react';
-import { memo, useMemo, useState } from 'react';
+import { memo, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useEnabledChatModels } from '@/hooks/useEnabledChatModels';
@@ -26,6 +26,21 @@ const useStyles = createStyles(({ css, token }) => ({
   content: css`
     line-height: 1.7;
     color: ${token.colorTextSecondary};
+  `,
+  livePanel: css`
+    overflow-y: auto;
+
+    max-height: 180px;
+    padding-block: 8px;
+    padding-inline: 10px;
+    border: 1px solid ${token.colorBorderSecondary};
+    border-radius: 8px;
+
+    font-size: 13px;
+    line-height: 1.6;
+    color: ${token.colorTextSecondary};
+
+    background: ${token.colorFillQuaternary};
   `,
   sectionLabel: css`
     font-size: 12px;
@@ -91,6 +106,12 @@ const useStyles = createStyles(({ css, token }) => ({
 
     background: ${token.colorBgContainer};
   `,
+  reasoningTag: css`
+    flex: none;
+    font-size: 11px;
+    font-weight: 400;
+    color: ${token.colorTextTertiary};
+  `,
   response: css`
     margin-block-start: 4px;
   `,
@@ -122,6 +143,27 @@ const useStyles = createStyles(({ css, token }) => ({
   `,
 }));
 
+const AutoScrollPanel = memo<{ children: ReactNode; className: string }>(
+  ({ children, className }) => {
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+      const node = ref.current;
+      if (!node) return;
+
+      node.scrollTop = node.scrollHeight;
+    }, [children]);
+
+    return (
+      <div className={className} ref={ref}>
+        {children}
+      </div>
+    );
+  },
+);
+
+AutoScrollPanel.displayName = 'AutoScrollPanel';
+
 interface ModelCouncilMessageProps {
   embedded?: boolean;
   hideJudgeResponse?: boolean;
@@ -150,6 +192,32 @@ const isTerminalStatus = (status?: string) => status === 'completed' || isFailed
 
 const getVisibleContent = (content?: string | null) =>
   content && content !== LOADING_FLAT ? content : '';
+
+const getStepLabel = (t: any, step: any) => {
+  if (step?.stepType === 'grounding') return t('modelCouncil.steps.search');
+  if (step?.stepType === 'tools_calling') return t('modelCouncil.steps.tool');
+
+  return t('modelCouncil.steps.step');
+};
+
+const getStepText = (step: any) => {
+  if (step?.grounding) {
+    const grounding = step.grounding;
+    const queries = grounding.searchQueries || grounding.queries || grounding.query;
+    if (Array.isArray(queries) && queries.length > 0) return queries.join(', ');
+    if (typeof queries === 'string') return queries;
+  }
+
+  const tools = step?.toolsCalling;
+  if (Array.isArray(tools) && tools.length > 0) {
+    return tools
+      .map((tool) => tool.name || tool.apiName || tool.identifier)
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  return '';
+};
 
 const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
   ({ id, embedded, hideJudgeResponse, judgeMessage, judgeStatus }) => {
@@ -257,7 +325,11 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
       <Flexbox gap={12} style={{ marginInline: 'auto', maxWidth: 840, width: '100%' }}>
         {memberChildren.map((child: AssistantContentBlock) => {
           const childModel = getChildModel(child);
-          const childMeta = (childModel.metadata?.modelCouncil || {}) as { status?: string };
+          const childMeta = (childModel.metadata?.modelCouncil || {}) as {
+            reasoningLevel?: string;
+            status?: string;
+            steps?: any[];
+          };
           const status = childModel.error ? 'failed' : childMeta.status || 'running';
           const isExpanded = expanded[child.id];
           const modelId = childModel.model || '';
@@ -267,15 +339,21 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
             modelId ||
             providerId ||
             t('modelCouncil.member');
+          const configuredModel = settingsSnapshot?.councilModels.find(
+            (item) => item.model === modelId && item.provider === providerId,
+          );
+          const reasoningLevel = childMeta.reasoningLevel || configuredModel?.reasoningLevel;
           const completed = status === 'completed';
           const timedOut = status === 'timeout';
           const failed = isFailedStatus(status);
           const reasoningContent = childModel.reasoning?.content?.trim();
+          const stepItems = childMeta.steps || [];
           const visibleContent = getVisibleContent(child.content);
           const livePreview = !completed && !failed ? reasoningContent || visibleContent : '';
           const errorMessage = childModel.error?.message;
           const hasExpandableContent = !!(
             reasoningContent ||
+            stepItems.length > 0 ||
             visibleContent ||
             (failed && errorMessage)
           );
@@ -291,10 +369,11 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                   <span className={styles.iconCell}>
                     <ModelIcon model={modelId || modelLabel} size={16} type={'color'} />
                   </span>
-                  <Text ellipsis strong>
+                  <Text ellipsis weight={500}>
                     {modelLabel}
                     {!completed && !failed ? ` ${t('modelCouncil.status.running')}` : ''}
                   </Text>
+                  {reasoningLevel && <Text className={styles.reasoningTag}>{reasoningLevel}</Text>}
                 </Flexbox>
                 {hasExpandableContent && (
                   <button
@@ -331,12 +410,28 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
               </Flexbox>
               {isExpanded && (
                 <Flexbox gap={8}>
-                  {reasoningContent && (
+                  {(reasoningContent || stepItems.length > 0) && (
                     <Flexbox gap={4}>
                       <Text className={styles.sectionLabel}>{t('modelCouncil.reasoning')}</Text>
-                      <div className={styles.content}>
-                        <Markdown variant={'chat'}>{reasoningContent}</Markdown>
-                      </div>
+                      <AutoScrollPanel className={styles.livePanel}>
+                        {stepItems.length > 0 && (
+                          <Flexbox gap={4} style={{ marginBlockEnd: reasoningContent ? 8 : 0 }}>
+                            {stepItems.map((step, stepIndex) => {
+                              const stepText = getStepText(step);
+
+                              return (
+                                <Text key={`${child.id}-step-${stepIndex}`} type={'secondary'}>
+                                  {getStepLabel(t, step)}
+                                  {stepText ? `: ${stepText}` : ''}
+                                </Text>
+                              );
+                            })}
+                          </Flexbox>
+                        )}
+                        {reasoningContent && (
+                          <Markdown variant={'chat'}>{reasoningContent}</Markdown>
+                        )}
+                      </AutoScrollPanel>
                     </Flexbox>
                   )}
                   {visibleContent && (
@@ -384,9 +479,21 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
             const completed = status === 'completed';
             const failed = isFailedStatus(status);
             const judgeContent = getVisibleContent(judge.content);
+            const judgeMeta = (judge.metadata?.modelCouncil || {}) as {
+              reasoningLevel?: string;
+              steps?: any[];
+            };
+            const reasoningLevel =
+              judgeMeta.reasoningLevel || settingsSnapshot?.judgeModel?.reasoningLevel;
             const judgeReasoning = judge.reasoning?.content?.trim();
+            const judgeSteps = judgeMeta.steps || [];
             const judgeLivePreview = !completed && !failed ? judgeReasoning || judgeContent : '';
-            const hasJudgeDetail = !!(judgeContent || judgeReasoning || judgeLivePreview);
+            const hasJudgeDetail = !!(
+              judgeContent ||
+              judgeReasoning ||
+              judgeLivePreview ||
+              judgeSteps.length > 0
+            );
 
             return (
               <Flexbox className={styles.card} gap={12} key={judge.id}>
@@ -395,9 +502,12 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                     <span className={styles.iconCell}>
                       <ModelIcon model={modelId || modelLabel} size={16} type={'color'} />
                     </span>
-                    <Text ellipsis strong>
+                    <Text ellipsis weight={500}>
                       {modelLabel}
                     </Text>
+                    {reasoningLevel && (
+                      <Text className={styles.reasoningTag}>{reasoningLevel}</Text>
+                    )}
                   </Flexbox>
                   {hasJudgeDetail && (
                     <button
@@ -434,12 +544,26 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                 </Flexbox>
                 {isExpanded && (
                   <Flexbox gap={8}>
-                    {judgeReasoning && (
+                    {(judgeReasoning || judgeSteps.length > 0) && (
                       <Flexbox gap={4}>
                         <Text className={styles.sectionLabel}>{t('modelCouncil.reasoning')}</Text>
-                        <div className={styles.content}>
-                          <Markdown variant={'chat'}>{judgeReasoning}</Markdown>
-                        </div>
+                        <AutoScrollPanel className={styles.livePanel}>
+                          {judgeSteps.length > 0 && (
+                            <Flexbox gap={4} style={{ marginBlockEnd: judgeReasoning ? 8 : 0 }}>
+                              {judgeSteps.map((step, stepIndex) => {
+                                const stepText = getStepText(step);
+
+                                return (
+                                  <Text key={`${judge.id}-step-${stepIndex}`} type={'secondary'}>
+                                    {getStepLabel(t, step)}
+                                    {stepText ? `: ${stepText}` : ''}
+                                  </Text>
+                                );
+                              })}
+                            </Flexbox>
+                          )}
+                          {judgeReasoning && <Markdown variant={'chat'}>{judgeReasoning}</Markdown>}
+                        </AutoScrollPanel>
                       </Flexbox>
                     )}
                     {judgeContent && (

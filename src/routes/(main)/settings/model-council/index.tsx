@@ -12,9 +12,11 @@ import { FORM_STYLE } from '@/const/layoutTokens';
 import ModelSelect from '@/features/ModelSelect';
 import { useEnabledChatModels } from '@/hooks/useEnabledChatModels';
 import SettingHeader from '@/routes/(main)/settings/features/SettingHeader';
+import { useAiInfraStore } from '@/store/aiInfra';
 import { useUserStore } from '@/store/user';
 import { settingsSelectors } from '@/store/user/selectors';
 import type { ModelCouncilModelConfig, ModelCouncilSettings } from '@/types/modelCouncil';
+import { findReasoningConfig, formatReasoningLabel } from '@/utils/modelReasoning';
 
 const DEFAULT_COUNCIL: ModelCouncilSettings = {
   councilModels: [],
@@ -63,6 +65,7 @@ const Page = memo(() => {
   const { t } = useTranslation('setting');
   const { styles } = useStyles();
   const enabledModels = useEnabledChatModels();
+  const enabledAiModels = useAiInfraStore((s) => s.enabledAiModels, isEqual);
   const [loading, setLoading] = useState(false);
   const [pendingModel, setPendingModel] = useState<ModelCouncilModelConfig | undefined>();
   const [settings, setSettings, isUserStateInit] = useUserStore(
@@ -80,15 +83,24 @@ const Page = memo(() => {
   const flatModels = useMemo(
     () =>
       enabledModels.flatMap((provider) =>
-        provider.children.map((model) => ({
-          displayName: (model as any).displayName || model.id,
-          id: model.id,
-          provider: provider.id,
-          providerName: provider.name,
-          reasoning: Boolean((model as any).abilities?.reasoning),
-        })),
+        provider.children.map((model) => {
+          const enabledModel = enabledAiModels?.find(
+            (item) => item.id === model.id && item.providerId === provider.id,
+          );
+
+          return {
+            displayName: (model as any).displayName || model.id,
+            id: model.id,
+            provider: provider.id,
+            providerName: provider.name,
+            reasoning: Boolean((model as any).abilities?.reasoning),
+            reasoningConfig: findReasoningConfig(
+              (model as any).settings?.extendParams || enabledModel?.settings?.extendParams,
+            ),
+          };
+        }),
       ),
-    [enabledModels],
+    [enabledAiModels, enabledModels],
   );
 
   const save = useCallback(
@@ -156,14 +168,52 @@ const Page = memo(() => {
 
   const updateModelReasoning = useCallback(
     async (target: ModelCouncilModelConfig, reasoning: boolean) => {
+      const fullModel = flatModels.find(
+        (model) => model.provider === target.provider && model.id === target.model,
+      );
+      const reasoningConfig = fullModel?.reasoningConfig;
+
       await save({
         ...council,
         councilModels: council.councilModels.map((item) =>
-          modelKey(item) === modelKey(target) ? { ...item, reasoning } : item,
+          modelKey(item) === modelKey(target)
+            ? {
+                ...item,
+                reasoning,
+                reasoningLevel: reasoning
+                  ? item.reasoningLevel || reasoningConfig?.defaultValue
+                  : undefined,
+                reasoningParam: reasoning ? reasoningConfig?.extendParam : undefined,
+              }
+            : item,
         ),
       });
     },
-    [council, save],
+    [council, flatModels, save],
+  );
+
+  const updateModelReasoningLevel = useCallback(
+    async (target: ModelCouncilModelConfig, reasoningLevel: string) => {
+      const fullModel = flatModels.find(
+        (model) => model.provider === target.provider && model.id === target.model,
+      );
+      const reasoningConfig = fullModel?.reasoningConfig;
+
+      await save({
+        ...council,
+        councilModels: council.councilModels.map((item) =>
+          modelKey(item) === modelKey(target)
+            ? {
+                ...item,
+                reasoning: true,
+                reasoningLevel,
+                reasoningParam: reasoningConfig?.extendParam,
+              }
+            : item,
+        ),
+      });
+    },
+    [council, flatModels, save],
   );
 
   const updateModelPersonality = useCallback(
@@ -219,6 +269,9 @@ const Page = memo(() => {
                             label: found?.displayName || model.model,
                             model: model.model,
                             provider: model.provider,
+                            reasoning: found?.reasoning || false,
+                            reasoningLevel: found?.reasoningConfig?.defaultValue,
+                            reasoningParam: found?.reasoningConfig?.extendParam,
                           });
                         }}
                       />
@@ -242,6 +295,9 @@ const Page = memo(() => {
                       );
                       const personalityId =
                         selectedModel.personalityId || getDefaultPersonalityId(index);
+                      const reasoningConfig = fullModel?.reasoningConfig;
+                      const reasoningLevel =
+                        selectedModel.reasoningLevel || reasoningConfig?.defaultValue;
 
                       return (
                         <Flexbox className={styles.modelRow} gap={8} key={modelKey(selectedModel)}>
@@ -275,6 +331,19 @@ const Page = memo(() => {
                                     updateModelReasoning(selectedModel, reasoning)
                                   }
                                 />
+                                {selectedModel.reasoning && reasoningConfig && (
+                                  <Select
+                                    size={'small'}
+                                    value={reasoningLevel}
+                                    options={reasoningConfig.levels.map((level) => ({
+                                      label: formatReasoningLabel(level),
+                                      value: level,
+                                    }))}
+                                    onChange={(level) =>
+                                      updateModelReasoningLevel(selectedModel, level)
+                                    }
+                                  />
+                                )}
                               </>
                             )}
                             <Button

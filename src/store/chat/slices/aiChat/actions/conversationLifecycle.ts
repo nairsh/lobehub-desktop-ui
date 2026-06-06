@@ -486,7 +486,10 @@ export class ConversationLifecycleActionImpl {
 
         const contentByMessageId = new Map<string, string>();
         const reasoningByMessageId = new Map<string, string>();
+        const statusByMessageId = new Map<string, string>();
+        const stepsByMessageId = new Map<string, any[]>();
         agentRuntimeClient.createStreamConnection(data.operationId, {
+          includeHistory: true,
           onDisconnect: async () => {
             if (data.topicId) this.#get().internal_updateTopicLoading(data.topicId, false);
             await this.#get().refreshMessages(finalContext);
@@ -527,6 +530,37 @@ export class ConversationLifecycleActionImpl {
                 );
                 return;
               }
+              case 'model_council_member_step':
+              case 'model_council_judge_step': {
+                const messageId = eventData.messageId;
+                if (!messageId) return;
+
+                const step = {
+                  at: Date.now(),
+                  grounding: eventData.grounding,
+                  stepType: eventData.stepType,
+                  toolsCalling: eventData.toolsCalling,
+                };
+                const nextSteps = [...(stepsByMessageId.get(messageId) || []), step];
+                stepsByMessageId.set(messageId, nextSteps);
+
+                this.#get().internal_dispatchMessage(
+                  {
+                    id: messageId,
+                    type: 'updateMessage',
+                    value: {
+                      metadata: {
+                        modelCouncil: {
+                          status: statusByMessageId.get(messageId) || 'running',
+                          steps: nextSteps,
+                        },
+                      } as any,
+                    },
+                  },
+                  { operationId },
+                );
+                return;
+              }
               case 'model_council_member_end':
               case 'model_council_judge_end': {
                 const messageId = eventData.messageId;
@@ -534,6 +568,7 @@ export class ConversationLifecycleActionImpl {
                 const content = eventData.content || contentByMessageId.get(messageId) || '';
                 const reasoning = eventData.reasoning || reasoningByMessageId.get(messageId);
                 contentByMessageId.set(messageId, content);
+                statusByMessageId.set(messageId, 'completed');
                 this.#get().internal_dispatchMessage(
                   {
                     id: messageId,
@@ -556,6 +591,7 @@ export class ConversationLifecycleActionImpl {
               case 'model_council_member_error': {
                 const messageId = eventData.messageId;
                 if (!messageId) return;
+                statusByMessageId.set(messageId, eventData.status || 'failed');
                 this.#get().internal_dispatchMessage(
                   {
                     id: messageId,

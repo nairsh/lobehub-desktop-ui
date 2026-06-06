@@ -4,6 +4,8 @@ export interface ModelCouncilModelConfig {
   personalityId?: string;
   provider: string;
   reasoning?: boolean;
+  reasoningLevel?: string;
+  reasoningParam?: string;
   systemPrompt?: string;
   temperature?: number;
   topK?: number;

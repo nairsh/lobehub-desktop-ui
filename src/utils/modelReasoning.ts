@@ -5,6 +5,7 @@ import type { LobeAgentChatConfig } from '@/types/agent';
 
 export type ReasoningExtendParam =
   | 'codexMaxReasoningEffort'
+  | 'deepseekV4ReasoningEffort'
   | 'effort'
   | 'gpt5ReasoningEffort'
   | 'gpt5_1ReasoningEffort'
@@ -36,6 +37,13 @@ export const MODEL_REASONING_CONFIGS = {
     defaultValue: 'medium',
     levels: ['low', 'medium', 'high', 'xhigh'],
     style: { minWidth: 200 },
+    titleKey: 'extendParams.reasoningEffort.title',
+  },
+  deepseekV4ReasoningEffort: {
+    configKey: 'deepseekV4ReasoningEffort',
+    defaultValue: 'high',
+    levels: ['none', 'high', 'max'],
+    style: { minWidth: 180 },
     titleKey: 'extendParams.reasoningEffort.title',
   },
   effort: {
@@ -129,6 +137,7 @@ const REASONING_PARAM_PRIORITY: ReasoningExtendParam[] = [
   'gpt5_2ReasoningEffort',
   'gpt5_1ReasoningEffort',
   'gpt5ReasoningEffort',
+  'deepseekV4ReasoningEffort',
   'codexMaxReasoningEffort',
   'grok4_20ReasoningEffort',
   'reasoningEffort',
