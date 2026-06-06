@@ -125,6 +125,47 @@ const getCurrentModelCouncilSettings = () =>
     | ModelCouncilSettings
     | undefined;
 
+const createModelCouncilSearchStep = (prompt: string, role: 'judge' | 'member') => ({
+  at: Date.now(),
+  grounding: {
+    query: prompt,
+    searchQueries: [prompt],
+    source: 'model_builtin_search',
+    status: 'enabled',
+    synthetic: true,
+    title: role === 'judge' ? 'Judge web search enabled' : 'Model web search enabled',
+  },
+  stepType: 'grounding',
+});
+
+const seedModelCouncilSearchSteps = <T extends { metadata?: any }>(messages: T[], prompt: string) =>
+  messages.map((item) => {
+    const modelCouncil = item.metadata?.modelCouncil;
+    const role = modelCouncil?.role;
+
+    if ((role !== 'judge' && role !== 'member') || modelCouncil?.steps?.length) return item;
+
+    return {
+      ...item,
+      metadata: {
+        ...item.metadata,
+        modelCouncil: {
+          ...modelCouncil,
+          steps: [createModelCouncilSearchStep(prompt, role)],
+        },
+      },
+    };
+  });
+
+const getModelCouncilStepKey = (step: any) => {
+  const grounding = step?.grounding;
+  if (grounding?.synthetic) {
+    return ['synthetic', grounding.source, grounding.title, grounding.query].join(':');
+  }
+
+  return;
+};
+
 export class ConversationLifecycleActionImpl {
   readonly #get: () => ChatStore;
 
@@ -469,7 +510,9 @@ export class ConversationLifecycleActionImpl {
           });
         }
 
-        this.#get().replaceMessages(data.messages, {
+        const seededMessages = seedModelCouncilSearchSteps(data.messages || [], message);
+
+        this.#get().replaceMessages(seededMessages, {
           context: finalContext,
           action: 'sendMessage/modelCouncilResponse',
         });
@@ -488,6 +531,10 @@ export class ConversationLifecycleActionImpl {
         const reasoningByMessageId = new Map<string, string>();
         const statusByMessageId = new Map<string, string>();
         const stepsByMessageId = new Map<string, any[]>();
+        for (const item of seededMessages) {
+          const steps = (item.metadata?.modelCouncil as any)?.steps;
+          if (Array.isArray(steps) && steps.length > 0) stepsByMessageId.set(item.id, steps);
+        }
         agentRuntimeClient.createStreamConnection(data.operationId, {
           includeHistory: true,
           onDisconnect: async () => {
@@ -541,7 +588,12 @@ export class ConversationLifecycleActionImpl {
                   stepType: eventData.stepType,
                   toolsCalling: eventData.toolsCalling,
                 };
-                const nextSteps = [...(stepsByMessageId.get(messageId) || []), step];
+                const currentSteps = stepsByMessageId.get(messageId) || [];
+                const stepKey = getModelCouncilStepKey(step);
+                const nextSteps =
+                  stepKey && currentSteps.some((item) => getModelCouncilStepKey(item) === stepKey)
+                    ? currentSteps
+                    : [...currentSteps, step];
                 stepsByMessageId.set(messageId, nextSteps);
 
                 this.#get().internal_dispatchMessage(
