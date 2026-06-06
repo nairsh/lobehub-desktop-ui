@@ -112,6 +112,9 @@ const useStyles = createStyles(({ css, token }) => ({
     font-weight: 400;
     color: ${token.colorTextTertiary};
   `,
+  titleText: css`
+    font-weight: 400;
+  `,
   response: css`
     margin-block-start: 4px;
   `,
@@ -398,13 +401,17 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                   <span className={styles.iconCell}>
                     <ModelIcon model={modelId || modelLabel} size={16} type={'color'} />
                   </span>
-                  <Text ellipsis weight={500}>
+                  <Text ellipsis className={styles.titleText}>
                     {modelLabel}
                     {!completed && !failed
                       ? ` ${liveStepStatus ? getStepLabel(t, stepItems.at(-1)) : t('modelCouncil.status.running')}`
                       : ''}
                   </Text>
-                  {reasoningLevel && <Text className={styles.reasoningTag}>{reasoningLevel}</Text>}
+                  {reasoningLevel && (
+                    <Text className={styles.reasoningTag}>
+                      {t('modelCouncil.reasoning')}: {reasoningLevel}
+                    </Text>
+                  )}
                 </Flexbox>
                 {hasExpandableContent && (
                   <button
@@ -537,11 +544,13 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                     <span className={styles.iconCell}>
                       <ModelIcon model={modelId || modelLabel} size={16} type={'color'} />
                     </span>
-                    <Text ellipsis weight={500}>
+                    <Text ellipsis className={styles.titleText}>
                       {modelLabel}
                     </Text>
                     {reasoningLevel && (
-                      <Text className={styles.reasoningTag}>{reasoningLevel}</Text>
+                      <Text className={styles.reasoningTag}>
+                        {t('modelCouncil.reasoning')}: {reasoningLevel}
+                      </Text>
                     )}
                   </Flexbox>
                   {hasJudgeDetail && (
