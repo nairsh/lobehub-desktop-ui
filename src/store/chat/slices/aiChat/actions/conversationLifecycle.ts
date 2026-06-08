@@ -157,9 +157,11 @@ const collectModelCouncilMessageIds = (item: { children?: any[]; id?: string; me
 };
 
 const getModelCouncilStepKey = (step: any) => {
-  const grounding = step?.grounding;
-  if (grounding?.synthetic) {
-    return ['synthetic', grounding.source, grounding.title, grounding.query].join(':');
+  if (step?.stepType === 'grounding') {
+    const g = step.grounding;
+    const queries = g?.searchQueries || g?.queries || g?.query || '';
+    const queryStr = Array.isArray(queries) ? queries.join(',') : String(queries);
+    return `grounding:${queryStr}`;
   }
 
   return;
@@ -450,6 +452,7 @@ export class ConversationLifecycleActionImpl {
       let data: any;
       try {
         const topicId = operationContext.topicId;
+        const isCouncilNewTopic = !topicId;
         const councilOverride = overrideCouncil || getCurrentModelCouncilSettings();
 
         data = await modelCouncilService.start(
@@ -555,6 +558,15 @@ export class ConversationLifecycleActionImpl {
           onDisconnect: async () => {
             if (data.topicId) this.#get().internal_updateTopicLoading(data.topicId, false);
             await this.#get().refreshMessages(finalContext);
+
+            // Auto-generate title for newly created Model Council topics.
+            // Must run after refreshMessages so the DB messages are available.
+            if (isCouncilNewTopic && data.topicId) {
+              messageService
+                .getMessages(finalContext)
+                .then((msgs) => this.#get().summaryTopicTitle(data.topicId, msgs))
+                .catch(console.error);
+            }
           },
           onError: (error) => {
             if (data.topicId) this.#get().internal_updateTopicLoading(data.topicId, false);

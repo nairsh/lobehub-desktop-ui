@@ -235,6 +235,21 @@ const getLiveStepStatus = (t: any, steps: any[]) => {
   return clippedStepText ? `${stepLabel}: ${clippedStepText}` : stepLabel;
 };
 
+const collapseSteps = (steps: any[]): { count: number; step: any }[] => {
+  const result: { count: number; step: any }[] = [];
+  for (const step of steps) {
+    const label = step.stepType;
+    const text = getStepText(step);
+    const last = result.at(-1);
+    if (last && last.step.stepType === label && getStepText(last.step) === text) {
+      last.count++;
+    } else {
+      result.push({ count: 1, step });
+    }
+  }
+  return result;
+};
+
 const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
   ({ id, embedded, hideJudgeResponse, judgeMessage, judgeStatus }) => {
     const { t } = useTranslation('chat');
@@ -472,13 +487,14 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                       <AutoScrollPanel className={styles.livePanel}>
                         {stepItems.length > 0 && (
                           <Flexbox gap={4} style={{ marginBlockEnd: reasoningContent ? 8 : 0 }}>
-                            {stepItems.map((step, stepIndex) => {
+                            {collapseSteps(stepItems).map(({ step, count }, stepIndex) => {
                               const stepText = getStepText(step);
 
                               return (
                                 <Text key={`${child.id}-step-${stepIndex}`} type={'secondary'}>
                                   {getStepLabel(t, step)}
                                   {stepText ? `: ${stepText}` : ''}
+                                  {count > 1 ? ` ×${count}` : ''}
                                 </Text>
                               );
                             })}
@@ -617,13 +633,14 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                         <AutoScrollPanel className={styles.livePanel}>
                           {judgeSteps.length > 0 && (
                             <Flexbox gap={4} style={{ marginBlockEnd: judgeReasoning ? 8 : 0 }}>
-                              {judgeSteps.map((step, stepIndex) => {
+                              {collapseSteps(judgeSteps).map(({ step, count }, stepIndex) => {
                                 const stepText = getStepText(step);
 
                                 return (
                                   <Text key={`${judge.id}-step-${stepIndex}`} type={'secondary'}>
                                     {getStepLabel(t, step)}
                                     {stepText ? `: ${stepText}` : ''}
+                                    {count > 1 ? ` ×${count}` : ''}
                                   </Text>
                                 );
                               })}
