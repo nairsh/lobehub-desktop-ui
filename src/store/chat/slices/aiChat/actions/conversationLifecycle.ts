@@ -125,48 +125,10 @@ const getCurrentModelCouncilSettings = () =>
     | ModelCouncilSettings
     | undefined;
 
-const createModelCouncilSearchStep = (prompt: string, role: 'judge' | 'member') => ({
-  at: Date.now(),
-  grounding: {
-    query: prompt,
-    searchQueries: [prompt],
-    source: 'model_builtin_search',
-    status: 'enabled',
-    synthetic: true,
-    title: role === 'judge' ? 'Judge web search enabled' : 'Model web search enabled',
-  },
-  stepType: 'grounding',
-});
+const seedModelCouncilSearchSteps = (messages: any[], _prompt: string) => messages;
 
-const seedModelCouncilSearchStep = <T extends { children?: any[]; metadata?: any }>(
-  item: T,
-  prompt: string,
-) => {
-  const nextChildren = Array.isArray(item.children)
-    ? item.children.map((child) => seedModelCouncilSearchStep(child, prompt))
-    : item.children;
-  const withChildren = nextChildren === item.children ? item : { ...item, children: nextChildren };
-  const modelCouncil = withChildren.metadata?.modelCouncil;
-  const role = modelCouncil?.role;
-
-  if ((role !== 'judge' && role !== 'member') || modelCouncil?.steps?.length) return withChildren;
-
-  return {
-    ...withChildren,
-    metadata: {
-      ...withChildren.metadata,
-      modelCouncil: {
-        ...modelCouncil,
-        steps: [createModelCouncilSearchStep(prompt, role)],
-      },
-    },
-  };
-};
-
-const seedModelCouncilSearchSteps = <T extends { children?: any[]; metadata?: any }>(
-  messages: T[],
-  prompt: string,
-) => messages.map((item) => seedModelCouncilSearchStep(item, prompt));
+const isTerminalStatus = (status?: string) =>
+  status === 'completed' || status === 'failed' || status === 'timeout' || status === 'canceled';
 
 const collectModelCouncilSteps = (item: { children?: any[]; id?: string; metadata?: any }) => {
   const entries: [string, any[]][] = [];
@@ -529,6 +491,18 @@ export class ConversationLifecycleActionImpl {
           topicId: data.topicId ?? operationContext.topicId,
           threadId: operationContext.threadId,
         };
+
+        // Council may have created the topic server-side, so the operation's
+        // context still carries the pre-council topicId (undefined for a new
+        // chat). Align it with finalContext so the live stream dispatches below
+        // — all keyed by { operationId } — resolve to the same message-map
+        // bucket the council messages are displayed in; otherwise every
+        // streamed reasoning/text update no-ops and only appears after the
+        // final refreshMessages on disconnect.
+        this.#get().updateOperationContext(operationId, {
+          threadId: finalContext.threadId,
+          topicId: finalContext.topicId,
+        });
 
         if (data?.topics) {
           const pageSize = systemStatusSelectors.topicPageSize(useGlobalStore.getState());

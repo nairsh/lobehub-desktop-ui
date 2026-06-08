@@ -239,16 +239,6 @@ const getLiveStepStatus = (t: any, steps: any[]) => {
   return clippedStepText ? `${stepLabel}: ${clippedStepText}` : stepLabel;
 };
 
-const getFallbackSearchStep = (t: any) => ({
-  grounding: {
-    source: 'model_builtin_search',
-    status: 'enabled',
-    synthetic: true,
-    title: t('modelCouncil.steps.searchEnabled', 'Web search enabled'),
-  },
-  stepType: 'grounding',
-});
-
 const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
   ({ id, embedded, hideJudgeResponse, judgeMessage, judgeStatus }) => {
     const { t } = useTranslation('chat');
@@ -407,7 +397,7 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
           const timedOut = status === 'timeout';
           const failed = isFailedStatus(status);
           const reasoningContent = childModel.reasoning?.content?.trim();
-          const stepItems = childMeta.steps?.length ? childMeta.steps : [getFallbackSearchStep(t)];
+          const stepItems = childMeta.steps || [];
           const visibleContent = getVisibleContent(child.content);
           const livePreview = !completed && !failed ? reasoningContent || visibleContent : '';
           const liveStepStatus =
@@ -561,9 +551,7 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                 ? modelReasoningLabelMap.get(modelKey({ model: modelId, provider: providerId }))
                 : undefined;
             const judgeReasoning = judge.reasoning?.content?.trim();
-            const judgeSteps = judgeMeta.steps?.length
-              ? judgeMeta.steps
-              : [getFallbackSearchStep(t)];
+            const judgeSteps = judgeMeta.steps || [];
             const judgeLivePreview = !completed && !failed ? judgeReasoning || judgeContent : '';
             const judgeLiveStepStatus =
               !completed && !failed ? getLiveStepStatus(t, judgeSteps) : undefined;

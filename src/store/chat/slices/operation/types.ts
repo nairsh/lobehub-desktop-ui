@@ -81,7 +81,9 @@ export type OperationStatus =
 /**
  * Operation context - business entity associations
  * Extends ConversationContext with operation-specific fields
- * Captured when Operation is created, never changes afterwards
+ * Captured when Operation is created; normally immutable, but may be
+ * reconciled via `updateOperationContext` when context (e.g. a topicId) is
+ * only known after the operation starts.
  */
 export interface OperationContext extends Partial<ConversationContext> {
   agentId?: string; // Associated agent ID (specific agent in Group Chat)

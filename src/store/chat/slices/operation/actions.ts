@@ -225,6 +225,59 @@ export class OperationActionsImpl {
     );
   };
 
+  /**
+   * Merge a partial context into an existing operation.
+   *
+   * Used when a flow learns conversation context only after the operation was
+   * started — e.g. Model Council creates the topic server-side, so the topicId
+   * is unknown when the `sendMessage` operation is created. Subsequent
+   * `internal_dispatchMessage({ operationId })` calls read `operation.context`
+   * to resolve the message-map bucket; without this update they would resolve to
+   * the stale (pre-topic) bucket and silently no-op, so live streaming never
+   * lands on the displayed conversation. Keeps the `operationsByContext` index
+   * in sync when the resulting context key changes.
+   */
+  updateOperationContext = (
+    operationId: string,
+    partialContext: Partial<OperationContext>,
+  ): void => {
+    this.#set(
+      produce((state: ChatStore) => {
+        const operation = state.operations[operationId];
+        if (!operation) return;
+
+        const prevContext = operation.context;
+        const prevKey = prevContext.agentId
+          ? messageMapKey(prevContext as MessageMapKeyInput)
+          : undefined;
+
+        operation.context = { ...prevContext, ...partialContext };
+
+        const nextKey = operation.context.agentId
+          ? messageMapKey(operation.context as MessageMapKeyInput)
+          : undefined;
+
+        if (prevKey !== nextKey) {
+          if (prevKey && state.operationsByContext[prevKey]) {
+            state.operationsByContext[prevKey] = state.operationsByContext[prevKey].filter(
+              (id) => id !== operationId,
+            );
+          }
+          if (nextKey) {
+            if (!state.operationsByContext[nextKey]) {
+              state.operationsByContext[nextKey] = [];
+            }
+            if (!state.operationsByContext[nextKey].includes(operationId)) {
+              state.operationsByContext[nextKey].push(operationId);
+            }
+          }
+        }
+      }),
+      false,
+      n(`updateOperationContext/${operationId}`),
+    );
+  };
+
   updateOperationStatus = (
     operationId: string,
     status: OperationStatus,
