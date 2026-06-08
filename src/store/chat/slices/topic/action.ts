@@ -663,11 +663,11 @@ export class ChatTopicActionImpl {
   };
 
   refreshTopic = async (): Promise<void> => {
-    const { activeGroupAgentId, activeGroupId, activeSessionId } = this.#get();
+    const { activeAgentId, activeGroupAgentId, activeGroupId, activeSessionId } = this.#get();
     // Use topicMapKey to generate the same key used in useFetchTopics
     // Key format: [SWR_USE_FETCH_TOPIC, containerKey, { isInbox, pageSize }]
     const containerKey = topicMapKey({
-      agentId: activeSessionId || activeGroupAgentId,
+      agentId: activeSessionId || activeGroupAgentId || activeAgentId,
       groupId: activeGroupId,
     });
     await mutate(
@@ -715,10 +715,10 @@ export class ChatTopicActionImpl {
   };
 
   internal_dispatchTopic = (payload: ChatTopicDispatch, action?: any): void => {
-    const { activeGroupAgentId, activeGroupId, activeSessionId } = this.#get();
+    const { activeAgentId, activeGroupAgentId, activeGroupId, activeSessionId } = this.#get();
     const topicDataMap = this.#get().topicDataMap;
     let key = topicMapKey({
-      agentId: activeGroupAgentId || activeSessionId,
+      agentId: activeGroupAgentId || activeSessionId || activeAgentId,
       groupId: activeGroupId,
     });
 
