@@ -208,13 +208,9 @@ const getStepLabel = (t: any, step: any) => {
 const getStepText = (step: any) => {
   if (step?.grounding) {
     const grounding = step.grounding;
-    if (grounding.synthetic && typeof grounding.title === 'string') return grounding.title;
-
     const queries = grounding.searchQueries || grounding.queries || grounding.query;
     if (Array.isArray(queries) && queries.length > 0) return queries.join(', ');
     if (typeof queries === 'string') return queries;
-    if (typeof grounding.title === 'string') return grounding.title;
-    if (typeof grounding.status === 'string') return grounding.status;
   }
 
   const tools = step?.toolsCalling;
