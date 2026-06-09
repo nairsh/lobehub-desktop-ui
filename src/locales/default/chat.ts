@@ -6,6 +6,7 @@ export default {
   'modelCouncil.member': 'Council model',
   'modelCouncil.notConfigured': 'Choose at least two council models and one judge in settings.',
   'modelCouncil.reasoning': 'Reasoning',
+  'modelCouncil.retry': 'Retry',
   'modelCouncil.steps.search': 'Search Web',
   'modelCouncil.steps.searchEnabled': 'Web search enabled',
   'modelCouncil.steps.step': 'Step',

@@ -235,6 +235,7 @@
   "modelCouncil.member": "Council model",
   "modelCouncil.notConfigured": "Choose at least two council models and one judge in settings.",
   "modelCouncil.reasoning": "Reasoning",
+  "modelCouncil.retry": "Retry",
   "modelCouncil.status.completed": "Completed",
   "modelCouncil.status.failed": "Failed",
   "modelCouncil.status.running": "Thinking",

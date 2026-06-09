@@ -3,7 +3,7 @@ export default {
   archiveProject: 'Archive Project',
   createProject: 'New Project',
   deleteConfirm:
-    'Delete this project? Conversations linked to it will remain but become unlinked. This cannot be undone.',
+    'Delete this project? Conversations linked to it will remain but become unlinked. The project knowledge base and its uploaded files will be deleted permanently. This cannot be undone.',
   deleteProject: 'Delete Project',
   editProject: 'Edit Project',
   emptyState: 'No projects yet. Create one to get started.',
@@ -15,4 +15,5 @@ export default {
   scopedConversations: 'Scoped Conversations',
   switchProject: 'Switch Project',
   title: 'Projects',
+  topicAssociationFailed: 'Failed to update the topic’s project. Please try again.',
 };

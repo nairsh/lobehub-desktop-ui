@@ -17,6 +17,7 @@ export interface PublicState {
 }
 
 export interface State extends PublicState {
+  aiIsland?: PageAiIslandState;
   documentId: string | undefined;
   editor?: IEditor;
   isMetaDirty?: boolean;
@@ -25,7 +26,21 @@ export interface State extends PublicState {
   metaSaveStatus?: MetaSaveStatus;
 }
 
+export interface PageAiIslandState {
+  content: string;
+  format: 'text' | 'xml';
+  id: string;
+  pageId?: string;
+  preview?: string;
+  rect: {
+    left: number;
+    top: number;
+    width: number;
+  };
+}
+
 export const initialState: State = {
+  aiIsland: undefined,
   autoSave: true,
   documentId: undefined,
   emoji: undefined,

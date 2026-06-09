@@ -10,6 +10,21 @@ class ModelCouncilService {
       { context: { showNotification: false } },
     );
 
+  retryMember = async (
+    memberMessageId: string,
+    rerunJudge: boolean = true,
+  ): Promise<{
+    judgeMessageId: string;
+    memberMessageId: string;
+    messageGroupId: string;
+    operationId: string;
+    rerunJudge: boolean;
+  }> =>
+    (lambdaClient as any).modelCouncil.retryMember.mutate(
+      { memberMessageId, rerunJudge },
+      { context: { showNotification: false } },
+    );
+
   start = async (params: ModelCouncilStartPayload, abortController: AbortController) =>
     (lambdaClient as any).modelCouncil.start.mutate(cleanObject(params), {
       context: { showNotification: false },

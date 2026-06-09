@@ -128,6 +128,12 @@ export default {
   'modelCouncil.settings.models.remove': 'Remove model',
   'modelCouncil.settings.models.title': 'Council models',
   'modelCouncil.settings.title': 'Model Council',
+  'modelCouncil.settings.webSearch.desc':
+    'Web search makes answers more current but slows each model down noticeably.',
+  'modelCouncil.settings.webSearch.judge': 'Judge only',
+  'modelCouncil.settings.webSearch.all': 'All models',
+  'modelCouncil.settings.webSearch.off': 'Off',
+  'modelCouncil.settings.webSearch.title': 'Web search',
   'modelCouncil.personality.analyst': 'Analytical strategist',
   'modelCouncil.personality.creative': 'Creative thinker',
   'modelCouncil.personality.pragmatic': 'Pragmatic implementer',
@@ -943,6 +949,10 @@ When I am ___, I need ___
   'systemAgent.inputCompletion.modelDesc':
     'Model used for input auto-completion suggestions (like GitHub Copilot ghost text)',
   'systemAgent.inputCompletion.title': 'Input Auto-Completion Agent',
+  'systemAgent.pageAgent.label': 'Model',
+  'systemAgent.pageAgent.modelDesc':
+    'Model used for page editing, inline AI rewrites, and page chat',
+  'systemAgent.pageAgent.title': 'Page AI Agent',
   'systemAgent.promptRewrite.label': 'Model',
   'systemAgent.promptRewrite.modelDesc': 'Specify the model used to rewrite prompts',
   'systemAgent.promptRewrite.title': 'Prompt Rewrite Agent',

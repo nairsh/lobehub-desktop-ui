@@ -6,12 +6,13 @@ import { type StateCreator } from 'zustand';
 import { useDocumentStore } from '@/store/document';
 import { useFileStore } from '@/store/file';
 
-import { type State } from './initialState';
+import { type PageAiIslandState, type State } from './initialState';
 import { initialState } from './initialState';
 
 const log = debug('page:editor');
 
 export interface Action {
+  closeAiIsland: () => void;
   flushMetaSave: () => void;
   handleCopyLink: (t: (key: string) => string, message: any) => void;
   handleDelete: (
@@ -23,6 +24,7 @@ export interface Action {
   handleTitleSubmit: () => Promise<void>;
   initMeta: (title?: string, emoji?: string) => void;
   performMetaSave: () => Promise<void>;
+  setAiIsland: (state: PageAiIslandState) => void;
   setEmoji: (emoji: string | undefined) => void;
   setTitle: (title: string) => void;
   triggerDebouncedMetaSave: () => void;
@@ -55,6 +57,10 @@ export const store: (initState?: Partial<State>) => StateCreator<Store> =
     return {
       ...initialState,
       ...initState,
+
+      closeAiIsland: () => {
+        set({ aiIsland: undefined });
+      },
 
       flushMetaSave: () => {
         debouncedMetaSave?.flush();
@@ -168,6 +174,10 @@ export const store: (initState?: Partial<State>) => StateCreator<Store> =
         if (isDirty) {
           triggerDebouncedMetaSave();
         }
+      },
+
+      setAiIsland: (aiIsland) => {
+        set({ aiIsland });
       },
 
       setTitle: (title: string) => {

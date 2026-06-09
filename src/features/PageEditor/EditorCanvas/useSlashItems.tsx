@@ -1,3 +1,4 @@
+import { nanoid } from '@lobechat/utils';
 import { type SlashOptions } from '@lobehub/editor';
 import {
   INSERT_CHECK_LIST_COMMAND,
@@ -7,10 +8,11 @@ import {
   INSERT_IMAGE_COMMAND,
   INSERT_MATH_COMMAND,
   INSERT_ORDERED_LIST_COMMAND,
+  INSERT_QUOTE_COMMAND,
   INSERT_TABLE_COMMAND,
   INSERT_UNORDERED_LIST_COMMAND,
 } from '@lobehub/editor';
-import { Text } from '@lobehub/ui';
+import { Flexbox, Text } from '@lobehub/ui';
 import {
   Heading1Icon,
   Heading2Icon,
@@ -20,7 +22,10 @@ import {
   ListOrderedIcon,
   ListTodoIcon,
   MinusIcon,
+  PilcrowIcon,
+  QuoteIcon,
   SigmaIcon,
+  SparklesIcon,
   SquareDashedBottomCodeIcon,
   Table2Icon,
 } from 'lucide-react';
@@ -29,11 +34,58 @@ import { useTranslation } from 'react-i18next';
 
 import { openFileSelector } from '@/features/EditorCanvas';
 
+import { usePageEditorStore } from '../store';
+
 export const useSlashItems = (): SlashOptions['items'] => {
   const { t } = useTranslation('editor');
+  const pageId = usePageEditorStore((s) => s.documentId);
+  const setAiIsland = usePageEditorStore((s) => s.setAiIsland);
 
   return useMemo(() => {
     const data: SlashOptions['items'] = [
+      {
+        icon: SparklesIcon,
+        key: 'ask-ai',
+        label: t('pageAiIsland.askAi', 'Ask AI'),
+        onSelect: () => {
+          const selection = window.getSelection();
+          const rangeRect =
+            selection && selection.rangeCount > 0
+              ? selection.getRangeAt(0).getBoundingClientRect()
+              : undefined;
+          const anchorElement =
+            selection?.anchorNode instanceof Element
+              ? selection.anchorNode
+              : selection?.anchorNode?.parentElement;
+          const blockElement = anchorElement?.closest<HTMLElement>('[data-block-id]');
+          const blockText = blockElement?.textContent?.replaceAll(/\s+/g, ' ').trim() || '';
+          const blockRect = blockElement?.getBoundingClientRect();
+
+          setAiIsland({
+            content: blockText,
+            format: 'text',
+            id: `slash-${nanoid(6)}`,
+            pageId,
+            preview: blockText || undefined,
+            rect: {
+              left: rangeRect?.left || blockRect?.left || window.innerWidth / 2 - 150,
+              top: (rangeRect?.bottom || blockRect?.bottom || 160) + 8,
+              width: rangeRect?.width || blockRect?.width || 300,
+            },
+          });
+        },
+      },
+      {
+        type: 'divider',
+      },
+      {
+        icon: PilcrowIcon,
+        key: 'text',
+        label: t('selectionToolbar.text'),
+        onSelect: (editor) => {
+          editor.dispatchCommand(INSERT_HEADING_COMMAND, { tag: 'p' } as any);
+        },
+      },
       {
         icon: Heading1Icon,
         key: 'h1',
@@ -59,7 +111,12 @@ export const useSlashItems = (): SlashOptions['items'] => {
         },
       },
       {
-        type: 'divider',
+        icon: Heading3Icon,
+        key: 'h4',
+        label: t('slash.h4'),
+        onSelect: (editor) => {
+          editor.dispatchCommand(INSERT_HEADING_COMMAND, { tag: 'h4' });
+        },
       },
       {
         icon: ListTodoIcon,
@@ -86,6 +143,30 @@ export const useSlashItems = (): SlashOptions['items'] => {
         },
       },
       {
+        icon: Table2Icon,
+        key: 'table',
+        label: t('slash.table'),
+        onSelect: (editor) => {
+          editor.dispatchCommand(INSERT_TABLE_COMMAND, { columns: '3', rows: '3' });
+        },
+      },
+      {
+        icon: QuoteIcon,
+        key: 'quote',
+        label: t('typobar.blockquote'),
+        onSelect: (editor) => {
+          editor.dispatchCommand(INSERT_QUOTE_COMMAND, undefined);
+        },
+      },
+      {
+        icon: MinusIcon,
+        key: 'hr',
+        label: t('slash.hr'),
+        onSelect: (editor) => {
+          editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, {});
+        },
+      },
+      {
         type: 'divider',
       },
       {
@@ -100,22 +181,6 @@ export const useSlashItems = (): SlashOptions['items'] => {
               }
             }
           }, 'image/*');
-        },
-      },
-      {
-        icon: MinusIcon,
-        key: 'hr',
-        label: t('slash.hr'),
-        onSelect: (editor) => {
-          editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, {});
-        },
-      },
-      {
-        icon: Table2Icon,
-        key: 'table',
-        label: t('slash.table'),
-        onSelect: (editor) => {
-          editor.dispatchCommand(INSERT_TABLE_COMMAND, { columns: '3', rows: '3' });
         },
       },
       {
@@ -143,17 +208,46 @@ export const useSlashItems = (): SlashOptions['items'] => {
     ];
     return data.map((item) => {
       if (item.type === 'divider') return item;
+      const itemKey = String(item.key);
+      const descriptions: Record<string, string> = {
+        'ask-ai': t('slash.description.askAi', {
+          defaultValue: 'Draft, rewrite, or answer with page context.',
+        }),
+        'codeblock': t('slash.description.codeblock', {
+          defaultValue: 'Capture code with syntax highlighting.',
+        }),
+        'h1': t('slash.description.h1', { defaultValue: 'Big section heading.' }),
+        'h2': t('slash.description.h2', { defaultValue: 'Medium section heading.' }),
+        'h3': t('slash.description.h3', { defaultValue: 'Small section heading.' }),
+        'h4': t('slash.description.h4', { defaultValue: 'Tiny section heading.' }),
+        'hr': t('slash.description.hr', { defaultValue: 'Visually divide blocks.' }),
+        'image': t('slash.description.image', { defaultValue: 'Upload or embed an image.' }),
+        'ol': t('slash.description.ol', { defaultValue: 'Create a numbered list.' }),
+        'quote': t('slash.description.quote', { defaultValue: 'Capture a quote or citation.' }),
+        'table': t('slash.description.table', { defaultValue: 'Add a simple table.' }),
+        'tex': t('slash.description.tex', { defaultValue: 'Write a TeX equation.' }),
+        'text': t('slash.description.text', { defaultValue: 'Start writing plain text.' }),
+        'tl': t('slash.description.tl', { defaultValue: 'Track tasks with checkboxes.' }),
+        'ul': t('slash.description.ul', { defaultValue: 'Create a bulleted list.' }),
+      };
       return {
         ...item,
         extra: (
-          <Text code fontSize={12} type={'secondary'}>
-            {item.key}
-          </Text>
+          <Flexbox gap={2} style={{ minWidth: 160 }}>
+            <Text fontSize={12} type={'secondary'}>
+              {descriptions[itemKey] || itemKey}
+            </Text>
+          </Flexbox>
         ),
+        metadata: {
+          ...item.metadata,
+          description: descriptions[itemKey] || itemKey,
+        },
         style: {
-          minWidth: 200,
+          minHeight: 40,
+          minWidth: 260,
         },
       };
     });
-  }, [t]);
+  }, [pageId, setAiIsland, t]);
 };

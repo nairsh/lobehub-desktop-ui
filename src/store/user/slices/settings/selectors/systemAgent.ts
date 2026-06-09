@@ -16,12 +16,14 @@ const promptRewrite = (s: UserStore) => currentSystemAgent(s).promptRewrite;
 const historyCompress = (s: UserStore) => currentSystemAgent(s).historyCompress;
 const generationTopic = (s: UserStore) => currentSystemAgent(s).generationTopic;
 const inputCompletion = (s: UserStore) => currentSystemAgent(s).inputCompletion;
+const pageAgent = (s: UserStore) => currentSystemAgent(s).pageAgent;
 
 export const systemAgentSelectors = {
   agentMeta,
   generationTopic,
   historyCompress,
   inputCompletion,
+  pageAgent,
   promptRewrite,
   queryRewrite,
   thread,

@@ -1,3 +1,6 @@
+import { t } from 'i18next';
+
+import { message } from '@/components/AntdStaticMethods';
 import { topicService } from '@/services/topic';
 import { savePinnedIds } from '@/store/project/initialState';
 import type { ProjectStore } from '@/store/project/store';
@@ -25,17 +28,20 @@ export class ProjectActiveActionImpl implements ProjectActiveAction {
   }
 
   addTopicToProject = async (projectId: string, topicId: string): Promise<void> => {
-    const { topicIdsByProject } = this.#get();
-    const existing = topicIdsByProject[projectId] ?? [];
+    const previous = this.#get().topicIdsByProject;
+    const existing = previous[projectId] ?? [];
     if (!existing.includes(topicId)) {
       this.#set({
-        topicIdsByProject: { ...topicIdsByProject, [projectId]: [topicId, ...existing] },
+        topicIdsByProject: { ...previous, [projectId]: [topicId, ...existing] },
       });
     }
     try {
-      await topicService.updateTopic(topicId, { projectId } as any);
+      await topicService.updateTopic(topicId, { projectId });
     } catch (error) {
-      console.warn('[Project] Failed to persist topic project association', error);
+      console.error('[Project] Failed to persist topic project association', error);
+      // Roll back the optimistic update so UI and DB stay consistent
+      this.#set({ topicIdsByProject: previous });
+      message.error(t('topicAssociationFailed', { ns: 'project' }));
     }
   };
 
@@ -44,18 +50,20 @@ export class ProjectActiveActionImpl implements ProjectActiveAction {
   };
 
   removeTopicFromProject = async (projectId: string, topicId: string): Promise<void> => {
-    const { topicIdsByProject } = this.#get();
-    const existing = topicIdsByProject[projectId] ?? [];
+    const previous = this.#get().topicIdsByProject;
+    const existing = previous[projectId] ?? [];
     this.#set({
       topicIdsByProject: {
-        ...topicIdsByProject,
+        ...previous,
         [projectId]: existing.filter((id) => id !== topicId),
       },
     });
     try {
-      await topicService.updateTopic(topicId, { projectId: null } as any);
+      await topicService.updateTopic(topicId, { projectId: null });
     } catch (error) {
-      console.warn('[Project] Failed to remove topic project association', error);
+      console.error('[Project] Failed to remove topic project association', error);
+      this.#set({ topicIdsByProject: previous });
+      message.error(t('topicAssociationFailed', { ns: 'project' }));
     }
   };
 

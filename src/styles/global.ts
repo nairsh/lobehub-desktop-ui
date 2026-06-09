@@ -105,10 +105,10 @@ export default ({ token }: { prefixCls: string; token: Theme }) => css`
     margin-inline: 4px;
   }
 
-  /* Snappy pop animation for all dropdown/popover menus */
+  /* Smooth dropdown/popover menus */
   [data-placement] {
-    --lobe-dropdown-animation-duration: 110ms !important;
-    --lobe-dropdown-animation-ease-out: cubic-bezier(0.25, 1.4, 0.5, 1) !important;
+    --lobe-dropdown-animation-duration: 170ms !important;
+    --lobe-dropdown-animation-ease-out: cubic-bezier(0.16, 1, 0.3, 1) !important;
     --lobe-dropdown-animation-ease-in: cubic-bezier(0.4, 0, 1, 1) !important;
   }
 
@@ -118,19 +118,19 @@ export default ({ token }: { prefixCls: string; token: Theme }) => css`
      scales the inner popup child instead. */
   @keyframes lobe-slash-menu-pop {
     from {
-      transform: scale(0.92);
+      transform: translateY(-4px) scale(0.985);
       opacity: 0;
     }
 
     to {
-      transform: scale(1);
+      transform: translateY(0) scale(1);
       opacity: 1;
     }
   }
 
   [data-resloved-placement] > * {
     transform-origin: top center;
-    animation: lobe-slash-menu-pop 110ms cubic-bezier(0.25, 1.4, 0.5, 1);
+    animation: lobe-slash-menu-pop 170ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   [data-placement][data-open] > * {
@@ -139,12 +139,12 @@ export default ({ token }: { prefixCls: string; token: Theme }) => css`
   }
 
   [data-placement][data-open] > *[data-starting-style] {
-    transform: scale(0.92) !important;
+    transform: translateY(-4px) scale(0.985) !important;
     opacity: 0;
   }
 
   [data-placement][data-closed] > * {
-    transform: scale(0.92) !important;
+    transform: translateY(-4px) scale(0.985) !important;
     opacity: 0;
   }
 `;

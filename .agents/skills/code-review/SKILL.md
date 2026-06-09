@@ -39,7 +39,7 @@ description: 'Code review checklist for LobeHub. Use when reviewing PRs, diffs, 
 
 ### SPA / routing
 
-- **`desktopRouter` pair:** If the diff touches `src/spa/router/desktopRouter.config.tsx`, does it also update `src/spa/router/desktopRouter.config.desktop.tsx` with the same route paths and nesting? Single-file edits often cause drift and blank screens.
+- **`desktopRouter` structure:** Route changes must land in `src/spa/router/desktopRouter.routes.tsx` only; `desktopRouter.config.tsx` and `desktopRouter.config.desktop.tsx` must stay thin re-exports of it. Routes defined directly in a config file cause web/desktop drift and blank screens.
 
 ### Reuse
 

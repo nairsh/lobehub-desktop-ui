@@ -6,13 +6,13 @@ import { useHotkeyById } from './useHotkeyById';
 
 /**
  * Save document hotkey (Cmd+S / Ctrl+S)
- * @param flushSave - Function to flush pending saves
+ * @param save - Function to save the active document
  */
-export const useSaveDocumentHotkey = (flushSave: () => void) => {
+export const useSaveDocumentHotkey = (save: () => void | Promise<void>) => {
   return useHotkeyById(
     HotkeyEnum.SaveDocument,
     () => {
-      flushSave();
+      void save();
     },
     {
       enableOnContentEditable: true,

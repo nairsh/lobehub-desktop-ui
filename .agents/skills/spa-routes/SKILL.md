@@ -1,6 +1,6 @@
 ---
 name: spa-routes
-description: MUST use when editing src/routes/ segments, src/spa/router/desktopRouter.config.tsx or desktopRouter.config.desktop.tsx (always change both together), mobileRouter.config.tsx, or when moving UI/logic between routes and src/features/.
+description: MUST use when editing src/routes/ segments, src/spa/router/desktopRouter.routes.tsx (the single shared route tree; the two desktopRouter.config files are thin re-exports of it), mobileRouter.config.tsx, or when moving UI/logic between routes and src/features/.
 ---
 
 # SPA Routes and Features Guide
@@ -13,7 +13,7 @@ SPA structure:
 
 This project uses a **roots vs features** split: `src/routes/` only holds page segments; business logic and UI live in `src/features/` by domain.
 
-**Agent constraint — desktop router parity:** Edits to the desktop route tree must update **both** `src/spa/router/desktopRouter.config.tsx` and `src/spa/router/desktopRouter.config.desktop.tsx` in the same change (same paths, nesting, index routes, and segment registration). Updating only one causes drift; the missing tree can fail to register routes and surface as a **blank screen** or broken navigation on the affected build.
+**Agent constraint — desktop router structure:** All desktop route tree edits go in `src/spa/router/desktopRouter.routes.tsx` (single shared, lazy route tree). `desktopRouter.config.tsx` and `desktopRouter.config.desktop.tsx` must remain thin re-exports of it — defining routes in either config file lets the web and desktop builds drift apart and can surface as a **blank screen** or broken navigation.
 
 ## When to Use This Skill
 
@@ -75,21 +75,21 @@ Each feature should:
    - Layout: `export { default } from '@/features/MyFeature/MyLayout'` or compose a few feature components + `<Outlet />`.
    - Page: import from `@/features/MyFeature` (or a specific subpath) and render; no business logic in the route file.
 
-5. **Register the route (desktop — two files, always)**
-   - **`desktopRouter.config.tsx`:** Add the segment with `dynamicElement` / `dynamicLayout` pointing at route modules (e.g. `@/routes/(main)/my-feature`).
-   - **`desktopRouter.config.desktop.tsx`:** Mirror the **same** `RouteObject` shape: identical `path` / `index` / parent-child structure. Use the static imports and elements already used in that file (see neighboring routes). Do **not** register in only one of these files.
-   - **Mobile-only flows:** use `mobileRouter.config.tsx` instead (no need to duplicate into the desktop pair unless the route truly exists on both).
+5. **Register the route (desktop — single shared file)**
+   - **`desktopRouter.routes.tsx`:** Add the segment with `dynamicElement` / `dynamicLayout` pointing at route modules (e.g. `@/routes/(main)/my-feature`). This is the ONLY place routes are defined.
+   - **Mobile-only flows:** use `mobileRouter.config.tsx` instead.
 
 ---
 
-## 3a. Desktop router pair (`desktopRouter.config` × 2)
+## 3a. Desktop router structure
 
-| File | Role |
-|------|------|
-| `desktopRouter.config.tsx` | Dynamic imports via `dynamicElement` / `dynamicLayout` — code-splitting; used by `entry.web.tsx` and `entry.desktop.tsx`. |
-| `desktopRouter.config.desktop.tsx` | Same route tree with **synchronous** imports — kept for Electron / local parity and predictable bundling. |
+| File                               | Role                                                                                                                                                                                                                                                                                 |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `desktopRouter.routes.tsx`         | **The** route tree — lazy imports via `dynamicElement` / `dynamicLayout` (code-splitting), shared by web and Electron desktop builds.                                                                                                                                                |
+| `desktopRouter.config.tsx`         | Thin re-export of `desktopRouter.routes.tsx`. Do not define routes here.                                                                                                                                                                                                             |
+| `desktopRouter.config.desktop.tsx` | Thin re-export of `desktopRouter.routes.tsx` (resolved by the desktop build via `vitePlatformResolve`). Do not define routes here, and do not import `./desktopRouter.config` from it (the platform-resolve plugin would rewrite that back to this file and create an import cycle). |
 
-Anything that changes the tree (new segment, renamed `path`, moved layout, new child route) must be reflected in **both** files in one PR or commit. Remove routes from both when deleting.
+All route tree changes (new segment, renamed `path`, moved layout, new child route) go in `desktopRouter.routes.tsx` only. `desktopRouter.sync.test.tsx` enforces that both config files stay thin re-exports.
 
 ---
 

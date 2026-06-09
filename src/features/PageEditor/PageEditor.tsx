@@ -4,11 +4,12 @@ import { EditorProvider } from '@lobehub/editor/react';
 import { Flexbox } from '@lobehub/ui';
 import { cssVar } from 'antd-style';
 import type { FC } from 'react';
-import { memo } from 'react';
+import { memo, useEffect } from 'react';
 
 import DiffAllToolbar from '@/features/EditorCanvas/DiffAllToolbar';
-import WideScreenContainer from '@/features/WideScreenContainer';
 import { useRegisterFilesHotkeys } from '@/hooks/useHotkeys';
+import { useGlobalStore } from '@/store/global';
+import { systemStatusSelectors } from '@/store/global/selectors';
 import { usePageStore } from '@/store/page';
 import { StyleSheet } from '@/utils/styles';
 
@@ -32,8 +33,13 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   editorContent: {
+    marginInline: 'auto',
+    maxWidth: 900,
+    paddingInline: 'clamp(56px, 8vw, 96px)',
+    paddingTop: 52,
     overflowY: 'auto',
     position: 'relative',
+    width: 'min(100%, 900px)',
   },
 });
 
@@ -53,9 +59,15 @@ interface PageEditorProps {
 const PageEditorCanvas = memo(() => {
   const editor = usePageEditorStore((s) => s.editor);
   const documentId = usePageEditorStore((s) => s.documentId);
+  const showRightPanel = useGlobalStore(systemStatusSelectors.showRightPanel);
+  const updateSystemStatus = useGlobalStore((s) => s.updateSystemStatus);
 
   // Register Files scope and save document hotkey
   useRegisterFilesHotkeys();
+
+  useEffect(() => {
+    updateSystemStatus({ showLeftPanel: false, showRightPanel: false });
+  }, [updateSystemStatus]);
 
   return (
     <>
@@ -68,17 +80,21 @@ const PageEditorCanvas = memo(() => {
       >
         <Flexbox flex={1} height={'100%'} style={styles.editorContainer}>
           <Header />
-          <Flexbox horizontal height={'100%'} style={styles.contentWrapper} width={'100%'}>
-            <WideScreenContainer wrapperStyle={{ cursor: 'text' }} onClick={() => editor?.focus()}>
-              <Flexbox flex={1} style={styles.editorContent}>
-                <TitleSection />
-                <EditorCanvas />
-              </Flexbox>
-            </WideScreenContainer>
+          <Flexbox
+            horizontal
+            height={'100%'}
+            style={{ ...styles.contentWrapper, cursor: 'text' }}
+            width={'100%'}
+            onClick={() => editor?.focus()}
+          >
+            <Flexbox flex={1} style={styles.editorContent}>
+              <TitleSection />
+              <EditorCanvas />
+            </Flexbox>
           </Flexbox>
           {documentId && <DiffAllToolbar documentId={documentId} editor={editor!} />}
         </Flexbox>
-        <Copilot />
+        {showRightPanel && <Copilot />}
       </Flexbox>
     </>
   );

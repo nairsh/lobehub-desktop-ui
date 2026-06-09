@@ -28,10 +28,11 @@ const TitleSection = memo(() => {
 
   return (
     <Flexbox
-      gap={16}
-      paddingBlock={16}
+      gap={8}
+      paddingBlock={'0 10px'}
       style={{
         cursor: 'default',
+        position: 'relative',
       }}
       onMouseEnter={() => setIsHoveringTitle(true)}
       onMouseLeave={() => setIsHoveringTitle(false)}
@@ -72,6 +73,9 @@ const TitleSection = memo(() => {
           type="text"
           style={{
             opacity: isHoveringTitle ? 1 : 0,
+            pointerEvents: isHoveringTitle ? 'auto' : 'none',
+            position: 'absolute',
+            top: -34,
             transition: `opacity ${cssVar.motionDurationMid} ${cssVar.motionEaseInOut}`,
             width: 'fit-content',
           }}
@@ -91,8 +95,10 @@ const TitleSection = memo(() => {
         value={title}
         variant={'borderless'}
         style={{
-          fontSize: 36,
-          fontWeight: 600,
+          color: cssVar.colorText,
+          fontSize: 40,
+          fontWeight: 700,
+          lineHeight: 1.2,
           padding: 0,
           resize: 'none',
           width: '100%',

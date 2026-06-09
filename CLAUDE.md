@@ -75,8 +75,9 @@ lobehub/
 ├── src/
 │   ├── spa/                        # ✅ SPA entries + router config
 │   │   └── router/
-│   │       ├── desktopRouter.config.tsx          # dynamic imports
-│   │       └── desktopRouter.config.desktop.tsx  # sync imports — KEEP IN SYNC
+│   │       ├── desktopRouter.routes.tsx          # THE route tree (lazy imports)
+│   │       ├── desktopRouter.config.tsx          # thin re-export — do not add routes
+│   │       └── desktopRouter.config.desktop.tsx  # thin re-export — do not add routes
 │   ├── routes/                     # ✅ Thin route segments
 │   │   ├── (main)/  (mobile)/  (desktop)/  onboarding/  share/
 │   ├── features/                   # ✅ Domain UI
@@ -110,7 +111,7 @@ When adding/changing SPA routes:
 1. Add only route segment files under `src/routes/` that delegate to features.
 2. Implement the layout/page content in `src/features/<Domain>/` and export it.
 3. Import via `import { X } from '@/features/<Domain>'`. Do **not** create `features/` folders under `src/routes/`.
-4. **Desktop router parity:** update **both** `src/spa/router/desktopRouter.config.tsx` (dynamic imports) and `src/spa/router/desktopRouter.config.desktop.tsx` (sync imports). Paths and nesting must match — **a mismatch causes blank screens** in the desktop build.
+4. **Desktop router structure:** make all route changes in `src/spa/router/desktopRouter.routes.tsx` (the single shared, lazy route tree). `desktopRouter.config.tsx` and `desktopRouter.config.desktop.tsx` are thin re-exports of it — never define routes in them, or the web and desktop builds drift apart and **cause blank screens**. `desktopRouter.sync.test.tsx` guards this.
 
 See `.agents/skills/spa-routes/SKILL.md` for the full convention.
 
@@ -200,7 +201,7 @@ Before changing any file, confirm:
 
 1. ☐ The file is under an **ALLOWED** path (Section 1).
 2. ☐ The change is **client/UI** behavior, not server logic.
-3. ☐ If editing SPA routes, both `desktopRouter.config.tsx` files will be kept in sync.
+3. ☐ If editing SPA routes, the change goes in `desktopRouter.routes.tsx` (the config files stay thin re-exports).
 4. ☐ If adding i18n keys, the default locale and at least one preview locale are updated.
 5. ☐ A targeted `bunx vitest run` covers the change (no full-suite runs).
 

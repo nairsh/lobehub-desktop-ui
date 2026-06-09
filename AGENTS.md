@@ -89,8 +89,9 @@ lobehub/
 ├── src/
 │   ├── spa/                        # ✅ SPA entries + router config
 │   │   └── router/
-│   │       ├── desktopRouter.config.tsx          # dynamic imports
-│   │       └── desktopRouter.config.desktop.tsx  # sync imports — KEEP IN SYNC
+│   │       ├── desktopRouter.routes.tsx          # THE route tree (lazy imports)
+│   │       ├── desktopRouter.config.tsx          # thin re-export — do not add routes
+│   │       └── desktopRouter.config.desktop.tsx  # thin re-export — do not add routes
 │   ├── routes/                     # ✅ Thin route segments
 │   ├── features/                   # ✅ Domain UI
 │   ├── components/                 # ✅ Shared UI
@@ -182,14 +183,9 @@ We split routes from features:
 - **`src/features/`** holds business UI by **domain** (e.g. `Pages`, `PageEditor`, `Home`). Layout chunks, hooks, and domain UI go here. Each feature exports via `index.ts(x)`.
 - Route files use `import { X } from '@/features/<Domain>'`. Do **not** create a `features/` folder inside `src/routes/`.
 
-### 🚨 Desktop router parity rule
+### 🚨 Desktop router structure
 
-When you change the main SPA route tree, you **must** update **both**:
-
-- `src/spa/router/desktopRouter.config.tsx` (dynamic imports)
-- `src/spa/router/desktopRouter.config.desktop.tsx` (sync imports)
-
-Paths and nesting must match. **Updating only one causes blank screens** in the desktop build.
+The route tree lives in **one** shared file: `src/spa/router/desktopRouter.routes.tsx` (lazy/code-split imports). Both `desktopRouter.config.tsx` and `desktopRouter.config.desktop.tsx` are thin re-exports of it and must stay that way — defining routes directly in either config file lets the web and desktop builds drift apart, which **causes blank screens**. `desktopRouter.sync.test.tsx` guards this. Make all route changes in `desktopRouter.routes.tsx`.
 
 See `.agents/skills/spa-routes/SKILL.md` for the full convention.
 

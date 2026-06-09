@@ -1,16 +1,18 @@
 import { BUILTIN_AGENT_SLUGS } from '@lobechat/builtin-agents';
 import { isChatGroupSessionId } from '@lobechat/types';
 import { type ReactNode } from 'react';
-import { memo, useMemo } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 
 import Loading from '@/components/Loading/BrandTextLoading';
 import { ConversationProvider } from '@/features/Conversation';
 import { useOperationState } from '@/hooks/useOperationState';
 import { useAgentStore } from '@/store/agent';
-import { builtinAgentSelectors } from '@/store/agent/selectors';
+import { agentSelectors, builtinAgentSelectors } from '@/store/agent/selectors';
 import { useChatStore } from '@/store/chat';
 import { type MessageMapKeyInput } from '@/store/chat/utils/messageMapKey';
 import { messageMapKey } from '@/store/chat/utils/messageMapKey';
+import { useUserStore } from '@/store/user';
+import { settingsSelectors } from '@/store/user/selectors';
 
 interface PageAgentProviderProps {
   children: ReactNode;
@@ -21,8 +23,35 @@ export const PageAgentProvider = memo<PageAgentProviderProps>(({ children }) => 
   const pageAgentId = useAgentStore(builtinAgentSelectors.pageAgentId);
   const activeTopicId = useChatStore((s) => s.activeTopicId);
   const activeAgentId = useAgentStore((s) => s.activeAgentId);
+  const pageAgentConfig = useAgentStore((s) =>
+    pageAgentId ? agentSelectors.getAgentConfigById(pageAgentId)(s) : undefined,
+  );
+  const pageAgentModel = useUserStore((s) => settingsSelectors.currentSystemAgent(s).pageAgent);
+  const updateAgentConfigById = useAgentStore((s) => s.updateAgentConfigById);
 
   useInitBuiltinAgent(BUILTIN_AGENT_SLUGS.pageAgent);
+
+  useEffect(() => {
+    if (!pageAgentId || !pageAgentModel?.model || !pageAgentModel?.provider) return;
+    if (
+      pageAgentConfig?.model === pageAgentModel.model &&
+      pageAgentConfig?.provider === pageAgentModel.provider
+    ) {
+      return;
+    }
+
+    void updateAgentConfigById(pageAgentId, {
+      model: pageAgentModel.model,
+      provider: pageAgentModel.provider,
+    });
+  }, [
+    pageAgentConfig?.model,
+    pageAgentConfig?.provider,
+    pageAgentId,
+    pageAgentModel?.model,
+    pageAgentModel?.provider,
+    updateAgentConfigById,
+  ]);
 
   // Build conversation context for page agent.
   // Ignore chat-group ids in page scope and fall back to page agent.

@@ -42,7 +42,8 @@ export class ProjectCrudActionImpl implements ProjectCrudAction {
     try {
       const list = await projectService.list();
       this.#set({ isProjectListLoading: false, projectList: list as ProjectItem[] });
-    } catch {
+    } catch (error) {
+      console.error('[Project] Failed to load project list', error);
       this.#set({ isProjectListLoading: false });
     }
   };

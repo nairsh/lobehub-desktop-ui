@@ -5,12 +5,13 @@ import type { AssistantContentBlock } from '@lobechat/types';
 import { ModelIcon } from '@lobehub/icons';
 import { Flexbox, Icon, Markdown, Text } from '@lobehub/ui';
 import { createStyles } from 'antd-style';
-import { AlertCircle, CheckCircle2, ChevronRight, Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ChevronRight, Loader2, RotateCw } from 'lucide-react';
 import { memo, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useEnabledChatModels } from '@/hooks/useEnabledChatModels';
 import { useAiInfraStore } from '@/store/aiInfra';
+import { useChatStore } from '@/store/chat';
 import type { ModelCouncilModelConfig, ModelCouncilSettings } from '@/types/modelCouncil';
 import { findReasoningConfig, formatReasoningLabel } from '@/utils/modelReasoning';
 
@@ -314,11 +315,142 @@ const collapseSteps = (steps: any[]): { count: number; step: any }[] => {
   return result;
 };
 
+interface CouncilCardProps {
+  completed: boolean;
+  errorDetail?: string;
+  expanded: boolean;
+  extraAction?: ReactNode;
+  failed: boolean;
+  modelIconId: string;
+  modelLabel: string;
+  onToggleExpand: () => void;
+  reasoningContent?: string;
+  reasoningLabel?: string;
+  statusLabel: string;
+  stepItems: any[];
+  titleSuffix?: string;
+  visibleContent?: string;
+}
+
+const CouncilCard = memo<CouncilCardProps>(
+  ({
+    completed,
+    errorDetail,
+    expanded,
+    extraAction,
+    failed,
+    modelIconId,
+    modelLabel,
+    onToggleExpand,
+    reasoningContent,
+    reasoningLabel,
+    statusLabel,
+    stepItems,
+    titleSuffix,
+    visibleContent,
+  }) => {
+    const { t } = useTranslation('chat');
+    const { styles, theme } = useStyles();
+
+    const hasExpandableContent = !!(
+      reasoningContent ||
+      stepItems.length > 0 ||
+      visibleContent ||
+      (failed && errorDetail)
+    );
+
+    return (
+      <Flexbox className={styles.card} gap={12}>
+        <Flexbox horizontal align={'center'} justify={'space-between'}>
+          <Flexbox horizontal align={'center'} className={styles.pill} gap={8}>
+            <span className={styles.iconCell}>
+              <ModelIcon model={modelIconId || modelLabel} size={16} type={'color'} />
+            </span>
+            <Text ellipsis className={styles.titleText}>
+              {modelLabel}
+              {titleSuffix || ''}
+            </Text>
+            {reasoningLabel && (
+              <Text className={styles.reasoningTag}>
+                {t('modelCouncil.reasoning')}: {reasoningLabel}
+              </Text>
+            )}
+          </Flexbox>
+          <Flexbox horizontal align={'center'} gap={12}>
+            {extraAction}
+            {hasExpandableContent && (
+              <button className={styles.expandButton} type="button" onClick={onToggleExpand}>
+                <Flexbox horizontal align={'center'} gap={6}>
+                  {t('modelCouncil.viewResponse')}
+                  <Icon icon={ChevronRight} size={14} />
+                </Flexbox>
+              </button>
+            )}
+          </Flexbox>
+        </Flexbox>
+        <Flexbox horizontal align={'center'} gap={8}>
+          {completed ? (
+            <Icon color={theme.colorSuccess} icon={CheckCircle2} size={16} />
+          ) : failed ? (
+            <Icon color={theme.colorWarning} icon={AlertCircle} size={16} />
+          ) : (
+            <Icon spin color={theme.colorTextSecondary} icon={Loader2} size={16} />
+          )}
+          <Text type={'secondary'}>{statusLabel}</Text>
+        </Flexbox>
+        {expanded && (
+          <Flexbox gap={8}>
+            {(reasoningContent || stepItems.length > 0) && (
+              <Flexbox gap={4}>
+                <Text className={styles.sectionLabel}>{t('modelCouncil.reasoning')}</Text>
+                <AutoScrollPanel className={styles.livePanel}>
+                  {stepItems.length > 0 && (
+                    <Flexbox gap={4} style={{ marginBlockEnd: reasoningContent ? 8 : 0 }}>
+                      {collapseSteps(stepItems).map(({ step, count }, stepIndex) => {
+                        const stepText = getStepText(step);
+
+                        return (
+                          <Text key={`step-${stepIndex}`} type={'secondary'}>
+                            {getStepLabel(t, step)}
+                            {stepText ? `: ${stepText}` : ''}
+                            {count > 1 ? ` ×${count}` : ''}
+                          </Text>
+                        );
+                      })}
+                    </Flexbox>
+                  )}
+                  {reasoningContent && <Markdown variant={'chat'}>{reasoningContent}</Markdown>}
+                </AutoScrollPanel>
+              </Flexbox>
+            )}
+            {visibleContent && (
+              <div className={styles.content}>
+                <Markdown variant={'chat'}>{visibleContent}</Markdown>
+              </div>
+            )}
+            {failed && errorDetail && !visibleContent && (
+              <Flexbox gap={4}>
+                <Text className={styles.sectionLabel}>{t('modelCouncil.errorDetail')}</Text>
+                <Text className={styles.content} type={'secondary'}>
+                  {errorDetail}
+                </Text>
+              </Flexbox>
+            )}
+          </Flexbox>
+        )}
+      </Flexbox>
+    );
+  },
+);
+
+CouncilCard.displayName = 'CouncilCard';
+
 const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
   ({ id, embedded, hideJudgeResponse, judgeMessage, judgeStatus }) => {
     const { t } = useTranslation('chat');
-    const { styles, theme } = useStyles();
+    const { styles } = useStyles();
     const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+    const [isRetrying, setIsRetrying] = useState(false);
     const message = useConversationStore(dataSelectors.getDisplayMessageById(id));
     const hasAttachedJudgeMessage = useConversationStore((s) => {
       if (embedded) return false;
@@ -345,6 +477,30 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
     const metadata = (message?.metadata as any) || {};
     const settingsSnapshot = metadata.settingsSnapshot as ModelCouncilSettings | undefined;
     const groupStatus = metadata.status as string | undefined;
+    const groupOperationId = metadata.operationId as string | undefined;
+
+    // Re-attach to a council operation still running server-side (e.g. after an
+    // app reload mid-run). Duplicate attaches are ignored by the chat store.
+    useEffect(() => {
+      if (!message || !groupOperationId) return;
+      if (groupStatus !== 'running' && groupStatus !== 'judging') return;
+
+      useChatStore.getState().resumeModelCouncilStream({
+        groupMessage: message,
+        operationId: groupOperationId,
+      });
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [groupOperationId, groupStatus]);
+
+    const handleRetryMember = (memberMessageId: string) => {
+      if (!message || isRetrying) return;
+      setIsRetrying(true);
+      useChatStore
+        .getState()
+        .retryCouncilMember({ groupMessage: message, memberMessageId })
+        .catch(console.error)
+        .finally(() => setIsRetrying(false));
+    };
 
     const modelDisplayMap = useMemo(() => {
       const map = new Map<string, string>();
@@ -486,12 +642,6 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
           const liveStepStatus =
             !completed && !failed ? getLiveStepStatus(t, stepItems) : undefined;
           const errorMessage = childModel.error?.message;
-          const hasExpandableContent = !!(
-            reasoningContent ||
-            stepItems.length > 0 ||
-            visibleContent ||
-            (failed && errorMessage)
-          );
 
           const failedStatusLabel = timedOut
             ? t('modelCouncil.status.timeout')
@@ -509,91 +659,43 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
             statusLabel = t('modelCouncil.status.completed');
           }
 
+          const canRetry = failed && !hasRunningMember && !isRetrying;
+
           return (
-            <Flexbox className={styles.card} gap={12} key={child.id}>
-              <Flexbox horizontal align={'center'} justify={'space-between'}>
-                <Flexbox horizontal align={'center'} className={styles.pill} gap={8}>
-                  <span className={styles.iconCell}>
-                    <ModelIcon model={modelId || modelLabel} size={16} type={'color'} />
-                  </span>
-                  <Text ellipsis className={styles.titleText}>
-                    {modelLabel}
-                    {!completed && !failed
-                      ? ` ${liveStepStatus ? getStepLabel(t, stepItems.at(-1)) : t('modelCouncil.status.running')}`
-                      : ''}
-                  </Text>
-                  {reasoningLabel && (
-                    <Text className={styles.reasoningTag}>
-                      {t('modelCouncil.reasoning')}: {reasoningLabel}
-                    </Text>
-                  )}
-                </Flexbox>
-                {hasExpandableContent && (
+            <CouncilCard
+              completed={completed}
+              errorDetail={errorMessage}
+              expanded={!!isExpanded}
+              failed={failed}
+              key={child.id}
+              modelIconId={modelId}
+              modelLabel={modelLabel}
+              reasoningContent={reasoningContent}
+              reasoningLabel={reasoningLabel}
+              statusLabel={statusLabel}
+              stepItems={stepItems}
+              visibleContent={visibleContent}
+              extraAction={
+                canRetry ? (
                   <button
                     className={styles.expandButton}
                     type="button"
-                    onClick={() => setExpanded((prev) => ({ ...prev, [child.id]: !isExpanded }))}
+                    onClick={() => handleRetryMember(child.id)}
                   >
                     <Flexbox horizontal align={'center'} gap={6}>
-                      {t('modelCouncil.viewResponse')}
-                      <Icon icon={ChevronRight} size={14} />
+                      <Icon icon={RotateCw} size={13} />
+                      {t('modelCouncil.retry', 'Retry')}
                     </Flexbox>
                   </button>
-                )}
-              </Flexbox>
-              <Flexbox horizontal align={'center'} gap={8}>
-                {completed ? (
-                  <Icon color={theme.colorSuccess} icon={CheckCircle2} size={16} />
-                ) : failed ? (
-                  <Icon color={theme.colorWarning} icon={AlertCircle} size={16} />
-                ) : (
-                  <Icon spin color={theme.colorTextSecondary} icon={Loader2} size={16} />
-                )}
-                <Text type={'secondary'}>{statusLabel}</Text>
-              </Flexbox>
-              {isExpanded && (
-                <Flexbox gap={8}>
-                  {(reasoningContent || stepItems.length > 0) && (
-                    <Flexbox gap={4}>
-                      <Text className={styles.sectionLabel}>{t('modelCouncil.reasoning')}</Text>
-                      <AutoScrollPanel className={styles.livePanel}>
-                        {stepItems.length > 0 && (
-                          <Flexbox gap={4} style={{ marginBlockEnd: reasoningContent ? 8 : 0 }}>
-                            {collapseSteps(stepItems).map(({ step, count }, stepIndex) => {
-                              const stepText = getStepText(step);
-
-                              return (
-                                <Text key={`${child.id}-step-${stepIndex}`} type={'secondary'}>
-                                  {getStepLabel(t, step)}
-                                  {stepText ? `: ${stepText}` : ''}
-                                  {count > 1 ? ` ×${count}` : ''}
-                                </Text>
-                              );
-                            })}
-                          </Flexbox>
-                        )}
-                        {reasoningContent && (
-                          <Markdown variant={'chat'}>{reasoningContent}</Markdown>
-                        )}
-                      </AutoScrollPanel>
-                    </Flexbox>
-                  )}
-                  {visibleContent && (
-                    <div className={styles.content}>
-                      <Markdown variant={'chat'}>{visibleContent}</Markdown>
-                    </div>
-                  )}
-                  {failed && errorMessage && !visibleContent && (
-                    <Flexbox gap={4}>
-                      <Text className={styles.sectionLabel}>{t('modelCouncil.errorDetail')}</Text>
-                      <Text className={styles.content} type={'secondary'}>
-                        {errorMessage}
-                      </Text>
-                    </Flexbox>
-                  )}
-                </Flexbox>
-              )}
-            </Flexbox>
+                ) : undefined
+              }
+              titleSuffix={
+                !completed && !failed
+                  ? ` ${liveStepStatus ? getStepLabel(t, stepItems.at(-1)) : t('modelCouncil.status.running')}`
+                  : ''
+              }
+              onToggleExpand={() => setExpanded((prev) => ({ ...prev, [child.id]: !isExpanded }))}
+            />
           );
         })}
         {(showSynthesisStatus || showJudgeCard) && <div className={styles.phaseDivider} />}
@@ -639,12 +741,6 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
             const judgeLivePreview = !completed && !failed ? judgeReasoning || judgeContent : '';
             const judgeLiveStepStatus =
               !completed && !failed ? getLiveStepStatus(t, judgeSteps) : undefined;
-            const hasJudgeDetail = !!(
-              judgeContent ||
-              judgeReasoning ||
-              judgeLivePreview ||
-              judgeSteps.length > 0
-            );
             let judgeStatusLabel = t('modelCouncil.synthesizing');
             if (judgeLiveStepStatus) {
               judgeStatusLabel = judgeLiveStepStatus;
@@ -659,77 +755,20 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
             }
 
             return (
-              <Flexbox className={styles.card} gap={12} key={judge.id}>
-                <Flexbox horizontal align={'center'} justify={'space-between'}>
-                  <Flexbox horizontal align={'center'} className={styles.pill} gap={8}>
-                    <span className={styles.iconCell}>
-                      <ModelIcon model={modelId || modelLabel} size={16} type={'color'} />
-                    </span>
-                    <Text ellipsis className={styles.titleText}>
-                      {modelLabel}
-                    </Text>
-                    {reasoningLabel && (
-                      <Text className={styles.reasoningTag}>
-                        {t('modelCouncil.reasoning')}: {reasoningLabel}
-                      </Text>
-                    )}
-                  </Flexbox>
-                  {hasJudgeDetail && (
-                    <button
-                      className={styles.expandButton}
-                      type="button"
-                      onClick={() => setExpanded((prev) => ({ ...prev, [judge.id]: !isExpanded }))}
-                    >
-                      <Flexbox horizontal align={'center'} gap={6}>
-                        {t('modelCouncil.viewResponse')}
-                        <Icon icon={ChevronRight} size={14} />
-                      </Flexbox>
-                    </button>
-                  )}
-                </Flexbox>
-                <Flexbox horizontal align={'center'} gap={8}>
-                  {completed ? (
-                    <Icon color={theme.colorSuccess} icon={CheckCircle2} size={16} />
-                  ) : failed ? (
-                    <Icon color={theme.colorWarning} icon={AlertCircle} size={16} />
-                  ) : (
-                    <Icon spin color={theme.colorTextSecondary} icon={Loader2} size={16} />
-                  )}
-                  <Text type={'secondary'}>{judgeStatusLabel}</Text>
-                </Flexbox>
-                {isExpanded && (
-                  <Flexbox gap={8}>
-                    {(judgeReasoning || judgeSteps.length > 0) && (
-                      <Flexbox gap={4}>
-                        <Text className={styles.sectionLabel}>{t('modelCouncil.reasoning')}</Text>
-                        <AutoScrollPanel className={styles.livePanel}>
-                          {judgeSteps.length > 0 && (
-                            <Flexbox gap={4} style={{ marginBlockEnd: judgeReasoning ? 8 : 0 }}>
-                              {collapseSteps(judgeSteps).map(({ step, count }, stepIndex) => {
-                                const stepText = getStepText(step);
-
-                                return (
-                                  <Text key={`${judge.id}-step-${stepIndex}`} type={'secondary'}>
-                                    {getStepLabel(t, step)}
-                                    {stepText ? `: ${stepText}` : ''}
-                                    {count > 1 ? ` ×${count}` : ''}
-                                  </Text>
-                                );
-                              })}
-                            </Flexbox>
-                          )}
-                          {judgeReasoning && <Markdown variant={'chat'}>{judgeReasoning}</Markdown>}
-                        </AutoScrollPanel>
-                      </Flexbox>
-                    )}
-                    {judgeContent && (
-                      <div className={styles.content}>
-                        <Markdown variant={'chat'}>{judgeContent}</Markdown>
-                      </div>
-                    )}
-                  </Flexbox>
-                )}
-              </Flexbox>
+              <CouncilCard
+                completed={completed}
+                expanded={!!isExpanded}
+                failed={failed}
+                key={judge.id}
+                modelIconId={modelId}
+                modelLabel={modelLabel}
+                reasoningContent={judgeReasoning}
+                reasoningLabel={reasoningLabel}
+                statusLabel={judgeStatusLabel}
+                stepItems={judgeSteps}
+                visibleContent={judgeContent}
+                onToggleExpand={() => setExpanded((prev) => ({ ...prev, [judge.id]: !isExpanded }))}
+              />
             );
           })()}
         {!hideJudgeResponse && judgeVisibleContent && (

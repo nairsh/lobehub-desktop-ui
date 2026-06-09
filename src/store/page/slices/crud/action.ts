@@ -18,7 +18,7 @@ const EDITOR_PAGE_FILE_TYPE = 'custom/document';
  * Page update parameters - flattened for easier use
  */
 export interface PageUpdateParams {
-  emoji?: string;
+  emoji?: string | null;
   title?: string;
 }
 
@@ -250,11 +250,16 @@ export class CrudActionImpl {
     this.#get().internal_dispatchDocuments({ id: tempId, type: 'removeDocument' });
   };
 
-  renamePage = async (pageId: string, title: string, emoji?: string): Promise<void> => {
+  renamePage = async (pageId: string, title: string, emoji?: string | null): Promise<void> => {
     const { updatePageOptimistically } = this.#get();
+    const updates: PageUpdateParams = { title };
+
+    if (emoji !== undefined) {
+      updates.emoji = emoji;
+    }
 
     try {
-      await updatePageOptimistically(pageId, { emoji, title });
+      await updatePageOptimistically(pageId, updates);
     } catch (error) {
       console.error('Failed to rename page:', error);
     } finally {
@@ -300,7 +305,7 @@ export class CrudActionImpl {
     // Build updated metadata with emoji
     const updatedMetadata = {
       ...existingPage.metadata,
-      ...(updates.emoji !== undefined ? { emoji: updates.emoji } : {}),
+      ...('emoji' in updates ? { emoji: updates.emoji ?? undefined } : {}),
     };
 
     // Clean up undefined values from metadata

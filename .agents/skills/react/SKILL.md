@@ -35,15 +35,15 @@ Reference: `node_modules/@lobehub/ui/es/index.mjs` for all available components.
 
 Hybrid routing: Next.js App Router (static pages) + React Router DOM (main SPA).
 
-| Route Type         | Use Case                          | Implementation                                                               |
-| ------------------ | --------------------------------- | ---------------------------------------------------------------------------- |
-| Next.js App Router | Auth pages (login, signup, oauth) | `src/app/[variants]/(auth)/`                                                 |
-| React Router DOM   | Main SPA (chat, settings)         | `desktopRouter.config.tsx` + `desktopRouter.config.desktop.tsx` (must match) |
+| Route Type         | Use Case                          | Implementation                                        |
+| ------------------ | --------------------------------- | ----------------------------------------------------- |
+| Next.js App Router | Auth pages (login, signup, oauth) | `src/app/[variants]/(auth)/`                          |
+| React Router DOM   | Main SPA (chat, settings)         | `desktopRouter.routes.tsx` (single shared route tree) |
 
 ### Key Files
 
 - Entry: `src/spa/entry.web.tsx` (web), `src/spa/entry.mobile.tsx`, `src/spa/entry.desktop.tsx`
-- Desktop router (pair — **always edit both** when changing routes): `src/spa/router/desktopRouter.config.tsx` (dynamic imports) and `src/spa/router/desktopRouter.config.desktop.tsx` (sync imports). Drift can cause unregistered routes / blank screen.
+- Desktop router: all routes live in `src/spa/router/desktopRouter.routes.tsx` (lazy imports). The two `desktopRouter.config*` files are thin re-exports — never define routes in them (drift causes unregistered routes / blank screen).
 - Mobile router: `src/spa/router/mobileRouter.config.tsx`
 - Router utilities: `src/utils/router.tsx`
 
@@ -55,8 +55,9 @@ Known pairs that must stay in sync:
 
 | Base file (web, dynamic imports)                      | Desktop file (Electron, sync imports)                         |
 | ----------------------------------------------------- | ------------------------------------------------------------- |
-| `src/spa/router/desktopRouter.config.tsx`             | `src/spa/router/desktopRouter.config.desktop.tsx`             |
 | `src/routes/(main)/settings/features/componentMap.ts` | `src/routes/(main)/settings/features/componentMap.desktop.ts` |
+
+(The `desktopRouter.config` pair no longer needs manual syncing — both files are thin re-exports of `desktopRouter.routes.tsx`.)
 
 **How to check**: After editing any `.ts` / `.tsx` file, run `Glob` for `<filename>.desktop.{ts,tsx}` in the same directory. If a match exists, update it with the equivalent sync-import change.
 

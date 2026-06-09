@@ -18,6 +18,7 @@ const Page = () => {
   return (
     <>
       <SettingHeader title={t('tab.serviceModel')} />
+      <SystemAgentForm systemAgentKey="pageAgent" />
       <SystemAgentForm systemAgentKey="topic" />
       <SystemAgentForm systemAgentKey="generationTopic" />
       <SystemAgentForm systemAgentKey="translation" />

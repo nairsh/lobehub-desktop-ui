@@ -23,17 +23,17 @@ const Editing = memo<EditingProps>(({ documentId, title, currentEmoji, toggleEdi
   const editing = usePageStore((s) => s.renamingPageId === documentId);
 
   const [newTitle, setNewTitle] = useState(title);
-  const [newEmoji, setNewEmoji] = useState(currentEmoji);
+  const [newEmoji, setNewEmoji] = useState<string | null>(currentEmoji ?? null);
 
   const handleUpdate = useCallback(async () => {
-    const hasChanges =
-      (newTitle && title !== newTitle) || (newEmoji !== undefined && currentEmoji !== newEmoji);
+    const currentEmojiValue = currentEmoji ?? null;
+    const hasChanges = (newTitle && title !== newTitle) || currentEmojiValue !== newEmoji;
 
     if (hasChanges) {
       try {
-        const updates: { emoji?: string; title?: string } = {};
+        const updates: { emoji?: string | null; title?: string } = {};
         if (newTitle && title !== newTitle) updates.title = newTitle;
-        if (newEmoji !== undefined && currentEmoji !== newEmoji) updates.emoji = newEmoji;
+        if (currentEmojiValue !== newEmoji) updates.emoji = newEmoji;
 
         await usePageStore.getState().renamePage(documentId, updates.title || title, updates.emoji);
       } catch (error) {
@@ -54,7 +54,7 @@ const Editing = memo<EditingProps>(({ documentId, title, currentEmoji, toggleEdi
             allowDelete
             defaultAvatar={'📄'}
             locale={locale}
-            value={newEmoji}
+            value={newEmoji ?? undefined}
             customRender={(emoji) => (
               <Block
                 clickable
@@ -72,9 +72,9 @@ const Editing = memo<EditingProps>(({ documentId, title, currentEmoji, toggleEdi
                 )}
               </Block>
             )}
-            onChange={setNewEmoji}
+            onChange={(emoji) => setNewEmoji(emoji ?? null)}
             onClick={(e) => e?.stopPropagation()}
-            onDelete={() => setNewEmoji(undefined)}
+            onDelete={() => setNewEmoji(null)}
           />
           <Input
             autoFocus

@@ -1,7 +1,7 @@
 'use client';
 
 import { Block, Icon, Text } from '@lobehub/ui';
-import { Dropdown } from 'antd';
+import { Dropdown, Modal } from 'antd';
 import { createStaticStyles, cssVar } from 'antd-style';
 import { BookmarkIcon, EditIcon, FolderIcon, TrashIcon } from 'lucide-react';
 import { memo, useCallback } from 'react';
@@ -25,6 +25,7 @@ interface ProjectItemProps {
 
 const ProjectItem = memo<ProjectItemProps>(({ project }) => {
   const { t } = useTranslation('project');
+  const { t: tCommon } = useTranslation('common');
   const navigate = useNavigate();
   const { open: openModal } = useProjectModal();
 
@@ -48,9 +49,18 @@ const ProjectItem = memo<ProjectItemProps>(({ project }) => {
     });
   }, [project, openModal]);
 
-  const handleDelete = useCallback(async () => {
-    await deleteProject(project.id);
-  }, [project.id, deleteProject]);
+  const handleDelete = useCallback(() => {
+    Modal.confirm({
+      cancelText: tCommon('cancel'),
+      content: t('deleteConfirm'),
+      okText: tCommon('delete'),
+      okType: 'danger',
+      onOk: async () => {
+        await deleteProject(project.id);
+      },
+      title: t('deleteProject'),
+    });
+  }, [project.id, deleteProject, t, tCommon]);
 
   return (
     <Dropdown
@@ -102,9 +112,9 @@ const ProjectItem = memo<ProjectItemProps>(({ project }) => {
             className={styles.pinIcon}
             color={cssVar.colorWarning}
             fill={cssVar.colorWarning}
-            flex={'none'}
             icon={BookmarkIcon}
             size={12}
+            style={{ flex: 'none' }}
           />
         )}
       </Block>

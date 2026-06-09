@@ -6,6 +6,8 @@ import { getChatGroupStoreState } from '@/store/agentGroup';
 import { useChatStore } from '@/store/chat';
 import { type HomeStore } from '@/store/home/store';
 import { type StoreSetter } from '@/store/types';
+import { getUserStoreState } from '@/store/user';
+import { settingsSelectors } from '@/store/user/selectors';
 import { getStableNavigate } from '@/utils/stableNavigate';
 import { setNamespace } from '@/utils/storeDebug';
 
@@ -164,13 +166,10 @@ export class HomeInputActionImpl {
     try {
       const agentState = getAgentStoreState();
 
-      // 1. Get model/provider config from inbox agent
-      const inboxAgentId = builtinAgentSelectors.inboxAgentId(agentState);
-      const inboxConfig = inboxAgentId
-        ? agentSelectors.getAgentConfigById(inboxAgentId)(agentState)
-        : null;
-      const model = inboxConfig?.model;
-      const provider = inboxConfig?.provider;
+      // 1. Get model/provider config from the dedicated Page AI service model
+      const pageAgentModel = settingsSelectors.currentSystemAgent(getUserStoreState()).pageAgent;
+      const model = pageAgentModel?.model;
+      const provider = pageAgentModel?.provider;
 
       // 2. Create new Document
       const newDoc = await documentService.createDocument({
@@ -186,7 +185,6 @@ export class HomeInputActionImpl {
       const pageAgentId = builtinAgentSelectors.pageAgentId(agentState);
 
       if (pageAgentId) {
-        // Update pageAgent's model to match inbox selection
         if (model && provider) {
           await agentState.updateAgentConfigById(pageAgentId, { model, provider });
         }

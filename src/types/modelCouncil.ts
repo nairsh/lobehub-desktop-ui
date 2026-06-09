@@ -20,6 +20,8 @@ export interface ModelCouncilSettings {
   maxModels?: number;
   perModelTimeoutMs?: number;
   showIntermediates?: 'collapsed' | 'expanded';
+  /** Which council roles may use web search. Search adds significant latency per member. */
+  webSearch?: 'all' | 'judge' | 'off';
 }
 
 export interface ModelCouncilStartPayload {

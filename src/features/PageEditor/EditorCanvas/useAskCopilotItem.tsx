@@ -1,56 +1,97 @@
 'use client';
 
-import { DEFAULT_INBOX_AVATAR } from '@lobechat/const';
 import { nanoid } from '@lobechat/utils';
 import { type IEditor } from '@lobehub/editor';
-import { HIDE_TOOLBAR_COMMAND } from '@lobehub/editor';
 import { type ChatInputActionsProps } from '@lobehub/editor/react';
-import { Avatar, Block } from '@lobehub/ui';
 import { createStaticStyles, cssVar } from 'antd-style';
+import { SparklesIcon } from 'lucide-react';
+import { type MouseEvent } from 'react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-
-import { useFileStore } from '@/store/file';
-import { useGlobalStore } from '@/store/global';
 
 import { usePageEditorStore } from '../store';
 
 const styles = createStaticStyles(({ css }) => ({
   askCopilot: css`
+    cursor: pointer;
+
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+
+    width: 100%;
+    height: 28px;
+    padding-inline: 7px 6px;
+    border: 1px solid color-mix(in srgb, ${cssVar.colorBorder} 72%, transparent);
     border-radius: 6px;
-    color: ${cssVar.colorTextDescription};
+
+    font-size: 12px;
+    font-weight: 400;
+    color: ${cssVar.colorTextSecondary};
+    white-space: nowrap;
+
+    background: color-mix(in srgb, ${cssVar.colorBgElevated} 92%, ${cssVar.colorText} 8%);
 
     &:hover {
-      color: ${cssVar.colorTextSecondary};
+      border-color: color-mix(in srgb, ${cssVar.colorBorder} 52%, ${cssVar.colorText});
+      color: ${cssVar.colorText};
+      background: color-mix(in srgb, ${cssVar.colorBgElevated} 88%, ${cssVar.colorText} 12%);
     }
+  `,
+  askCopilotIcon: css`
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+
+    width: 15px;
+    height: 15px;
+
+    color: ${cssVar.colorTextTertiary};
+  `,
+  shortcut: css`
+    margin-inline-start: auto;
+
+    font-size: 11px;
+    font-weight: 500;
+    color: ${cssVar.colorTextQuaternary};
+    white-space: nowrap;
   `,
 }));
 
+const preventToolbarMouseDown = (event: MouseEvent<HTMLButtonElement>) => {
+  event.preventDefault();
+  event.stopPropagation();
+};
+
 export const useAskCopilotItem = (editor: IEditor | undefined): ChatInputActionsProps['items'] => {
   const { t } = useTranslation('common');
-  const addSelectionContext = useFileStore((s) => s.addChatContextSelection);
   const pageId = usePageEditorStore((s) => s.documentId);
+  const setAiIsland = usePageEditorStore((s) => s.setAiIsland);
 
   return useMemo(() => {
     if (!editor) return [];
 
-    const label = t('cmdk.askLobeAI');
+    const label = t('cmdk.editWithAI');
 
     return [
       {
         children: (
-          <Block
-            clickable
-            horizontal
-            align="center"
+          <button
+            aria-label={label}
             className={styles.askCopilot}
-            gap={8}
-            paddingBlock={6}
-            paddingInline={12}
-            variant="borderless"
+            type="button"
+            onMouseDown={preventToolbarMouseDown}
             onClick={() => {
-              const xml = (editor.getSelectionDocument?.('litexml') as string) || '';
-              const plainText = (editor.getSelectionDocument?.('text') as string) || '';
+              const getDoc = (type: string) => {
+                try {
+                  return (editor.getSelectionDocument?.(type) as string) || '';
+                } catch {
+                  return '';
+                }
+              };
+              const xml = getDoc('litexml');
+              const plainText = getDoc('text');
               const content = xml.trim() || plainText.trim();
 
               if (!content) return;
@@ -62,43 +103,44 @@ export const useAskCopilotItem = (editor: IEditor | undefined): ChatInputActions
                   .replaceAll(/\s+/g, ' ')
                   .trim() || undefined;
 
-              // Store action handles deduplication
-              addSelectionContext({
+              const rangeRect = (() => {
+                const selection = window.getSelection();
+                if (!selection || selection.rangeCount === 0) return undefined;
+
+                const rect = selection.getRangeAt(0).getBoundingClientRect();
+                if (rect.width || rect.height) return rect;
+
+                return undefined;
+              })();
+
+              setAiIsland({
                 content,
                 format,
                 id: `selection-${nanoid(6)}`,
                 pageId,
                 preview,
-                title: 'Selection',
-                type: 'text',
+                rect: {
+                  left: rangeRect?.left ?? window.innerWidth / 2 - 180,
+                  top: (rangeRect?.bottom ?? 160) + 12,
+                  width: rangeRect?.width ?? 360,
+                },
               });
 
-              // Open right panel if not opened
-              useGlobalStore.getState().toggleRightPanel(true);
-
-              // Focus on chat input after a short delay to ensure panel is opened
-              setTimeout(() => {
-                // Find the chat input editor within the right panel
-                // Query all lexical editors and get the last one (which should be the chat input)
-                const allEditors = [...document.querySelectorAll('[data-lexical-editor="true"]')];
-                const chatInputEditor = allEditors.at(-1) as HTMLElement;
-                if (chatInputEditor) {
-                  chatInputEditor.focus();
-                }
-              }, 300);
-
-              editor.dispatchCommand(HIDE_TOOLBAR_COMMAND, undefined);
-              editor.blur();
+              window.getSelection()?.removeAllRanges();
+              document.dispatchEvent(new Event('page-editor-hide-selection-toolbar'));
             }}
           >
-            <Avatar avatar={DEFAULT_INBOX_AVATAR} shape="square" size={16} />
+            <span className={styles.askCopilotIcon}>
+              <SparklesIcon size={13} />
+            </span>
             <span>{label}</span>
-          </Block>
+            <span className={styles.shortcut}>{t('cmdk.editWithAIShortcut', '⌘⌃E')}</span>
+          </button>
         ),
         key: 'ask-copilot',
         label,
         onClick: () => {},
       },
     ];
-  }, [addSelectionContext, editor, pageId, t]);
+  }, [editor, pageId, setAiIsland, t]);
 };

@@ -25,6 +25,7 @@ const DEFAULT_COUNCIL: ModelCouncilSettings = {
   perModelTimeoutMs: 90_000,
   judgeTimeoutMs: 120_000,
   showIntermediates: 'collapsed',
+  webSearch: 'judge',
 };
 
 const DEFAULT_PERSONALITY_IDS = [
@@ -374,6 +375,21 @@ const Page = memo(() => {
                 ),
                 desc: t('modelCouncil.settings.judge.desc'),
                 label: t('modelCouncil.settings.judge.title'),
+              },
+              {
+                children: (
+                  <Select
+                    value={council.webSearch || 'judge'}
+                    options={[
+                      { label: t('modelCouncil.settings.webSearch.judge'), value: 'judge' },
+                      { label: t('modelCouncil.settings.webSearch.all'), value: 'all' },
+                      { label: t('modelCouncil.settings.webSearch.off'), value: 'off' },
+                    ]}
+                    onChange={(webSearch) => save({ ...council, webSearch })}
+                  />
+                ),
+                desc: t('modelCouncil.settings.webSearch.desc'),
+                label: t('modelCouncil.settings.webSearch.title'),
               },
             ],
             title: (

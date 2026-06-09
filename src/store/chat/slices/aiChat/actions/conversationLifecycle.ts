@@ -125,7 +125,9 @@ const getCurrentModelCouncilSettings = () =>
     | ModelCouncilSettings
     | undefined;
 
-const seedModelCouncilSearchSteps = (messages: any[], _prompt: string) => messages;
+// Guards against attaching two SSE connections to the same council operation
+// (e.g. the send flow and the on-mount resume effect racing each other).
+const activeModelCouncilStreams = new Set<string>();
 
 const isTerminalStatus = (status?: string) =>
   status === 'completed' || status === 'failed' || status === 'timeout' || status === 'canceled';
@@ -204,6 +206,302 @@ export class ConversationLifecycleActionImpl {
     void set;
     this.#get = get;
   }
+
+  /**
+   * Attach an SSE connection for a Model Council operation and mirror its
+   * events into the message map. Used by the send flow, the on-mount resume
+   * (after a reload while a council is still running server-side), and member
+   * retry.
+   */
+  internal_attachModelCouncilStream = (params: {
+    context: any;
+    /** attach even if a connection for this operation is already registered */
+    force?: boolean;
+    isCouncilNewTopic?: boolean;
+    messageGroupId?: string;
+    /** client operation id used to scope dispatches (send flow only) */
+    scopeOperationId?: string;
+    seededMessages: any[];
+    serverOperationId: string;
+    topicId?: string | null;
+  }) => {
+    const {
+      context,
+      force,
+      isCouncilNewTopic,
+      messageGroupId,
+      scopeOperationId,
+      seededMessages,
+      serverOperationId,
+      topicId,
+    } = params;
+
+    if (!force && activeModelCouncilStreams.has(serverOperationId)) return;
+    activeModelCouncilStreams.add(serverOperationId);
+
+    const scope = scopeOperationId ? { operationId: scopeOperationId } : undefined;
+
+    const contentByMessageId = new Map<string, string>();
+    const reasoningByMessageId = new Map<string, string>();
+    const statusByMessageId = new Map<string, string>();
+    const stepsByMessageId = new Map<string, any[]>();
+    const modelCouncilMessageIds = seededMessages.flatMap((item) =>
+      collectModelCouncilMessageIds(item),
+    );
+    for (const item of seededMessages) {
+      for (const [messageId, steps] of collectModelCouncilSteps(item)) {
+        stepsByMessageId.set(messageId, steps);
+      }
+    }
+
+    agentRuntimeClient.createStreamConnection(serverOperationId, {
+      includeHistory: true,
+      onDisconnect: async () => {
+        activeModelCouncilStreams.delete(serverOperationId);
+        if (topicId) this.#get().internal_updateTopicLoading(topicId, false);
+        await this.#get().refreshMessages(context);
+
+        // Auto-generate title for newly created Model Council topics.
+        // Must run after refreshMessages so the DB messages are available.
+        if (isCouncilNewTopic && topicId) {
+          messageService
+            .getMessages(context)
+            .then((msgs) => this.#get().summaryTopicTitle(topicId, msgs))
+            .catch(console.error);
+        }
+      },
+      onError: (error) => {
+        activeModelCouncilStreams.delete(serverOperationId);
+        if (topicId) this.#get().internal_updateTopicLoading(topicId, false);
+
+        const message =
+          error instanceof Error ? error.message : t('error.unknownError', 'Stream error');
+
+        for (const messageId of modelCouncilMessageIds) {
+          if (isTerminalStatus(statusByMessageId.get(messageId))) continue;
+
+          statusByMessageId.set(messageId, 'failed');
+          this.#get().internal_dispatchMessage(
+            {
+              id: messageId,
+              type: 'updateMessage',
+              value: {
+                error: {
+                  message,
+                  type: 'ModelCouncilStreamError' as any,
+                },
+                metadata: {
+                  modelCouncil: {
+                    status: 'failed',
+                    steps: stepsByMessageId.get(messageId),
+                  },
+                } as any,
+              },
+            },
+            scope,
+          );
+        }
+
+        if (messageGroupId) {
+          this.#get().internal_dispatchMessage(
+            {
+              id: messageGroupId,
+              type: 'updateMessageGroupMetadata',
+              value: { status: 'failed' },
+            },
+            scope,
+          );
+        }
+      },
+      onEvent: (event: any) => {
+        const eventData = event.data || {};
+        switch (event.type) {
+          case 'model_council_member_chunk':
+          case 'model_council_judge_chunk': {
+            const messageId = eventData.messageId;
+            if (!messageId) return;
+
+            const reasoningDelta =
+              eventData.reasoning ||
+              eventData.thinking ||
+              (eventData.chunkType === 'reasoning' ? eventData.text : undefined);
+            const textDelta = eventData.chunkType === 'reasoning' ? undefined : eventData.text;
+
+            const value: Record<string, any> = {
+              metadata: { modelCouncil: { status: 'running' } },
+            };
+
+            if (textDelta) {
+              const nextContent = `${contentByMessageId.get(messageId) || ''}${textDelta}`;
+              contentByMessageId.set(messageId, nextContent);
+              value.content = nextContent;
+            }
+
+            if (reasoningDelta) {
+              const nextReasoning = `${reasoningByMessageId.get(messageId) || ''}${reasoningDelta}`;
+              reasoningByMessageId.set(messageId, nextReasoning);
+              value.reasoning = { content: nextReasoning };
+            }
+
+            this.#get().internal_dispatchMessage(
+              { id: messageId, type: 'updateMessage', value },
+              scope,
+            );
+            return;
+          }
+          case 'model_council_member_step':
+          case 'model_council_judge_step': {
+            const messageId = eventData.messageId;
+            if (!messageId) return;
+
+            const step = {
+              at: Date.now(),
+              grounding: eventData.grounding,
+              stepType: eventData.stepType,
+              toolsCalling: eventData.toolsCalling,
+            };
+            const currentSteps = stepsByMessageId.get(messageId) || [];
+            const nextSteps = mergeModelCouncilStep(currentSteps, step);
+            stepsByMessageId.set(messageId, nextSteps);
+
+            this.#get().internal_dispatchMessage(
+              {
+                id: messageId,
+                type: 'updateMessage',
+                value: {
+                  metadata: {
+                    modelCouncil: {
+                      status: statusByMessageId.get(messageId) || 'running',
+                      steps: nextSteps,
+                    },
+                  } as any,
+                },
+              },
+              scope,
+            );
+            return;
+          }
+          case 'model_council_member_end':
+          case 'model_council_judge_end': {
+            const messageId = eventData.messageId;
+            if (!messageId) return;
+            const content = eventData.content || contentByMessageId.get(messageId) || '';
+            const reasoning = eventData.reasoning || reasoningByMessageId.get(messageId);
+            const steps = stepsByMessageId.get(messageId);
+            contentByMessageId.set(messageId, content);
+            statusByMessageId.set(messageId, 'completed');
+            this.#get().internal_dispatchMessage(
+              {
+                id: messageId,
+                type: 'updateMessage',
+                value: {
+                  content,
+                  reasoning: reasoning ? { content: reasoning } : undefined,
+                  metadata: {
+                    modelCouncil: {
+                      status: 'completed',
+                      steps,
+                      usage: eventData.usage,
+                    },
+                  } as any,
+                },
+              },
+              scope,
+            );
+            return;
+          }
+          case 'model_council_member_error': {
+            const messageId = eventData.messageId;
+            if (!messageId) return;
+            statusByMessageId.set(messageId, eventData.status || 'failed');
+            this.#get().internal_dispatchMessage(
+              {
+                id: messageId,
+                type: 'updateMessage',
+                value: {
+                  error: {
+                    message: eventData.message,
+                    type: 'ModelCouncilMemberError' as any,
+                  },
+                  metadata: { modelCouncil: { status: eventData.status || 'failed' } } as any,
+                },
+              },
+              scope,
+            );
+            return;
+          }
+          case 'model_council_judge_start': {
+            const messageId = eventData.messageId;
+            if (!messageId) return;
+            this.#get().internal_dispatchMessage(
+              {
+                id: messageId,
+                type: 'updateMessage',
+                value: { metadata: { modelCouncil: { status: 'running' } } as any },
+              },
+              scope,
+            );
+            if (eventData.groupId) {
+              this.#get().internal_dispatchMessage(
+                {
+                  id: eventData.groupId,
+                  type: 'updateMessageGroupMetadata',
+                  value: { status: 'judging' },
+                },
+                scope,
+              );
+            }
+            return;
+          }
+          case 'model_council_end': {
+            if (!eventData.groupId) return;
+            this.#get().internal_dispatchMessage(
+              {
+                id: eventData.groupId,
+                type: 'updateMessageGroupMetadata',
+                value: {
+                  members: eventData.members,
+                  status: eventData.status || 'completed',
+                },
+              },
+              scope,
+            );
+            return;
+          }
+        }
+      },
+    });
+  };
+
+  /**
+   * Re-attach to a council operation that is still running server-side after
+   * an app reload. Safe to call repeatedly — duplicate attaches are ignored.
+   */
+  resumeModelCouncilStream = (params: { groupMessage: any; operationId: string }) => {
+    const context = this.#get().internal_getConversationContext();
+    this.internal_attachModelCouncilStream({
+      context,
+      messageGroupId: params.groupMessage?.id,
+      seededMessages: [params.groupMessage],
+      serverOperationId: params.operationId,
+      topicId: params.groupMessage?.topicId ?? context.topicId,
+    });
+  };
+
+  retryCouncilMember = async (params: { groupMessage: any; memberMessageId: string }) => {
+    const result = await modelCouncilService.retryMember(params.memberMessageId);
+    const context = this.#get().internal_getConversationContext();
+    this.internal_attachModelCouncilStream({
+      context,
+      force: true,
+      messageGroupId: result.messageGroupId,
+      seededMessages: [params.groupMessage],
+      serverOperationId: result.operationId,
+      topicId: params.groupMessage?.topicId ?? context.topicId,
+    });
+    if (params.groupMessage?.topicId)
+      this.#get().internal_updateTopicLoading(params.groupMessage.topicId, true);
+  };
 
   sendMessage = async ({
     message,
@@ -553,7 +851,7 @@ export class ConversationLifecycleActionImpl {
           });
         }
 
-        const seededMessages = seedModelCouncilSearchSteps(data.messages || [], message);
+        const seededMessages = data.messages || [];
 
         this.#get().replaceMessages(seededMessages, {
           context: finalContext,
@@ -570,230 +868,15 @@ export class ConversationLifecycleActionImpl {
         this.#get().completeOperation(operationId);
         if (data.topicId) this.#get().internal_updateTopicLoading(data.topicId, true);
 
-        const contentByMessageId = new Map<string, string>();
-        const reasoningByMessageId = new Map<string, string>();
-        const statusByMessageId = new Map<string, string>();
-        const stepsByMessageId = new Map<string, any[]>();
-        const modelCouncilMessageIds = seededMessages.flatMap((item) =>
-          collectModelCouncilMessageIds(item),
-        );
-        for (const item of seededMessages) {
-          for (const [messageId, steps] of collectModelCouncilSteps(item)) {
-            stepsByMessageId.set(messageId, steps);
-          }
-        }
-        agentRuntimeClient.createStreamConnection(data.operationId, {
-          includeHistory: true,
-          onDisconnect: async () => {
-            if (data.topicId) this.#get().internal_updateTopicLoading(data.topicId, false);
-            await this.#get().refreshMessages(finalContext);
-
-            // Auto-generate title for newly created Model Council topics.
-            // Must run after refreshMessages so the DB messages are available.
-            if (isCouncilNewTopic && data.topicId) {
-              messageService
-                .getMessages(finalContext)
-                .then((msgs) => this.#get().summaryTopicTitle(data.topicId, msgs))
-                .catch(console.error);
-            }
-          },
-          onError: (error) => {
-            if (data.topicId) this.#get().internal_updateTopicLoading(data.topicId, false);
-
-            const message =
-              error instanceof Error ? error.message : t('error.unknownError', 'Stream error');
-
-            for (const messageId of modelCouncilMessageIds) {
-              if (isTerminalStatus(statusByMessageId.get(messageId))) continue;
-
-              statusByMessageId.set(messageId, 'failed');
-              this.#get().internal_dispatchMessage(
-                {
-                  id: messageId,
-                  type: 'updateMessage',
-                  value: {
-                    error: {
-                      message,
-                      type: 'ModelCouncilStreamError' as any,
-                    },
-                    metadata: {
-                      modelCouncil: {
-                        status: 'failed',
-                        steps: stepsByMessageId.get(messageId),
-                      },
-                    } as any,
-                  },
-                },
-                { operationId },
-              );
-            }
-
-            this.#get().internal_dispatchMessage(
-              {
-                id: data.assistantMessageId,
-                type: 'updateMessageGroupMetadata',
-                value: { status: 'failed' },
-              },
-              { operationId },
-            );
-          },
-          onEvent: (event: any) => {
-            const eventData = event.data || {};
-            switch (event.type) {
-              case 'model_council_member_chunk':
-              case 'model_council_judge_chunk': {
-                const messageId = eventData.messageId;
-                if (!messageId) return;
-
-                const reasoningDelta =
-                  eventData.reasoning ||
-                  eventData.thinking ||
-                  (eventData.chunkType === 'reasoning' ? eventData.text : undefined);
-                const textDelta = eventData.chunkType === 'reasoning' ? undefined : eventData.text;
-
-                const value: Record<string, any> = {
-                  metadata: { modelCouncil: { status: 'running' } },
-                };
-
-                if (textDelta) {
-                  const nextContent = `${contentByMessageId.get(messageId) || ''}${textDelta}`;
-                  contentByMessageId.set(messageId, nextContent);
-                  value.content = nextContent;
-                }
-
-                if (reasoningDelta) {
-                  const nextReasoning = `${reasoningByMessageId.get(messageId) || ''}${reasoningDelta}`;
-                  reasoningByMessageId.set(messageId, nextReasoning);
-                  value.reasoning = { content: nextReasoning };
-                }
-
-                this.#get().internal_dispatchMessage(
-                  { id: messageId, type: 'updateMessage', value },
-                  { operationId },
-                );
-                return;
-              }
-              case 'model_council_member_step':
-              case 'model_council_judge_step': {
-                const messageId = eventData.messageId;
-                if (!messageId) return;
-
-                const step = {
-                  at: Date.now(),
-                  grounding: eventData.grounding,
-                  stepType: eventData.stepType,
-                  toolsCalling: eventData.toolsCalling,
-                };
-                const currentSteps = stepsByMessageId.get(messageId) || [];
-                const nextSteps = mergeModelCouncilStep(currentSteps, step);
-                stepsByMessageId.set(messageId, nextSteps);
-
-                this.#get().internal_dispatchMessage(
-                  {
-                    id: messageId,
-                    type: 'updateMessage',
-                    value: {
-                      metadata: {
-                        modelCouncil: {
-                          status: statusByMessageId.get(messageId) || 'running',
-                          steps: nextSteps,
-                        },
-                      } as any,
-                    },
-                  },
-                  { operationId },
-                );
-                return;
-              }
-              case 'model_council_member_end':
-              case 'model_council_judge_end': {
-                const messageId = eventData.messageId;
-                if (!messageId) return;
-                const content = eventData.content || contentByMessageId.get(messageId) || '';
-                const reasoning = eventData.reasoning || reasoningByMessageId.get(messageId);
-                const steps = stepsByMessageId.get(messageId);
-                contentByMessageId.set(messageId, content);
-                statusByMessageId.set(messageId, 'completed');
-                this.#get().internal_dispatchMessage(
-                  {
-                    id: messageId,
-                    type: 'updateMessage',
-                    value: {
-                      content,
-                      reasoning: reasoning ? { content: reasoning } : undefined,
-                      metadata: {
-                        modelCouncil: {
-                          status: 'completed',
-                          steps,
-                          usage: eventData.usage,
-                        },
-                      } as any,
-                    },
-                  },
-                  { operationId },
-                );
-                return;
-              }
-              case 'model_council_member_error': {
-                const messageId = eventData.messageId;
-                if (!messageId) return;
-                statusByMessageId.set(messageId, eventData.status || 'failed');
-                this.#get().internal_dispatchMessage(
-                  {
-                    id: messageId,
-                    type: 'updateMessage',
-                    value: {
-                      error: {
-                        message: eventData.message,
-                        type: 'ModelCouncilMemberError' as any,
-                      },
-                      metadata: { modelCouncil: { status: eventData.status || 'failed' } } as any,
-                    },
-                  },
-                  { operationId },
-                );
-                return;
-              }
-              case 'model_council_judge_start': {
-                const messageId = eventData.messageId;
-                if (!messageId) return;
-                this.#get().internal_dispatchMessage(
-                  {
-                    id: messageId,
-                    type: 'updateMessage',
-                    value: { metadata: { modelCouncil: { status: 'running' } } as any },
-                  },
-                  { operationId },
-                );
-                if (eventData.groupId) {
-                  this.#get().internal_dispatchMessage(
-                    {
-                      id: eventData.groupId,
-                      type: 'updateMessageGroupMetadata',
-                      value: { status: 'judging' },
-                    },
-                    { operationId },
-                  );
-                }
-                return;
-              }
-              case 'model_council_end': {
-                if (!eventData.groupId) return;
-                this.#get().internal_dispatchMessage(
-                  {
-                    id: eventData.groupId,
-                    type: 'updateMessageGroupMetadata',
-                    value: {
-                      members: eventData.members,
-                      status: eventData.status || 'completed',
-                    },
-                  },
-                  { operationId },
-                );
-                return;
-              }
-            }
-          },
+        this.internal_attachModelCouncilStream({
+          context: finalContext,
+          force: true,
+          isCouncilNewTopic,
+          messageGroupId: data.messageGroupId,
+          scopeOperationId: operationId,
+          seededMessages,
+          serverOperationId: data.operationId,
+          topicId: data.topicId,
         });
 
         if (ENABLE_BUSINESS_FEATURES) markUserValidAction();

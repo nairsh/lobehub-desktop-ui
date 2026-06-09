@@ -121,6 +121,8 @@ export default {
   'cmdk.askAgentHeading': 'Ask Agent',
   'cmdk.askAgentPlaceholder': 'Ask {{agent}} something...',
   'cmdk.askLobeAI': 'Ask Lobe AI',
+  'cmdk.editWithAI': 'Edit with AI',
+  'cmdk.editWithAIShortcut': '⌘⌃E',
   'cmdk.browseChats': 'Recent chats',
   'cmdk.community': 'Community',
   'cmdk.communitySupport': 'Community Support',

@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { EditorCanvas as SharedEditorCanvas } from '@/features/EditorCanvas';
 
 import { usePageEditorStore } from '../store';
+import PageAiIsland from './PageAiIsland';
 import { useAskCopilotItem } from './useAskCopilotItem';
 import { useSlashItems } from './useSlashItems';
 
@@ -25,19 +26,22 @@ const EditorCanvas = memo<EditorCanvasProps>(({ placeholder, style }) => {
   const askCopilotItem = useAskCopilotItem(editor);
 
   return (
-    <SharedEditorCanvas
-      documentId={documentId}
-      editor={editor}
-      placeholder={placeholder || t('pageEditor.editorPlaceholder')}
-      slashItems={slashItems}
-      style={style}
-      toolbarExtraItems={askCopilotItem}
-      unsavedChangesGuard={{
-        enabled: true,
-        message: t('form.unsavedWarning', { ns: 'ui' }),
-        title: t('form.unsavedChanges', { ns: 'ui' }),
-      }}
-    />
+    <>
+      <SharedEditorCanvas
+        documentId={documentId}
+        editor={editor}
+        placeholder={placeholder || t('pageEditor.editorPlaceholder')}
+        slashItems={slashItems}
+        style={style}
+        toolbarExtraItems={askCopilotItem}
+        unsavedChangesGuard={{
+          enabled: true,
+          message: t('form.unsavedWarning', { ns: 'ui' }),
+          title: t('form.unsavedChanges', { ns: 'ui' }),
+        }}
+      />
+      <PageAiIsland />
+    </>
   );
 });
 

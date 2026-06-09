@@ -119,6 +119,8 @@
   "cmdk.context.resource": "Resource",
   "cmdk.context.settings": "Settings",
   "cmdk.discover": "Discover",
+  "cmdk.editWithAI": "Edit with AI",
+  "cmdk.editWithAIShortcut": "⌘⌃E",
   "cmdk.keyboard.ESC": "ESC",
   "cmdk.keyboard.Enter": "Enter",
   "cmdk.keyboard.Tab": "Tab",
