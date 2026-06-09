@@ -3,6 +3,7 @@ import LobeArtifact from './LobeArtifact';
 import LobeThinking from './LobeThinking';
 import LocalFile from './LocalFile';
 import Mention from './Mention';
+import ModelCite from './ModelCite';
 import Thinking from './Thinking';
 import { type MarkdownElement } from './type';
 
@@ -15,4 +16,5 @@ export const markdownElements: MarkdownElement[] = [
   LocalFile,
   Mention,
   ImageSearchRef,
+  ModelCite,
 ];

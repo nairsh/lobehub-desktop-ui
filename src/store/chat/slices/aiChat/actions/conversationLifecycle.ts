@@ -167,6 +167,35 @@ const getModelCouncilStepKey = (step: any) => {
   return;
 };
 
+// Synthetic "web search enabled" placeholder the server used to emit even when no
+// real search ran — drop it so we never show a fake "Searching: <prompt>" step.
+const isSyntheticModelCouncilStep = (step: any) =>
+  step?.stepType === 'grounding' &&
+  (step.grounding?.synthetic === true || step.grounding?.source === 'model_builtin_search');
+
+// `toolsCalling` arrives as a cumulative array that grows per chunk. Keep a single
+// tools_calling step and replace it in place instead of appending one per chunk
+// (the source of the bogus "Using tool ×27").
+const mergeModelCouncilStep = (currentSteps: any[], step: any) => {
+  if (isSyntheticModelCouncilStep(step)) return currentSteps;
+
+  if (step.stepType === 'tools_calling') {
+    const index = currentSteps.findIndex((item) => item.stepType === 'tools_calling');
+    if (index >= 0) {
+      const next = [...currentSteps];
+      next[index] = { ...step, at: currentSteps[index].at ?? step.at };
+      return next;
+    }
+    return [...currentSteps, step];
+  }
+
+  const stepKey = getModelCouncilStepKey(step);
+  if (stepKey && currentSteps.some((item) => getModelCouncilStepKey(item) === stepKey)) {
+    return currentSteps;
+  }
+  return [...currentSteps, step];
+};
+
 export class ConversationLifecycleActionImpl {
   readonly #get: () => ChatStore;
 
@@ -656,11 +685,7 @@ export class ConversationLifecycleActionImpl {
                   toolsCalling: eventData.toolsCalling,
                 };
                 const currentSteps = stepsByMessageId.get(messageId) || [];
-                const stepKey = getModelCouncilStepKey(step);
-                const nextSteps =
-                  stepKey && currentSteps.some((item) => getModelCouncilStepKey(item) === stepKey)
-                    ? currentSteps
-                    : [...currentSteps, step];
+                const nextSteps = mergeModelCouncilStep(currentSteps, step);
                 stepsByMessageId.set(messageId, nextSteps);
 
                 this.#get().internal_dispatchMessage(

@@ -14,6 +14,7 @@ import { useAiInfraStore } from '@/store/aiInfra';
 import type { ModelCouncilModelConfig, ModelCouncilSettings } from '@/types/modelCouncil';
 import { findReasoningConfig, formatReasoningLabel } from '@/utils/modelReasoning';
 
+import { MODEL_CITE_TAG, ModelCiteRender, rehypeModelCite } from '../../Markdown/plugins/ModelCite';
 import { dataSelectors, useConversationStore } from '../../store';
 
 const useStyles = createStyles(({ css, token }) => ({
@@ -178,6 +179,8 @@ interface ModelCouncilMessageProps {
   judgeStatus?: string;
 }
 
+const CITATION_REHYPE_PLUGINS = [rehypeModelCite];
+
 const modelKey = (item: Pick<ModelCouncilModelConfig, 'provider' | 'model'>) =>
   `${item.provider}/${item.model}`;
 
@@ -205,6 +208,38 @@ const getStepLabel = (t: any, step: any) => {
   return t('modelCouncil.steps.step', 'Step');
 };
 
+const getToolName = (tool: any) =>
+  tool?.function?.name || tool?.name || tool?.apiName || tool?.identifier;
+
+const getToolArgs = (tool: any) => {
+  const raw = tool?.function?.arguments ?? tool?.arguments;
+  if (!raw) return undefined;
+  if (typeof raw === 'object') return raw;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return undefined;
+  }
+};
+
+// Surface what a tool call actually did (e.g. the search query) so tool usage is
+// transparent rather than an opaque "Using tool".
+const summarizeToolArgs = (args: any): string => {
+  if (!args || typeof args !== 'object') return '';
+  const candidate =
+    args.query ?? args.q ?? args.search ?? args.keyword ?? args.keywords ?? args.text ?? args.url;
+  if (candidate) return String(Array.isArray(candidate) ? candidate.join(', ') : candidate);
+  const firstString = Object.values(args).find((value) => typeof value === 'string');
+  return firstString ? String(firstString) : '';
+};
+
+const describeToolCall = (tool: any) => {
+  const name = getToolName(tool);
+  const argSummary = summarizeToolArgs(getToolArgs(tool));
+  if (name && argSummary) return `${name} (${argSummary})`;
+  return name || argSummary || '';
+};
+
 const getStepText = (step: any) => {
   if (step?.grounding) {
     const grounding = step.grounding;
@@ -215,13 +250,42 @@ const getStepText = (step: any) => {
 
   const tools = step?.toolsCalling;
   if (Array.isArray(tools) && tools.length > 0) {
-    return tools
-      .map((tool) => tool.name || tool.apiName || tool.identifier)
-      .filter(Boolean)
-      .join(', ');
+    return tools.map(describeToolCall).filter(Boolean).join(', ');
   }
 
   return '';
+};
+
+// Drop the synthetic "web search enabled" placeholder and collapse the cumulative
+// tools_calling stream (which the server emits per chunk) down to a single step, so
+// the UI never shows a fake "Searching: <prompt>" or a bogus "Using tool ×27".
+const isSyntheticStep = (step: any) =>
+  step?.stepType === 'grounding' &&
+  (step.grounding?.synthetic === true || step.grounding?.source === 'model_builtin_search');
+
+const sanitizeSteps = (steps?: any[]): any[] => {
+  if (!Array.isArray(steps) || steps.length === 0) return [];
+
+  const result: any[] = [];
+  let toolsCallingIndex = -1;
+
+  for (const step of steps) {
+    if (isSyntheticStep(step)) continue;
+
+    if (step?.stepType === 'tools_calling') {
+      if (toolsCallingIndex === -1) {
+        toolsCallingIndex = result.length;
+        result.push(step);
+      } else {
+        result[toolsCallingIndex] = step;
+      }
+      continue;
+    }
+
+    result.push(step);
+  }
+
+  return result;
 };
 
 const getLiveStepStatus = (t: any, steps: any[]) => {
@@ -358,6 +422,11 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
     const activeJudgeStatus = judgeChild
       ? groupJudgeStatus
       : judgeStatus || (activeJudge?.content ? 'completed' : undefined);
+    // Once the judge starts producing its answer we stream it in place and drop the
+    // spinner cards, so the user never sees the final answer next to a "Synthesizing…"
+    // spinner.
+    const judgeVisibleContent = getVisibleContent(activeJudge?.content);
+    const judgeHasStartedWriting = !!judgeVisibleContent;
     const isJudging =
       !!activeJudge &&
       !isTerminalStatus(activeJudgeStatus) &&
@@ -374,8 +443,11 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
         return isTerminalStatus(status);
       });
     const showSynthesisStatus =
-      firstTwoMembersFinished && (hasRunningMember || (isJudging && !activeJudge));
-    const showJudgeCard = firstTwoMembersFinished && !!activeJudge && !hasRunningMember;
+      firstTwoMembersFinished &&
+      !judgeHasStartedWriting &&
+      (hasRunningMember || (isJudging && !activeJudge));
+    const showJudgeCard =
+      firstTwoMembersFinished && !!activeJudge && !hasRunningMember && !judgeHasStartedWriting;
 
     return (
       <Flexbox gap={12} style={{ marginInline: 'auto', maxWidth: 840, width: '100%' }}>
@@ -408,7 +480,7 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
           const timedOut = status === 'timeout';
           const failed = isFailedStatus(status);
           const reasoningContent = childModel.reasoning?.content?.trim();
-          const stepItems = childMeta.steps || [];
+          const stepItems = sanitizeSteps(childMeta.steps);
           const visibleContent = getVisibleContent(child.content);
           const livePreview = !completed && !failed ? reasoningContent || visibleContent : '';
           const liveStepStatus =
@@ -563,7 +635,7 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                 ? modelReasoningLabelMap.get(modelKey({ model: modelId, provider: providerId }))
                 : undefined;
             const judgeReasoning = judge.reasoning?.content?.trim();
-            const judgeSteps = judgeMeta.steps || [];
+            const judgeSteps = sanitizeSteps(judgeMeta.steps);
             const judgeLivePreview = !completed && !failed ? judgeReasoning || judgeContent : '';
             const judgeLiveStepStatus =
               !completed && !failed ? getLiveStepStatus(t, judgeSteps) : undefined;
@@ -660,7 +732,7 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
               </Flexbox>
             );
           })()}
-        {!hideJudgeResponse && judgeChild?.content && (
+        {!hideJudgeResponse && judgeVisibleContent && (
           <Flexbox className={styles.response} gap={8}>
             <Flexbox horizontal align={'center'} className={styles.responseHeader}>
               {memberChildren.map((child) => {
@@ -676,7 +748,22 @@ const ModelCouncilMessage = memo<ModelCouncilMessageProps>(
                 );
               })}
             </Flexbox>
-            <Markdown variant={'chat'}>{judgeChild.content}</Markdown>
+            <Markdown
+              enableStream
+              rehypePlugins={CITATION_REHYPE_PLUGINS}
+              variant={'chat'}
+              components={{
+                [MODEL_CITE_TAG]: (props: any) => (
+                  <ModelCiteRender
+                    {...props}
+                    councilModels={settingsSnapshot?.councilModels}
+                    id={judgeChild?.id ?? ''}
+                  />
+                ),
+              }}
+            >
+              {judgeVisibleContent}
+            </Markdown>
           </Flexbox>
         )}
       </Flexbox>
