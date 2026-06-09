@@ -50,6 +50,9 @@ const TabItem = memo<TabItemProps>(
     const isRunning = useTabRunning(item.reference);
     const isUnread = useTabUnread(item.reference);
     const showUnreadDot = !isRunning && isUnread;
+    const showTabVisual = !['agent', 'agent-topic', 'group', 'group-topic'].includes(
+      item.reference.type,
+    );
 
     const handleClick = useCallback(() => {
       if (!isActive) {
@@ -103,7 +106,7 @@ const TabItem = memo<TabItemProps>(
           gap={6}
           onClick={handleClick}
         >
-          {item.avatar ? (
+          {showTabVisual && item.avatar ? (
             <span className={styles.avatarWrapper}>
               <Avatar
                 emojiScaleWithBackground
@@ -116,6 +119,7 @@ const TabItem = memo<TabItemProps>(
               {showUnreadDot && <span aria-label={t('tab.unread')} className={styles.unreadDot} />}
             </span>
           ) : (
+            showTabVisual &&
             item.icon && (
               <span className={styles.avatarWrapper}>
                 <Icon className={styles.tabIcon} icon={item.icon} size="small" />

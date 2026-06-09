@@ -16,7 +16,6 @@ import { systemStatusSelectors } from '@/store/global/selectors';
 import { isModifierClick } from '@/utils/navigation';
 import { prefetchRoute } from '@/utils/router';
 
-import Agent from './Agent';
 import { CustomizeSidebarModal, openCustomizeSidebarModal } from './CustomizeSidebarModal';
 import PinnedProjects from './PinnedProjects';
 
@@ -29,12 +28,14 @@ export enum GroupKey {
   Resource = 'resource',
 }
 
-const ACCORDION_KEYS = new Set<string>([GroupKey.Recents, GroupKey.Agent]);
+const ACCORDION_KEYS = new Set<string>([GroupKey.Recents]);
 
 const accordionComponents: Record<string, (key: string) => ReactElement> = {
-  [GroupKey.Agent]: (key) => <Agent itemKey={key} key={key} />,
   [GroupKey.Recents]: (key) => <Recents itemKey={key} key={key} />,
 };
+
+// Community and Resources are now rendered inside the Agents drawer.
+const KEYS_IN_AGENT_SECTION = new Set<string>([GroupKey.Community, GroupKey.Resource]);
 
 const Body = memo(() => {
   const { t } = useTranslation('common');
@@ -79,19 +80,16 @@ const Body = memo(() => {
     return map;
   }, [topNavItems, bottomMenuItems]);
 
-  // Community and Resources are now rendered inside the Agent section
-  const KEYS_IN_AGENT_SECTION = new Set<string>([GroupKey.Community, GroupKey.Resource]);
-
-  // Items that must always be visible regardless of hiddenSections
-  const isVisible = useCallback(
-    (k: string) => k === GroupKey.Agent || !hiddenSections.includes(k),
-    [hiddenSections],
-  );
+  const isVisible = useCallback((k: string) => !hiddenSections.includes(k), [hiddenSections]);
 
   const visibleKeys = useMemo(
     () =>
       sidebarItems.filter(
-        (k) => isVisible(k) && !HEADER_NAV_KEYS.has(k) && !KEYS_IN_AGENT_SECTION.has(k),
+        (k) =>
+          k !== GroupKey.Agent &&
+          isVisible(k) &&
+          !HEADER_NAV_KEYS.has(k) &&
+          !KEYS_IN_AGENT_SECTION.has(k),
       ),
     [sidebarItems, isVisible],
   );

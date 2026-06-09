@@ -7,6 +7,7 @@ import { ActionIcon, DropdownMenu, Flexbox, Icon } from '@lobehub/ui';
 import { DiscordIcon, GithubIcon } from '@lobehub/ui/icons';
 import {
   Book,
+  Bot,
   CircleHelp,
   Feather,
   FileClockIcon,
@@ -17,7 +18,7 @@ import {
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 import ChangelogModal from '@/components/ChangelogModal';
 import HighlightNotification from '@/components/HighlightNotification';
@@ -27,9 +28,12 @@ import { useFeedbackModal } from '@/hooks/useFeedbackModal';
 import { useNavLayout } from '@/hooks/useNavLayout';
 import { useGlobalStore } from '@/store/global';
 import { systemStatusSelectors } from '@/store/global/selectors/systemStatus';
+import { useHomeStore } from '@/store/home';
 import { useUserStore } from '@/store/user';
 import { userGeneralSettingsSelectors } from '@/store/user/slices/settings/selectors';
 import { prefetchRoute } from '@/utils/router';
+
+import AllAgentsDrawer from '../Body/Agent/AllAgentsDrawer';
 
 const PRODUCT_HUNT_NOTIFICATION = {
   actionHref: 'https://www.producthunt.com/products/lobehub?launch=lobehub',
@@ -44,11 +48,14 @@ const Footer = memo(() => {
   const { analytics } = useAnalytics();
   const { footer } = useNavLayout();
   const isDevMode = useUserStore((s) => userGeneralSettingsSelectors.config(s).isDevMode);
-  const location = useLocation();
-  const isSettingsPage = location.pathname.startsWith('/settings');
   const [shouldLoadChangelog, setShouldLoadChangelog] = useState(false);
   const [isChangelogModalOpen, setIsChangelogModalOpen] = useState(false);
   const [isProductHuntCardOpen, setIsProductHuntCardOpen] = useState(false);
+  const [allAgentsDrawerOpen, openAllAgentsDrawer, closeAllAgentsDrawer] = useHomeStore((s) => [
+    s.allAgentsDrawerOpen,
+    s.openAllAgentsDrawer,
+    s.closeAllAgentsDrawer,
+  ]);
 
   const [isNotificationRead, updateSystemStatus] = useGlobalStore((s) => [
     systemStatusSelectors.isNotificationRead(PRODUCT_HUNT_NOTIFICATION.slug)(s),
@@ -125,6 +132,15 @@ const Footer = memo(() => {
 
   const helpMenuItems: MenuProps['items'] = useMemo(
     () => [
+      {
+        icon: <Icon icon={Bot} />,
+        key: 'agents',
+        label: t('navPanel.agent'),
+        onClick: openAllAgentsDrawer,
+      },
+      {
+        type: 'divider' as const,
+      },
       ...(footer.showSettingsEntry && !isDevMode
         ? [
             {
@@ -210,6 +226,7 @@ const Footer = memo(() => {
       footer.showEvalEntry,
       isDevMode,
       t,
+      openAllAgentsDrawer,
       handleOpenFeedbackModal,
       isWithinTimeWindow,
       handleOpenProductHuntCard,
@@ -267,6 +284,7 @@ const Footer = memo(() => {
         onActionClick={handleProductHuntActionClick}
         onClose={handleCloseProductHuntCard}
       />
+      <AllAgentsDrawer open={allAgentsDrawerOpen} onClose={closeAllAgentsDrawer} />
     </>
   );
 });

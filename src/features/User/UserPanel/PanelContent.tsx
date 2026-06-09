@@ -48,7 +48,7 @@ const PanelContent: FC<{ closePopover: () => void }> = ({ closePopover }) => {
   };
 
   return (
-    <Flexbox gap={2} style={{ minWidth: 300 }}>
+    <Flexbox gap={2} paddingBlock={4} style={{ minWidth: 300 }}>
       {isDesktop || isLoginWithAuth ? (
         <>
           <UserInfo avatarProps={{ clickable: false }} />

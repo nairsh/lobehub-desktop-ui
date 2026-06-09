@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 
 import SkeletonList from '@/features/NavPanel/components/SkeletonList';
 import SideBarDrawer from '@/features/NavPanel/SideBarDrawer';
+import { useFetchAgentList } from '@/hooks/useFetchAgentList';
 import dynamic from '@/libs/next/dynamic';
 
 const Content = dynamic(() => import('./Content'), {
@@ -25,6 +26,8 @@ interface AllAgentsDrawerProps {
 const AllAgentsDrawer = memo<AllAgentsDrawerProps>(({ open, onClose }) => {
   const { t } = useTranslation('common');
   const [searchKeyword, setSearchKeyword] = useState('');
+
+  useFetchAgentList();
 
   return (
     <SideBarDrawer
