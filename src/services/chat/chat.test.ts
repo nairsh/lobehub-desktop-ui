@@ -895,7 +895,7 @@ describe('ChatService', () => {
     });
 
     describe('with tools messages', () => {
-      it('should inject a tool system role for models with tools', async () => {
+      it('should send native tools without injecting textual tool instructions', async () => {
         const getChatCompletionSpy = vi.spyOn(chatService, 'getChatCompletion');
         const messages = [
           {
@@ -1036,7 +1036,7 @@ describe('ChatService', () => {
         expect(requestMessages[0].content).toContain(
           'Use the runSkill tool to activate a skill when needed.',
         );
-        expect(requestMessages[0].content).toContain('<tool name="SEO">');
+        expect(requestMessages[0].content).not.toContain('<tool name="SEO">');
         expect(requestMessages[1]).toEqual(
           expect.objectContaining({
             content: expect.stringContaining('https://vercel.com/ 请分析 chatGPT 关键词'),
@@ -1048,7 +1048,7 @@ describe('ChatService', () => {
         );
       });
 
-      it('should update the system role for models with tools', async () => {
+      it('should keep system role clean when native tools are present', async () => {
         const getChatCompletionSpy = vi.spyOn(chatService, 'getChatCompletion');
         const messages = [
           { role: 'system', content: 'system' },
@@ -1182,7 +1182,7 @@ describe('ChatService', () => {
           }),
         );
         expect(requestMessages[0].content).toContain('<available_skills>');
-        expect(requestMessages[0].content).toContain('<tool name="SEO">');
+        expect(requestMessages[0].content).not.toContain('<tool name="SEO">');
         expect(requestMessages[1]).toEqual(
           expect.objectContaining({
             content: expect.stringContaining('https://vercel.com/ 请分析 chatGPT 关键词'),

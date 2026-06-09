@@ -155,6 +155,8 @@ const FilePreviewModalContent = memo<{
 });
 FilePreviewModalContent.displayName = 'FilePreviewModalContent';
 
+const getFileResourceId = (file: FileListItem) => file.fileId ?? file.id;
+
 // ── WorkspacePanel ─────────────────────────────────────────────────────────
 
 interface WorkspacePanelProps {
@@ -212,12 +214,14 @@ const WorkspacePanel = memo<WorkspacePanelProps>(({ knowledgeBaseId, project, pr
   }, [knowledgeBaseId, t]);
 
   const openFilePreview = useCallback((file: FileListItem) => {
+    const fileId = getFileResourceId(file);
+
     createModal({
       allowFullscreen: true,
       centered: true,
       children: (
         <Suspense fallback={<div style={{ minHeight: 120 }} />}>
-          <FilePreviewModalContent fileId={file.id} initialFile={file} />
+          <FilePreviewModalContent fileId={fileId} initialFile={{ ...file, id: fileId }} />
         </Suspense>
       ),
       destroyOnHidden: true,
@@ -333,18 +337,23 @@ const WorkspacePanel = memo<WorkspacePanelProps>(({ knowledgeBaseId, project, pr
                       variant={'borderless'}
                       onClick={() => renamingId !== file.id && openFilePreview(file)}
                     >
-                      <Icon flex={'none'} icon={FileIconLucide} opacity={0.5} size={'small'} />
+                      <Icon
+                        icon={FileIconLucide}
+                        opacity={0.5}
+                        size={'small'}
+                        style={{ flex: 'none' }}
+                      />
                       {renamingId === file.id ? (
                         <Input
                           ref={renameInputRef}
                           size={'small'}
                           style={{ flex: 1, fontSize: 12 }}
                           value={renameValue}
-                          onBlur={() => commitRename(file.id)}
+                          onBlur={() => commitRename(getFileResourceId(file))}
                           onChange={(e) => setRenameValue(e.target.value)}
                           onClick={(e) => e.stopPropagation()}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter') commitRename(file.id);
+                            if (e.key === 'Enter') commitRename(getFileResourceId(file));
                             if (e.key === 'Escape') setRenamingId(null);
                           }}
                         />
@@ -363,15 +372,16 @@ const WorkspacePanel = memo<WorkspacePanelProps>(({ knowledgeBaseId, project, pr
                               icon: <EditIcon size={14} />,
                               key: 'rename',
                               label: t('rename', { defaultValue: 'Rename', ns: 'common' }),
-                              onClick: ({ domEvent }) => startRename(file, domEvent as any),
+                              onClick: ({ domEvent }: { domEvent: React.MouseEvent }) =>
+                                startRename(file, domEvent),
                             },
                             {
                               danger: true,
                               icon: <TrashIcon size={14} />,
                               key: 'delete',
                               label: t('delete', { defaultValue: 'Delete', ns: 'common' }),
-                              onClick: ({ domEvent }) =>
-                                deleteFile(file.fileId ?? file.id, domEvent as any),
+                              onClick: ({ domEvent }: { domEvent: React.MouseEvent }) =>
+                                deleteFile(getFileResourceId(file), domEvent),
                             },
                           ]}
                         >

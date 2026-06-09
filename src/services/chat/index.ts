@@ -271,7 +271,7 @@ class ChatService {
       // Page editor context from agent runtime
       initialContext: options?.initialContext,
       inputTemplate: chatConfig.inputTemplate,
-      manifests: enabledManifests,
+      manifests: tools && tools.length > 0 ? [] : enabledManifests,
       messages,
       model: payload.model,
       plugins,
