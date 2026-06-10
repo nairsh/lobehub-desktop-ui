@@ -96,9 +96,12 @@ const TitleSection = memo(() => {
         variant={'borderless'}
         style={{
           color: cssVar.colorText,
+          fontFamily:
+            'ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"',
           fontSize: 40,
           fontWeight: 700,
-          lineHeight: 1.2,
+          letterSpacing: 0,
+          lineHeight: 1.18,
           padding: 0,
           resize: 'none',
           width: '100%',
