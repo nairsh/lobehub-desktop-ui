@@ -569,6 +569,90 @@ const styles = createStaticStyles(({ css }) => ({
       background: color-mix(in srgb, ${cssVar.colorText} 2.5%, transparent);
     }
 
+    [data-lexical-editor='true'] .editor_table_scrollable_wrapper,
+    [data-lexical-editor='true'] .PlaygroundEditorTheme__tableScrollableWrapper {
+      overflow: auto hidden;
+      margin-block: 8px;
+      padding-block-end: 4px;
+      border-radius: 3px;
+    }
+
+    [data-lexical-editor='true'] .editor_table {
+      width: max-content;
+      min-width: 100%;
+      margin-block: 0;
+    }
+
+    [data-lexical-editor='true'] .editor_table_cell,
+    [data-lexical-editor='true'] .PlaygroundEditorTheme__tableCell {
+      position: relative;
+
+      min-width: 120px;
+      height: 34px;
+      padding-block: 7px;
+      padding-inline: 8px;
+      border-color: var(--page-editor-border);
+
+      transition: background-color 80ms ease;
+    }
+
+    [data-lexical-editor='true'] .editor_table_cell_header,
+    [data-lexical-editor='true'] .PlaygroundEditorTheme__tableCellHeader {
+      color: var(--page-editor-text-secondary);
+      background: color-mix(in srgb, ${cssVar.colorText} 4.5%, transparent);
+    }
+
+    [data-lexical-editor='true'] .editor_table_cell:hover,
+    [data-lexical-editor='true'] .PlaygroundEditorTheme__tableCell:hover {
+      background: color-mix(in srgb, ${cssVar.colorText} 3%, transparent);
+    }
+
+    .tableAddRows,
+    .tableAddColumns {
+      width: 24px !important;
+      height: 24px !important;
+      border: 1px solid var(--page-editor-border) !important;
+      border-radius: 4px !important;
+
+      color: var(--page-editor-text-secondary) !important;
+
+      opacity: 0.86;
+      background: ${cssVar.colorBgElevated} !important;
+      box-shadow: 0 2px 6px rgb(0 0 0 / 8%) !important;
+
+      transition:
+        background-color 100ms ease,
+        opacity 100ms ease,
+        transform 100ms ease;
+    }
+
+    .tableAddRows:hover,
+    .tableAddColumns:hover {
+      transform: scale(1.03);
+      opacity: 1;
+      background: color-mix(in srgb, ${cssVar.colorText} 6%, ${cssVar.colorBgElevated}) !important;
+    }
+
+    .TableCellResizer__resizer {
+      z-index: 12;
+    }
+
+    .TableCellResizer__resizer:hover {
+      background: #2383e2 !important;
+      mix-blend-mode: unset !important;
+    }
+
+    .table-cell-action-button-container--active {
+      opacity: 1;
+      transition: opacity 100ms ease;
+    }
+
+    .table-cell-action-button-container--inactive {
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 100ms ease;
+    }
+
     [data-block-drag-handle='true'],
     [aria-label='Block actions and drag'],
     [aria-label='Add block below'] {
