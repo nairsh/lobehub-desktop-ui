@@ -50,7 +50,7 @@ const getBlockOperationPortalStyles = () => `
   html[data-page-editor-dragging-block='true']
     [data-lobe-editor-hovered-block='true'] {
     background: color-mix(in srgb, var(--lobe-color-primary, #2383e2) 12%, transparent);
-    border-radius: 2px;
+    border-radius: 3px;
     box-shadow:
       -4px 0 0 color-mix(in srgb, var(--lobe-color-primary, #2383e2) 12%, transparent),
       4px 0 0 color-mix(in srgb, var(--lobe-color-primary, #2383e2) 12%, transparent);
@@ -58,14 +58,18 @@ const getBlockOperationPortalStyles = () => `
 
   .ant-btn[aria-label='Add block below'],
   .ant-btn[aria-label='Block actions and drag'] {
-    width: 22px !important;
+    width: 20px !important;
     height: 22px !important;
-    min-width: 22px !important;
+    min-width: 20px !important;
     padding: 0 !important;
-    border-radius: 4px !important;
+    border-radius: 3px !important;
     color: var(--lobe-color-text-quaternary, rgba(0, 0, 0, 0.34)) !important;
-    opacity: 0.72;
-    transition: background-color 120ms ease, color 120ms ease, opacity 120ms ease;
+    opacity: 0.58;
+    transition:
+      background-color 100ms ease,
+      color 100ms ease,
+      opacity 100ms ease,
+      transform 100ms ease;
   }
 
   html:not([data-page-editor-block-gutter='true'])
@@ -78,7 +82,7 @@ const getBlockOperationPortalStyles = () => `
 
   .ant-btn[aria-label='Add block below']:has(+ .ant-btn[aria-label='Block actions and drag']),
   .ant-btn[aria-label='Block actions and drag'] {
-    transform: translateX(8px);
+    transform: translateX(4px);
   }
 
   .ant-btn[aria-label='Add block below']:hover,
@@ -88,12 +92,13 @@ const getBlockOperationPortalStyles = () => `
     background: color-mix(in srgb, var(--lobe-color-text, #1f1f1f) 8%, transparent) !important;
     color: var(--lobe-color-text-secondary, rgba(0, 0, 0, 0.65)) !important;
     opacity: 1;
+    transform: translateX(4px) scale(1.02);
   }
 
   .ant-btn[aria-label='Add block below'] svg,
   .ant-btn[aria-label='Block actions and drag'] svg {
-    width: 13px !important;
-    height: 13px !important;
+    width: 14px !important;
+    height: 14px !important;
   }
 
   .lobe-block-operation-dropdown {
@@ -290,6 +295,7 @@ const styles = createStaticStyles(({ css }) => ({
     --page-editor-placeholder: ${cssVar.colorTextQuaternary};
     --page-editor-link: #2383e2;
     --page-editor-selection: rgb(35 131 226 / 28%);
+    --page-editor-block-hover: color-mix(in srgb, ${cssVar.colorText} 3.6%, transparent);
     --page-editor-code-bg: color-mix(in srgb, ${cssVar.colorText} 8%, transparent);
     --page-editor-code-text: color-mix(in srgb, ${cssVar.colorText} 86%, #eb5757);
 
@@ -305,8 +311,11 @@ const styles = createStaticStyles(({ css }) => ({
       color: var(--page-editor-text);
       text-rendering: optimizelegibility;
       letter-spacing: 0;
+
+      caret-color: var(--page-editor-text);
     }
 
+    [data-lexical-editor='true'] *::selection,
     [data-lexical-editor='true'] ::selection {
       background: var(--page-editor-selection);
     }
@@ -315,15 +324,28 @@ const styles = createStaticStyles(({ css }) => ({
       min-height: 24px;
       margin-block: 0;
       padding-block: 3px;
+      border-radius: 3px;
 
       font: inherit;
       color: inherit;
+
+      transition:
+        background-color 100ms ease,
+        box-shadow 100ms ease;
+    }
+
+    [data-lexical-editor='true'] [data-lobe-editor-hovered-block='true'] {
+      background: var(--page-editor-block-hover);
+      box-shadow:
+        -4px 0 0 var(--page-editor-block-hover),
+        4px 0 0 var(--page-editor-block-hover);
     }
 
     [data-lexical-editor='true'] [data-placeholder]::before {
       pointer-events: none;
       content: attr(data-placeholder);
       color: var(--page-editor-placeholder);
+      opacity: 0.85;
     }
 
     [data-lexical-editor='true'] h1,
@@ -392,18 +414,20 @@ const styles = createStaticStyles(({ css }) => ({
     [data-block-drag-handle='true'],
     [aria-label='Block actions and drag'],
     [aria-label='Add block below'] {
-      width: 22px !important;
+      width: 20px !important;
+      min-width: 20px !important;
       height: 22px !important;
-      border-radius: 4px !important;
+      border-radius: 3px !important;
 
       color: ${cssVar.colorTextQuaternary} !important;
 
-      opacity: 0.72;
+      opacity: 0.58;
 
       transition:
-        background-color ${cssVar.motionDurationFast} ${cssVar.motionEaseInOut},
-        color ${cssVar.motionDurationFast} ${cssVar.motionEaseInOut},
-        opacity ${cssVar.motionDurationFast} ${cssVar.motionEaseInOut};
+        background-color 100ms ease,
+        color 100ms ease,
+        opacity 100ms ease,
+        transform 100ms ease;
     }
 
     [data-block-drag-handle='true']:hover,
@@ -416,8 +440,8 @@ const styles = createStaticStyles(({ css }) => ({
 
     [aria-label='Add block below'] svg,
     [aria-label='Block actions and drag'] svg {
-      width: 13px !important;
-      height: 13px !important;
+      width: 14px !important;
+      height: 14px !important;
     }
   `,
   slashMenu: css`
