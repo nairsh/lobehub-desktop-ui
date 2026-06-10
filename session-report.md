@@ -10,31 +10,32 @@ Completed Phases 1-9 with one commit per phase. Phase 10 was attempted after a f
 
 Per the later instruction to use only the dev Electron app, external Safari/Notion inspection was not performed in this pass. Visual validation used `agent-browser`; no Playwright was used.
 
-Follow-up on 2026-06-11: the dev Electron blocker was narrowed and partially fixed. The renderer now boots after aligning `ToastHost` to the main `@lobehub/ui` optimized entry, and the page route no longer crashes from the Phase 8 `useAskCopilotItem` translation reference. A fresh page could be created, titled, and edited enough to capture the page editor shell and representative text entry. Slash-menu/checklist/inline-toolbar regression still needs a clean pass because the app navigated back to the project workspace during the slash-menu attempt.
+Follow-up on 2026-06-11: the dev Electron blocker was narrowed and partially fixed. The renderer now boots after aligning `ToastHost` to the main `@lobehub/ui` optimized entry, and the page route no longer crashes from the Phase 8 `useAskCopilotItem` translation reference. Fresh pages could be created and titled, and the page editor slash menu was verified in the dev Electron app with `agent-browser`. Checklist toggling and inline-toolbar selection still need a clean route-stable pass because later automation attempts repeatedly drifted focus back to the project workspace.
 
 ## Phases
 
-| Phase                  | Status                                 | Commit         | Notes                                                                                                                            |
-| ---------------------- | -------------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Typography & Tokens | Done                                   | `5bacc29fa`    | Added scoped page editor typography tokens, body/code/link/selection styles, and title treatment.                                |
-| 2. Page Chrome         | Done                                   | `83dbae1ce`    | Added page cover shell, tighter header, title/icon sizing, and content layout polish.                                            |
-| 3. Block Editor        | Done, visual blocked after code checks | `565ac7f66`    | Added hover/focus surface, drag/add handle visibility, placeholder and selection polish.                                         |
-| 4. Slash Menu          | Done, visual blocked after code checks | `fd5e5c48d`    | Reworked slash menu container, item layout, search, hover/active states, section labels, and keyboard state styling.             |
-| 5. Inline Toolbar      | Done, visual blocked after code checks | `69fdba45e`    | Added dark floating toolbar shell, grouped controls, text-type selector, link/action states, and inline AI prompt shell styling. |
-| 6. Block Types         | Done, visual blocked after code checks | `b34e5bdbf`    | Styled paragraph-adjacent blocks: headings, lists, checklists, toggles, quote, callout, code, divider, image/caption.            |
-| 7. Inline Table        | Done, visual blocked after code checks | `bf7bad83a`    | Styled table wrapper, cells, headers, row hover, add row/column affordances, and resize handle. Timebox respected.               |
-| 8. Notion AI UI Shells | Done, visual blocked after code checks | `f94ed38fb`    | Added sparkle entry points, AI island shell behavior, slash Ask AI item, and backend TODO comments. No AI logic added.           |
-| 9. Micro-Interactions  | Done, visual blocked after code checks | `5bb63c697`    | Added 80-120ms block/toggle/table motion, reduced-motion handling, and page menu font/small-text controls.                       |
-| 10. Regression Pass    | Blocked                                | No code commit | Fresh Electron relaunch timed out waiting for the renderer; `/project` and `/page/mxrK6wfv7Y3RYlWw` rendered only `Composer`.    |
+| Phase                  | Status                                 | Commit            | Notes                                                                                                                                               |
+| ---------------------- | -------------------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Typography & Tokens | Done                                   | `5bacc29fa`       | Added scoped page editor typography tokens, body/code/link/selection styles, and title treatment.                                                   |
+| 2. Page Chrome         | Done                                   | `83dbae1ce`       | Added page cover shell, tighter header, title/icon sizing, and content layout polish.                                                               |
+| 3. Block Editor        | Done, visual blocked after code checks | `565ac7f66`       | Added hover/focus surface, drag/add handle visibility, placeholder and selection polish.                                                            |
+| 4. Slash Menu          | Done, visual blocked after code checks | `fd5e5c48d`       | Reworked slash menu container, item layout, search, hover/active states, section labels, and keyboard state styling.                                |
+| 5. Inline Toolbar      | Done, visual blocked after code checks | `69fdba45e`       | Added dark floating toolbar shell, grouped controls, text-type selector, link/action states, and inline AI prompt shell styling.                    |
+| 6. Block Types         | Done, visual blocked after code checks | `b34e5bdbf`       | Styled paragraph-adjacent blocks: headings, lists, checklists, toggles, quote, callout, code, divider, image/caption.                               |
+| 7. Inline Table        | Done, visual blocked after code checks | `bf7bad83a`       | Styled table wrapper, cells, headers, row hover, add row/column affordances, and resize handle. Timebox respected.                                  |
+| 8. Notion AI UI Shells | Done, visual blocked after code checks | `f94ed38fb`       | Added sparkle entry points, AI island shell behavior, slash Ask AI item, and backend TODO comments. No AI logic added.                              |
+| 9. Micro-Interactions  | Done, visual blocked after code checks | `5bb63c697`       | Added 80-120ms block/toggle/table motion, reduced-motion handling, and page menu font/small-text controls.                                          |
+| 10. Regression Pass    | Partially verified                     | Follow-up commits | Fresh Electron now renders the page editor; page creation, title editing, and slash menu were verified. Checklist/inline toolbar remain incomplete. |
 
 ## Follow-Up Fixes
 
-| Fix                                         | Status             | Evidence                                                                                       |
-| ------------------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------- |
-| Align `ToastHost` import with `@lobehub/ui` | Done               | Dev Electron rendered normally after a clean optimized-deps rebuild.                           |
-| Define `t` inside `useAskCopilotItem`       | Done               | Page route no longer hit `ReferenceError: t is not defined`; focused editor tests passed.      |
-| Fresh page creation and title edit          | Partially verified | Created `/page/KpsvX2Mx2qyfBg8z`, set title to `Notion QA Page`, and captured screenshots.     |
-| Slash-menu/checklist/inline-toolbar pass    | Still incomplete   | App navigated back to project workspace during slash-menu attempt; needs another focused pass. |
+| Fix                                         | Status           | Evidence                                                                                                                       |
+| ------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Align `ToastHost` import with `@lobehub/ui` | Done             | Dev Electron rendered normally after a clean optimized-deps rebuild.                                                           |
+| Define `t` inside `useAskCopilotItem`       | Done             | Page route no longer hit `ReferenceError: t is not defined`; focused editor tests passed.                                      |
+| Fresh page creation and title edit          | Verified         | Created multiple fresh pages, including `/page/QnqLskzO8f4xMZCr`, and captured title screenshots.                              |
+| Slash-menu visual regression                | Verified         | Opened `/` command menu on `/page/VpvRq6dhzilGxEus`; captured grouped items, hover state, descriptions, shortcuts, and footer. |
+| Checklist/inline-toolbar interaction pass   | Still incomplete | Checklist and selection-toolbar attempts were inconclusive because the driver focus later moved back to the project workspace. |
 
 ## Files Changed By This UI Pass
 
@@ -68,6 +69,7 @@ Visual validation:
 - Later phases were blocked by the dev Electron route rendering only loader/debug states.
 - Fresh Phase 10 relaunch timed out waiting for renderer readiness and showed only `Composer`.
 - Follow-up screenshots show renderer boot, page editor shell load, fresh page creation, title edit, and representative editor text entry.
+- Additional follow-up screenshots show a fresh title-edit pass and a route-stable slash menu open on the page editor.
 
 ## Top Screenshot Artifacts
 
@@ -82,6 +84,8 @@ Visual validation:
 - Fresh page editor opened: `session-artifacts/screenshots/17-new-page-editor-open.png`
 - Title set: `session-artifacts/screenshots/18-regression-title-set.png`
 - Representative block text entered: `session-artifacts/screenshots/19-regression-block-text-entered.png`
+- Fresh page title final pass: `session-artifacts/screenshots/26-regression-final-page-title.png`
+- Slash menu final pass: `session-artifacts/screenshots/25-regression-slash-menu-selector-final.png`
 
 ### Screenshot Evidence
 
@@ -117,11 +121,21 @@ Title set:
 
 ![Title set](session-artifacts/screenshots/18-regression-title-set.png)
 
+Final title pass:
+
+![Final title pass](session-artifacts/screenshots/26-regression-final-page-title.png)
+
+Final slash menu pass:
+
+![Final slash menu pass](session-artifacts/screenshots/25-regression-slash-menu-selector-final.png)
+
 ## Remaining Gaps By Severity
 
 ### High
 
-- Phase 10 end-to-end regression is still incomplete. The `Composer` loading blocker was fixed enough to reach the editor shell, but slash-menu/checklist/inline-toolbar validation still needs a clean route-stable pass.
+- Phase 10 end-to-end regression is still incomplete. The `Composer` loading blocker was fixed enough to reach the editor shell, and the slash menu is visually verified, but checklist toggling and inline-toolbar validation still need a clean route-stable pass.
+- Checklist insertion from the slash menu was not verified through `agent-browser`; direct menu clicks did not activate the command reliably in the driver, and later focus drifted into the project composer.
+- Inline-toolbar visual validation remains incomplete; selection setup needs to be repeated once the session stays on a page route.
 - Multi-block selection behavior is styled only at the selection surface; Notion-level drag selection mechanics were not implemented.
 - Cover image and emoji icon styling are presentational shells only; real persistence and user-driven cover/icon flows still need product/store integration.
 - Live computed-style extraction from Notion was skipped after the instruction to use only the dev Electron app.
@@ -167,3 +181,4 @@ Title set:
 - `f94ed38fb phase 8: notion ai shells`
 - `5bb63c697 phase 9: micro interactions`
 - Follow-up commit: `fix: unblock page editor dev regression`
+- Follow-up commit: `docs: update page editor regression evidence`
