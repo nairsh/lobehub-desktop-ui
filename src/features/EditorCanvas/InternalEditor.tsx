@@ -283,6 +283,30 @@ const styles = createStaticStyles(({ css }) => ({
     padding-inline: 30px 0 !important;
   `,
   documentSurface: css`
+    @keyframes page-editor-block-in {
+      from {
+        transform: translateY(2px);
+        opacity: 0.72;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes page-editor-toggle-open {
+      from {
+        transform: translateY(-2px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
     --page-editor-font-sans:
       ui-sans-serif, -apple-system, blinkmacsystemfont, 'Segoe UI', helvetica, 'Apple Color Emoji',
       arial, sans-serif, 'Segoe UI Emoji', 'Segoe UI Symbol';
@@ -335,6 +359,7 @@ const styles = createStaticStyles(({ css }) => ({
       transition:
         background-color 100ms ease,
         box-shadow 100ms ease;
+      animation: page-editor-block-in 120ms cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     [data-lexical-editor='true'] [data-lobe-editor-hovered-block='true'] {
@@ -459,10 +484,18 @@ const styles = createStaticStyles(({ css }) => ({
       cursor: pointer;
       min-height: 24px;
       list-style-position: outside;
+      transition:
+        background-color 100ms ease,
+        color 100ms ease;
     }
 
     [data-lexical-editor='true'] summary::marker {
       color: var(--page-editor-text-tertiary);
+      transition: color 100ms ease;
+    }
+
+    [data-lexical-editor='true'] details[open] > *:not(summary) {
+      animation: page-editor-toggle-open 120ms cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     [data-lexical-editor='true'] blockquote {
@@ -635,6 +668,7 @@ const styles = createStaticStyles(({ css }) => ({
 
     .TableCellResizer__resizer {
       z-index: 12;
+      transition: background-color 80ms ease;
     }
 
     .TableCellResizer__resizer:hover {
@@ -684,6 +718,22 @@ const styles = createStaticStyles(({ css }) => ({
     [aria-label='Block actions and drag'] svg {
       width: 14px !important;
       height: 14px !important;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      [data-lexical-editor='true'] *,
+      [data-block-drag-handle='true'],
+      [aria-label='Block actions and drag'],
+      [aria-label='Add block below'],
+      .tableAddRows,
+      .tableAddColumns {
+        transition-duration: 0ms !important;
+      }
+
+      [data-lexical-editor='true'] > *,
+      [data-lexical-editor='true'] details[open] > *:not(summary) {
+        animation: none;
+      }
     }
   `,
   slashMenu: css`
