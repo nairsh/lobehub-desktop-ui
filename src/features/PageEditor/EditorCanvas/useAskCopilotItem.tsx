@@ -201,8 +201,10 @@ const AskCopilotInput = memo<AskCopilotInputProps>(({ editor }) => {
 
 AskCopilotInput.displayName = 'AskCopilotInput';
 
-export const useAskCopilotItem = (editor: IEditor | undefined): ChatInputActionsProps['items'] =>
-  useMemo(() => {
+export const useAskCopilotItem = (editor: IEditor | undefined): ChatInputActionsProps['items'] => {
+  const { t } = useTranslation('common');
+
+  return useMemo(() => {
     if (!editor) return [];
 
     return [
@@ -214,3 +216,4 @@ export const useAskCopilotItem = (editor: IEditor | undefined): ChatInputActions
       },
     ];
   }, [editor, t]);
+};

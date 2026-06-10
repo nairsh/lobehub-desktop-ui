@@ -10,6 +10,8 @@ Completed Phases 1-9 with one commit per phase. Phase 10 was attempted after a f
 
 Per the later instruction to use only the dev Electron app, external Safari/Notion inspection was not performed in this pass. Visual validation used `agent-browser`; no Playwright was used.
 
+Follow-up on 2026-06-11: the dev Electron blocker was narrowed and partially fixed. The renderer now boots after aligning `ToastHost` to the main `@lobehub/ui` optimized entry, and the page route no longer crashes from the Phase 8 `useAskCopilotItem` translation reference. A fresh page could be created, titled, and edited enough to capture the page editor shell and representative text entry. Slash-menu/checklist/inline-toolbar regression still needs a clean pass because the app navigated back to the project workspace during the slash-menu attempt.
+
 ## Phases
 
 | Phase                  | Status                                 | Commit         | Notes                                                                                                                            |
@@ -24,6 +26,15 @@ Per the later instruction to use only the dev Electron app, external Safari/Noti
 | 8. Notion AI UI Shells | Done, visual blocked after code checks | `f94ed38fb`    | Added sparkle entry points, AI island shell behavior, slash Ask AI item, and backend TODO comments. No AI logic added.           |
 | 9. Micro-Interactions  | Done, visual blocked after code checks | `5bb63c697`    | Added 80-120ms block/toggle/table motion, reduced-motion handling, and page menu font/small-text controls.                       |
 | 10. Regression Pass    | Blocked                                | No code commit | Fresh Electron relaunch timed out waiting for the renderer; `/project` and `/page/mxrK6wfv7Y3RYlWw` rendered only `Composer`.    |
+
+## Follow-Up Fixes
+
+| Fix                                         | Status             | Evidence                                                                                       |
+| ------------------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------- |
+| Align `ToastHost` import with `@lobehub/ui` | Done               | Dev Electron rendered normally after a clean optimized-deps rebuild.                           |
+| Define `t` inside `useAskCopilotItem`       | Done               | Page route no longer hit `ReferenceError: t is not defined`; focused editor tests passed.      |
+| Fresh page creation and title edit          | Partially verified | Created `/page/KpsvX2Mx2qyfBg8z`, set title to `Notion QA Page`, and captured screenshots.     |
+| Slash-menu/checklist/inline-toolbar pass    | Still incomplete   | App navigated back to project workspace during slash-menu attempt; needs another focused pass. |
 
 ## Files Changed By This UI Pass
 
@@ -56,6 +67,7 @@ Visual validation:
 - Successful screenshots were captured for the initial editor and early typography/page chrome phases.
 - Later phases were blocked by the dev Electron route rendering only loader/debug states.
 - Fresh Phase 10 relaunch timed out waiting for renderer readiness and showed only `Composer`.
+- Follow-up screenshots show renderer boot, page editor shell load, fresh page creation, title edit, and representative editor text entry.
 
 ## Top Screenshot Artifacts
 
@@ -65,6 +77,11 @@ Visual validation:
 - Phase 9 blocked check: `session-artifacts/screenshots/09-phase9-micro-interactions-check.png`
 - Phase 10 fresh-launch blocker: `session-artifacts/screenshots/10-regression-fresh-launch.png`
 - Phase 10 page-route blocker: `session-artifacts/screenshots/10-regression-page-route-blocked.png`
+- Renderer ready after follow-up fix: `session-artifacts/screenshots/11-renderer-ready-after-toasthost-fix.png`
+- Page editor shell loaded: `session-artifacts/screenshots/14-page-editor-loaded-after-fixes.png`
+- Fresh page editor opened: `session-artifacts/screenshots/17-new-page-editor-open.png`
+- Title set: `session-artifacts/screenshots/18-regression-title-set.png`
+- Representative block text entered: `session-artifacts/screenshots/19-regression-block-text-entered.png`
 
 ### Screenshot Evidence
 
@@ -88,11 +105,23 @@ Phase 10 fresh-launch blocker:
 
 ![Phase 10 fresh launch blocker](session-artifacts/screenshots/10-regression-fresh-launch.png)
 
+Renderer ready after follow-up fix:
+
+![Renderer ready after follow-up fix](session-artifacts/screenshots/11-renderer-ready-after-toasthost-fix.png)
+
+Fresh page editor opened:
+
+![Fresh page editor opened](session-artifacts/screenshots/17-new-page-editor-open.png)
+
+Title set:
+
+![Title set](session-artifacts/screenshots/18-regression-title-set.png)
+
 ## Remaining Gaps By Severity
 
 ### High
 
-- Phase 10 end-to-end regression could not run because the fresh dev Electron app stayed at `Composer` loading.
+- Phase 10 end-to-end regression is still incomplete. The `Composer` loading blocker was fixed enough to reach the editor shell, but slash-menu/checklist/inline-toolbar validation still needs a clean route-stable pass.
 - Multi-block selection behavior is styled only at the selection surface; Notion-level drag selection mechanics were not implemented.
 - Cover image and emoji icon styling are presentational shells only; real persistence and user-driven cover/icon flows still need product/store integration.
 - Live computed-style extraction from Notion was skipped after the instruction to use only the dev Electron app.
@@ -137,3 +166,4 @@ Phase 10 fresh-launch blocker:
 - `bf7bad83a phase 7: inline table styling`
 - `f94ed38fb phase 8: notion ai shells`
 - `5bb63c697 phase 9: micro interactions`
+- Follow-up commit: `fix: unblock page editor dev regression`
