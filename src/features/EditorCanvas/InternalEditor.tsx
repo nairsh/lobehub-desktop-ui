@@ -295,8 +295,11 @@ const styles = createStaticStyles(({ css }) => ({
     --page-editor-placeholder: ${cssVar.colorTextQuaternary};
     --page-editor-link: #2383e2;
     --page-editor-selection: rgb(35 131 226 / 28%);
+    --page-editor-border: color-mix(in srgb, ${cssVar.colorBorder} 72%, transparent);
     --page-editor-block-hover: color-mix(in srgb, ${cssVar.colorText} 3.6%, transparent);
+    --page-editor-callout-bg: color-mix(in srgb, ${cssVar.colorText} 5%, transparent);
     --page-editor-code-bg: color-mix(in srgb, ${cssVar.colorText} 8%, transparent);
+    --page-editor-code-block-bg: color-mix(in srgb, ${cssVar.colorText} 6%, transparent);
     --page-editor-code-text: color-mix(in srgb, ${cssVar.colorText} 86%, #eb5757);
 
     [data-lexical-editor='true'] {
@@ -409,6 +412,161 @@ const styles = createStaticStyles(({ css }) => ({
     [data-lexical-editor='true'] strong,
     [data-lexical-editor='true'] b {
       font-weight: 600;
+    }
+
+    [data-lexical-editor='true'] ul,
+    [data-lexical-editor='true'] ol {
+      margin-block: 0;
+      padding-block: 2px;
+      padding-inline-start: 1.45em;
+    }
+
+    [data-lexical-editor='true'] li {
+      min-height: 24px;
+      padding-block: 1px;
+      padding-inline-start: 0.15em;
+    }
+
+    [data-lexical-editor='true'] li::marker {
+      color: var(--page-editor-text-secondary);
+    }
+
+    [data-lexical-editor='true'] input[type='checkbox'] {
+      width: 16px;
+      height: 16px;
+      margin-block: 0;
+      margin-inline: 0 8px;
+      border: 1px solid var(--page-editor-border);
+      border-radius: 3px;
+
+      vertical-align: -2px;
+
+      accent-color: #2383e2;
+    }
+
+    [data-lexical-editor='true'] li[aria-checked='true'],
+    [data-lexical-editor='true'] li[data-checked='true'],
+    [data-lexical-editor='true'] li.checked {
+      color: var(--page-editor-text-tertiary);
+      text-decoration: line-through;
+    }
+
+    [data-lexical-editor='true'] details {
+      padding-block: 2px;
+    }
+
+    [data-lexical-editor='true'] summary {
+      cursor: pointer;
+      min-height: 24px;
+      list-style-position: outside;
+    }
+
+    [data-lexical-editor='true'] summary::marker {
+      color: var(--page-editor-text-tertiary);
+    }
+
+    [data-lexical-editor='true'] blockquote {
+      margin-block: 4px;
+      margin-inline: 0;
+      padding-block: 2px;
+      padding-inline-start: 14px;
+      border-inline-start: 3px solid var(--page-editor-text);
+
+      color: var(--page-editor-text);
+    }
+
+    [data-lexical-editor='true'] [data-callout],
+    [data-lexical-editor='true'] .callout,
+    [data-lexical-editor='true'] [class*='callout' i] {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+
+      margin-block: 4px;
+      padding: 16px;
+      border-radius: 3px;
+
+      background: var(--page-editor-callout-bg);
+    }
+
+    [data-lexical-editor='true'] pre {
+      overflow: auto;
+
+      margin-block: 6px;
+      padding: 16px;
+      border-radius: 4px;
+
+      background: var(--page-editor-code-block-bg);
+    }
+
+    [data-lexical-editor='true'] pre code {
+      padding: 0;
+      color: var(--page-editor-text);
+      background: transparent;
+    }
+
+    [data-lexical-editor='true'] hr {
+      height: 1px;
+      margin-block: 13px;
+      border: 0;
+      background: var(--page-editor-border);
+    }
+
+    [data-lexical-editor='true'] img {
+      display: block;
+
+      max-width: 100%;
+      height: auto;
+      margin-block: 6px;
+      border-radius: 3px;
+    }
+
+    [data-lexical-editor='true'] figure {
+      margin-block: 6px;
+      margin-inline: 0;
+    }
+
+    [data-lexical-editor='true'] figcaption,
+    [data-lexical-editor='true'] [data-caption] {
+      min-height: 20px;
+      margin-block-start: 6px;
+
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--page-editor-text-tertiary);
+      text-align: center;
+    }
+
+    [data-lexical-editor='true'] table {
+      table-layout: fixed;
+      border-collapse: collapse;
+
+      width: 100%;
+      margin-block: 8px;
+
+      font-size: 14px;
+      line-height: 20px;
+    }
+
+    [data-lexical-editor='true'] th,
+    [data-lexical-editor='true'] td {
+      min-width: 120px;
+      height: 32px;
+      padding-block: 6px;
+      padding-inline: 8px;
+      border: 1px solid var(--page-editor-border);
+
+      vertical-align: top;
+    }
+
+    [data-lexical-editor='true'] th {
+      font-weight: 500;
+      color: var(--page-editor-text-secondary);
+      background: color-mix(in srgb, ${cssVar.colorText} 4%, transparent);
+    }
+
+    [data-lexical-editor='true'] tr:hover td {
+      background: color-mix(in srgb, ${cssVar.colorText} 2.5%, transparent);
     }
 
     [data-block-drag-handle='true'],
