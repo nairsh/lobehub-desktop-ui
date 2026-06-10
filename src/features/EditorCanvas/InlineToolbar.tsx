@@ -10,7 +10,7 @@ import { createStaticStyles, cssVar, cx } from 'antd-style';
 import {
   BoldIcon,
   CheckIcon,
-  ChevronDownIcon,
+  ChevronRightIcon,
   CodeXmlIcon,
   Heading1Icon,
   Heading2Icon,
@@ -22,10 +22,13 @@ import {
   ListTodoIcon,
   MessageSquareQuote,
   MoreHorizontalIcon,
+  RadicalIcon,
   Redo2Icon,
   SigmaIcon,
   SlidersHorizontalIcon,
+  SmilePlusIcon,
   SquareDashedBottomCodeIcon,
+  SquarePenIcon,
   StrikethroughIcon,
   UnderlineIcon,
   Undo2Icon,
@@ -49,18 +52,21 @@ const styles = createStaticStyles(({ css }) => ({
 
     font-size: 13px;
     font-weight: 500;
-    color: ${cssVar.colorTextSecondary};
+    color: var(--page-editor-toolbar-text-secondary, ${cssVar.colorTextSecondary});
 
     background: transparent;
 
     transition:
-      background-color ${cssVar.motionDurationMid} ${cssVar.motionEaseInOut},
-      color ${cssVar.motionDurationMid} ${cssVar.motionEaseInOut},
-      transform ${cssVar.motionDurationMid} ${cssVar.motionEaseInOut};
+      background-color 100ms ease,
+      color 100ms ease,
+      transform 100ms ease;
 
     &:hover {
-      color: ${cssVar.colorText};
-      background: color-mix(in srgb, ${cssVar.colorText} 7%, transparent);
+      color: var(--page-editor-toolbar-text, ${cssVar.colorText});
+      background: var(
+        --page-editor-toolbar-hover,
+        color-mix(in srgb, ${cssVar.colorText} 7%, transparent)
+      );
     }
 
     &:active {
@@ -73,8 +79,11 @@ const styles = createStaticStyles(({ css }) => ({
     }
   `,
   floatingActionActive: css`
-    color: ${cssVar.colorText};
-    background: color-mix(in srgb, ${cssVar.colorText} 10%, transparent);
+    color: var(--page-editor-toolbar-text, ${cssVar.colorText});
+    background: var(
+      --page-editor-toolbar-active,
+      color-mix(in srgb, ${cssVar.colorText} 10%, transparent)
+    );
   `,
   floatingActionIconOnly: css`
     width: 27px;
@@ -83,22 +92,62 @@ const styles = createStaticStyles(({ css }) => ({
   floatingActionLabeled: css`
     padding-inline: 8px;
   `,
-  floatingShell: css`
-    display: inline-flex;
-    gap: 3px;
-    align-items: center;
+  floatingEditWithAi: css`
+    margin-block-start: 2px;
+    padding-block-start: 6px;
+    border-block-start: 1px solid var(--page-editor-toolbar-border);
 
-    width: max-content;
+    input,
+    textarea,
+    [contenteditable='true'] {
+      border-color: var(--page-editor-toolbar-border);
+      color: var(--page-editor-toolbar-text);
+      background: rgb(255 255 255 / 6%);
+    }
+  `,
+  floatingShell: css`
+    --page-editor-toolbar-bg: #2f3437;
+    --page-editor-toolbar-text: rgb(255 255 255 / 92%);
+    --page-editor-toolbar-text-secondary: rgb(255 255 255 / 72%);
+    --page-editor-toolbar-text-tertiary: rgb(255 255 255 / 48%);
+    --page-editor-toolbar-border: rgb(255 255 255 / 11%);
+    --page-editor-toolbar-hover: rgb(255 255 255 / 9%);
+    --page-editor-toolbar-active: rgb(255 255 255 / 14%);
+
+    transform-origin: top center;
+
+    display: flex;
+    flex-direction: column;
+
+    width: 230px;
     max-width: calc(100vw - 24px);
-    min-height: 36px;
-    padding: 4px;
-    border: 1px solid color-mix(in srgb, ${cssVar.colorBorder} 76%, transparent);
+    padding: 6px;
+    border: 1px solid var(--page-editor-toolbar-border);
     border-radius: 8px;
 
-    background: ${cssVar.colorBgElevated};
+    color: var(--page-editor-toolbar-text);
+
+    background: var(--page-editor-toolbar-bg);
     box-shadow:
-      0 12px 28px rgb(15 23 42 / 12%),
-      0 2px 5px rgb(15 23 42 / 8%);
+      0 14px 34px rgb(0 0 0 / 28%),
+      0 2px 8px rgb(0 0 0 / 18%);
+
+    animation: lobe-slash-menu-pop 100ms cubic-bezier(0.16, 1, 0.3, 1);
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
+  `,
+  floatingRow: css`
+    display: flex;
+    gap: 1px;
+    align-items: center;
+    min-height: 30px;
+  `,
+  floatingRowBorder: css`
+    margin-block-start: 2px;
+    padding-block-start: 4px;
+    border-block-start: 1px solid var(--page-editor-toolbar-border);
   `,
   floatingSection: css`
     display: inline-flex;
@@ -107,7 +156,41 @@ const styles = createStaticStyles(({ css }) => ({
   `,
   floatingSectionBorder: css`
     padding-inline-start: 3px;
-    border-inline-start: 1px solid color-mix(in srgb, ${cssVar.colorBorder} 58%, transparent);
+    border-inline-start: 1px solid var(--page-editor-toolbar-border);
+  `,
+  floatingSkillItem: css`
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+
+    width: 100%;
+    height: 28px;
+    padding-inline: 8px;
+    border: 0;
+    border-radius: 5px;
+
+    font-size: 13px;
+    color: var(--page-editor-toolbar-text);
+    text-align: start;
+
+    background: transparent;
+
+    &:hover {
+      background: var(--page-editor-toolbar-hover);
+    }
+  `,
+  floatingSkillsHeader: css`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    height: 28px;
+    padding-inline: 8px 6px;
+
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--page-editor-toolbar-text-tertiary);
   `,
   floatingWideAction: css`
     cursor: pointer;
@@ -117,7 +200,7 @@ const styles = createStaticStyles(({ css }) => ({
     align-items: center;
     justify-content: flex-start;
 
-    width: auto;
+    width: 100%;
     height: 28px;
     padding-inline: 8px 6px;
     border: 0;
@@ -125,13 +208,29 @@ const styles = createStaticStyles(({ css }) => ({
 
     font-size: 13px;
     line-height: 1;
-    color: ${cssVar.colorText};
+    color: var(--page-editor-toolbar-text);
+    white-space: nowrap;
 
     background: transparent;
 
     &:hover {
-      background: color-mix(in srgb, ${cssVar.colorText} 7%, transparent);
+      background: var(--page-editor-toolbar-hover);
     }
+  `,
+  floatingColorBox: css`
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 20px;
+    height: 20px;
+    border: 1px solid var(--page-editor-toolbar-border);
+    border-radius: 5px;
+
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--page-editor-toolbar-text);
   `,
   floatingTextIcon: css`
     display: inline-flex;
@@ -156,25 +255,6 @@ const styles = createStaticStyles(({ css }) => ({
     display: inline-flex;
     gap: 10px;
     align-items: center;
-  `,
-  popoverExtraAction: css`
-    button {
-      justify-content: flex-start;
-
-      width: auto;
-      height: 27px;
-      padding-inline: 8px;
-      border-radius: 5px;
-
-      font-weight: 500;
-      color: ${cssVar.colorText};
-
-      background: transparent;
-
-      &:hover {
-        background: color-mix(in srgb, ${cssVar.colorText} 7%, transparent);
-      }
-    }
   `,
 }));
 
@@ -286,20 +366,6 @@ const hasToolbarChildren = (
 ): item is ChatInputActionItem & { children: ReactNode; key: string } =>
   !('type' in item) && 'key' in item && 'children' in item;
 
-const renderExtraFloatingItem = (item: ChatInputActionItem) => {
-  if (!item || 'type' in item) return null;
-
-  if ('children' in item && item.children) {
-    return (
-      <div className={styles.popoverExtraAction} key={item.key}>
-        {item.children}
-      </div>
-    );
-  }
-
-  return null;
-};
-
 export interface InlineToolbarProps {
   className?: string;
   editor?: IEditor;
@@ -328,7 +394,7 @@ const InlineToolbar = memo<InlineToolbarProps>(
           {
             icon: blockStyleIconMap.text,
             key: 'text',
-            label: t('selectionToolbar.normalText', 'Normal Text'),
+            label: t('selectionToolbar.normalText'),
             onClick: () => toHeading('p'),
           },
           {
@@ -444,7 +510,7 @@ const InlineToolbar = memo<InlineToolbarProps>(
                 >
                   {activeBlockStyleItem.icon}
                   <span>{activeBlockStyleItem.label}</span>
-                  <ChevronDownIcon size={14} style={{ marginLeft: 'auto' }} />
+                  <ChevronRightIcon size={13} style={{ marginLeft: 'auto', opacity: 0.5 }} />
                 </button>
               </Dropdown>
             ),
@@ -724,123 +790,173 @@ const InlineToolbar = memo<InlineToolbarProps>(
     if (!editorState) return null;
     if (floating && !hasRangeSelection()) return null;
 
-    if (floating)
+    if (floating) {
+      const handleClearFormatting = () => {
+        if (editorState.isBold) editorState.bold();
+        if (editorState.isItalic) editorState.italic();
+        if (editorState.isUnderline) editorState.underline();
+        if (editorState.isStrikethrough) editorState.strikethrough();
+        if (editorState.isCode) editorState.code();
+      };
+
       return (
         <div className={cx(styles.floatingShell, className)} style={style}>
-          {extraItems?.length ? (
-            <div className={styles.floatingSection}>{extraItems.map(renderExtraFloatingItem)}</div>
-          ) : null}
-
-          <div className={styles.floatingSection}>
+          <div className={styles.floatingRow}>
             {items
               .filter(hasToolbarChildren)
               .filter((item) => item.key === 'text-style')
               .map((item) => (
-                <div key={item.key}>{item.children}</div>
+                <div key={item.key} style={{ width: '100%' }}>
+                  {item.children}
+                </div>
               ))}
           </div>
 
-          <div className={cx(styles.floatingSection, styles.floatingSectionBorder)}>
-            <FloatingToolbarButton
-              active={editorState.isBold}
-              ariaLabel={t('typobar.bold')}
-              onClick={editorState.bold}
-            >
-              <span className={styles.floatingTextIcon}>B</span>
-            </FloatingToolbarButton>
-            <FloatingToolbarButton
-              active={editorState.isItalic}
-              ariaLabel={t('typobar.italic')}
-              onClick={editorState.italic}
-            >
-              <span className={styles.floatingTextIcon} style={{ fontStyle: 'italic' }}>
-                I
-              </span>
-            </FloatingToolbarButton>
-            <FloatingToolbarButton
-              active={editorState.isUnderline}
-              ariaLabel={t('typobar.underline')}
-              onClick={editorState.underline}
-            >
-              <span className={styles.floatingTextIcon} style={{ textDecoration: 'underline' }}>
-                U
-              </span>
-            </FloatingToolbarButton>
+          <div className={cx(styles.floatingRow, styles.floatingRowBorder)}>
+            <div className={styles.floatingSection}>
+              <FloatingToolbarButton ariaLabel={t('selectionToolbar.color')}>
+                <span className={styles.floatingColorBox}>A</span>
+              </FloatingToolbarButton>
+              <FloatingToolbarButton
+                active={editorState.isBold}
+                ariaLabel={t('typobar.bold')}
+                onClick={editorState.bold}
+              >
+                <span className={styles.floatingTextIcon}>B</span>
+              </FloatingToolbarButton>
+              <FloatingToolbarButton
+                active={editorState.isItalic}
+                ariaLabel={t('typobar.italic')}
+                onClick={editorState.italic}
+              >
+                <span className={styles.floatingTextIcon} style={{ fontStyle: 'italic' }}>
+                  I
+                </span>
+              </FloatingToolbarButton>
+              <FloatingToolbarButton
+                active={editorState.isUnderline}
+                ariaLabel={t('typobar.underline')}
+                onClick={editorState.underline}
+              >
+                <span className={styles.floatingTextIcon} style={{ textDecoration: 'underline' }}>
+                  U
+                </span>
+              </FloatingToolbarButton>
+              <FloatingToolbarButton
+                ariaLabel={t('selectionToolbar.clearFormat')}
+                onClick={handleClearFormatting}
+              >
+                <span className={styles.floatingTextIcon} style={{ fontSize: 11, fontWeight: 500 }}>
+                  Tx
+                </span>
+              </FloatingToolbarButton>
+            </div>
+          </div>
+
+          <div className={cx(styles.floatingRow, styles.floatingRowBorder)}>
             <FloatingToolbarButton ariaLabel={t('typobar.link')} onClick={editorState.insertLink}>
               <LinkIcon size={15} />
             </FloatingToolbarButton>
-            <FloatingToolbarButton ariaLabel={t('selectionToolbar.color')}>
-              <span className={styles.floatingTextIcon}>A</span>
+            <FloatingToolbarButton
+              active={editorState.isStrikethrough}
+              ariaLabel={t('typobar.strikethrough')}
+              onClick={editorState.strikethrough}
+            >
+              <span className={styles.floatingTextIcon} style={{ textDecoration: 'line-through' }}>
+                S
+              </span>
             </FloatingToolbarButton>
-          </div>
-
-          <div className={cx(styles.floatingSection, styles.floatingSectionBorder)}>
-            <FloatingToolbarButton labeled ariaLabel={t('selectionToolbar.comment')}>
-              <MessageSquareQuote size={15} />
-              <span>{t('selectionToolbar.comment')}</span>
+            <FloatingToolbarButton
+              active={editorState.isCode}
+              ariaLabel={t('typobar.code')}
+              onClick={editorState.code}
+            >
+              <CodeXmlIcon size={15} />
+            </FloatingToolbarButton>
+            <FloatingToolbarButton ariaLabel={t('typobar.tex')} onClick={editorState.insertMath}>
+              <RadicalIcon size={15} />
             </FloatingToolbarButton>
             <Dropdown
               trigger={['click']}
               menu={{
                 items: [
-                  { key: 'proofread', label: t('pageAiIsland.proofread') },
-                  { key: 'explain', label: t('pageAiIsland.explain') },
-                  { key: 'improve', label: t('pageAiIsland.improve') },
-                  { key: 'reformat', label: t('selectionToolbar.reformat') },
+                  {
+                    key: 'blockquote',
+                    label: t('typobar.blockquote'),
+                    onClick: editorState.blockquote,
+                  },
+                  {
+                    key: 'bulletList',
+                    label: t('typobar.bulletList'),
+                    onClick: editorState.bulletList,
+                  },
+                  {
+                    key: 'numberList',
+                    label: t('typobar.numberList'),
+                    onClick: editorState.numberList,
+                  },
+                  { key: 'taskList', label: t('typobar.taskList'), onClick: editorState.checkList },
+                  {
+                    key: 'codeblock',
+                    label: t('typobar.codeblock'),
+                    onClick: editorState.codeblock,
+                  },
                 ],
               }}
             >
               <span onMouseDown={preventToolbarMouseDown}>
-                <FloatingToolbarButton labeled ariaLabel={t('selectionToolbar.skills')}>
-                  <SlidersHorizontalIcon size={15} />
-                  <span>{t('selectionToolbar.skills')}</span>
+                <FloatingToolbarButton ariaLabel={t('selectionToolbar.more')}>
+                  <MoreHorizontalIcon size={15} />
                 </FloatingToolbarButton>
               </span>
             </Dropdown>
           </div>
 
-          <Dropdown
-            trigger={['click']}
-            menu={{
-              items: [
-                {
-                  key: 'strikethrough',
-                  label: t('typobar.strikethrough'),
-                  onClick: editorState.strikethrough,
-                },
-                { key: 'clearFormat', label: t('selectionToolbar.clearFormat') },
-                { key: 'code', label: t('typobar.code'), onClick: editorState.code },
-                { key: 'math', label: t('typobar.tex'), onClick: editorState.insertMath },
-                {
-                  key: 'blockquote',
-                  label: t('typobar.blockquote'),
-                  onClick: editorState.blockquote,
-                },
-                {
-                  key: 'bulletList',
-                  label: t('typobar.bulletList'),
-                  onClick: editorState.bulletList,
-                },
-                {
-                  key: 'numberList',
-                  label: t('typobar.numberList'),
-                  onClick: editorState.numberList,
-                },
-                { key: 'taskList', label: t('typobar.taskList'), onClick: editorState.checkList },
-                { key: 'codeblock', label: t('typobar.codeblock'), onClick: editorState.codeblock },
-                { key: 'reaction', label: t('selectionToolbar.reaction') },
-                { key: 'open', label: t('selectionToolbar.open') },
-              ],
-            }}
-          >
-            <span onMouseDown={preventToolbarMouseDown}>
-              <FloatingToolbarButton ariaLabel={t('selectionToolbar.more')}>
-                <MoreHorizontalIcon size={15} />
+          <div className={cx(styles.floatingRow, styles.floatingRowBorder)}>
+            <FloatingToolbarButton labeled ariaLabel={t('selectionToolbar.comment')}>
+              <MessageSquareQuote size={15} />
+              <span>{t('selectionToolbar.comment')}</span>
+            </FloatingToolbarButton>
+            <div style={{ display: 'flex', gap: 1, marginLeft: 'auto' }}>
+              <FloatingToolbarButton ariaLabel={t('selectionToolbar.reaction')}>
+                <SmilePlusIcon size={14} />
               </FloatingToolbarButton>
-            </span>
-          </Dropdown>
+              <FloatingToolbarButton ariaLabel={t('blockMenu.suggestEdits')}>
+                <SquarePenIcon size={14} />
+              </FloatingToolbarButton>
+            </div>
+          </div>
+
+          <div className={cx(styles.floatingSkillsHeader, styles.floatingRowBorder)}>
+            <span>{t('selectionToolbar.skills')}</span>
+            <SlidersHorizontalIcon size={13} style={{ opacity: 0.45 }} />
+          </div>
+          {[
+            { key: 'proofread', label: t('pageAiIsland.proofread') },
+            { key: 'explain', label: t('pageAiIsland.explain') },
+            { key: 'improve', label: t('pageAiIsland.improve') },
+            { key: 'reformat', label: t('selectionToolbar.reformat') },
+          ].map((skill) => (
+            <button
+              className={styles.floatingSkillItem}
+              key={skill.key}
+              type="button"
+              onMouseDown={preventToolbarMouseDown}
+            >
+              {skill.label}
+            </button>
+          ))}
+
+          {extraItems?.length ? (
+            <div className={styles.floatingEditWithAi}>
+              {extraItems.filter(hasToolbarChildren).map((item) => (
+                <div key={item.key}>{item.children}</div>
+              ))}
+            </div>
+          ) : null}
         </div>
       );
+    }
 
     // Fixed toolbar - wrap in a styled container
     return (
