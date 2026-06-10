@@ -453,31 +453,33 @@ const styles = createStaticStyles(({ css }) => ({
 
     width: min(${SLASH_MENU_WIDTH}px, calc(100vw - 24px));
     max-height: min(${SLASH_MENU_MAX_HEIGHT}px, calc(100vh - 24px));
-    padding: 8px;
-    border: 1px solid color-mix(in srgb, ${cssVar.colorBorder} 72%, transparent);
-    border-radius: 14px;
+    padding: 4px;
+    border: 1px solid color-mix(in srgb, ${cssVar.colorBorder} 58%, transparent);
+    border-radius: 10px;
 
     background: ${cssVar.colorBgElevated};
     box-shadow:
-      0 18px 44px rgb(15 23 42 / 13%),
-      0 3px 10px rgb(15 23 42 / 8%);
+      0 12px 28px rgb(15 23 42 / 16%),
+      0 2px 8px rgb(15 23 42 / 10%);
 
-    animation: lobe-slash-menu-pop 120ms cubic-bezier(0.16, 1, 0.3, 1);
+    animation: lobe-slash-menu-pop 100ms cubic-bezier(0.16, 1, 0.3, 1);
   `,
   slashMenuSectionLabel: css`
+    user-select: none;
+
     display: flex;
     align-items: center;
 
-    height: 24px;
-    padding-inline: 8px;
+    height: 26px;
+    padding-inline: 10px;
 
-    font-size: 12px;
-    font-weight: 500;
+    font-size: 11px;
+    font-weight: 600;
     color: ${cssVar.colorTextTertiary};
   `,
   slashMenuDivider: css`
     height: 1px;
-    margin-block: 4px 3px;
+    margin-block: 4px;
     background: color-mix(in srgb, ${cssVar.colorBorder} 58%, transparent);
   `,
   slashMenuFooter: css`
@@ -485,56 +487,61 @@ const styles = createStaticStyles(({ css }) => ({
     align-items: center;
     justify-content: space-between;
 
-    height: 36px;
-    margin-block: 6px -8px;
-    margin-inline: -8px;
-    padding-inline: 10px;
+    height: 30px;
+    margin-block: 4px -4px;
+    margin-inline: -4px;
+    padding-inline: 12px;
     border-block-start: 1px solid color-mix(in srgb, ${cssVar.colorBorder} 58%, transparent);
 
-    font-size: 13px;
-    color: ${cssVar.colorTextSecondary};
+    font-size: 12px;
+    color: ${cssVar.colorTextTertiary};
   `,
   slashMenuFooterShortcut: css`
-    font-size: 13px;
+    font-size: 12px;
     color: ${cssVar.colorTextQuaternary};
   `,
   slashMenuList: css`
     overflow: hidden auto;
-    max-height: min(336px, calc(100vh - 84px));
+    max-height: min(356px, calc(100vh - 72px));
+    padding-block: 2px;
   `,
   slashMenuItem: css`
     cursor: pointer;
 
     display: grid;
-    grid-template-columns: 24px minmax(0, 1fr) auto;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
     gap: 10px;
     align-items: center;
 
     width: 100%;
-    min-height: 34px;
-    padding-block: 4px;
-    padding-inline: 8px;
+    min-height: 46px;
+    padding-block: 5px;
+    padding-inline: 6px 8px;
     border: 0;
-    border-radius: 8px;
+    border-radius: 6px;
 
     color: ${cssVar.colorText};
     text-align: start;
 
     background: transparent;
 
+    transition: background-color 80ms ease;
+
     &:hover {
-      background: color-mix(in srgb, ${cssVar.colorText} 8%, transparent);
+      background: color-mix(in srgb, ${cssVar.colorText} 7%, transparent);
     }
   `,
   slashMenuItemActive: css`
-    background: color-mix(in srgb, ${cssVar.colorText} 9%, transparent);
+    background: color-mix(in srgb, ${cssVar.colorText} 8%, transparent);
   `,
   slashMenuItemExtra: css`
     overflow: hidden;
-    display: none;
+    display: block;
+
+    margin-block-start: 1px;
 
     font-size: 12px;
-    line-height: 1.35;
+    line-height: 16px;
     color: ${cssVar.colorTextTertiary};
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -546,8 +553,11 @@ const styles = createStaticStyles(({ css }) => ({
 
     width: 24px;
     height: 24px;
+    border-radius: 4px;
 
     color: ${cssVar.colorTextSecondary};
+
+    background: color-mix(in srgb, ${cssVar.colorText} 5%, transparent);
   `,
   slashMenuItemTitle: css`
     overflow: hidden;
@@ -555,12 +565,12 @@ const styles = createStaticStyles(({ css }) => ({
 
     font-size: 14px;
     font-weight: 400;
-    line-height: 1.2;
+    line-height: 20px;
     text-overflow: ellipsis;
     white-space: nowrap;
   `,
   slashMenuShortcut: css`
-    font-size: 13px;
+    font-size: 12px;
     color: ${cssVar.colorTextQuaternary};
     white-space: nowrap;
   `,
@@ -1917,6 +1927,7 @@ const InternalEditor = memo<InternalEditorProps>(
                   return (
                     <button
                       aria-label={String(item.label)}
+                      aria-selected={isActive}
                       className={cx(styles.slashMenuItem, isActive && styles.slashMenuItemActive)}
                       data-slash-index={optionIndex}
                       key={item.key}
