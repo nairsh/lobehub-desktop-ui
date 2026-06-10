@@ -1,6 +1,7 @@
-import { isChatGroupSessionId } from '@lobechat/types';
 import { Flexbox } from '@lobehub/ui';
-import { memo, useCallback, useEffect, useMemo } from 'react';
+import { createStaticStyles, cssVar } from 'antd-style';
+import { FileTextIcon } from 'lucide-react';
+import { memo, useEffect, useMemo } from 'react';
 
 import DragUploadZone, { useUploadFiles } from '@/components/DragUploadZone';
 import { actionMap } from '@/features/ChatInput/ActionBar/config';
@@ -15,12 +16,14 @@ import { useAgentStore } from '@/store/agent';
 import { agentByIdSelectors } from '@/store/agent/selectors';
 import { useChatStore } from '@/store/chat';
 
-import AgentSelectorAction from './AgentSelector/AgentSelectorAction';
+import { usePageEditorStore } from '../store';
 import CopilotModelSelector from './CopilotModelSelector';
-import CopilotToolbar from './Toolbar';
+import CopilotHeader from './Header';
 import Welcome from './Welcome';
 
-const Search = actionMap['search'];
+const Upload = actionMap['fileUpload'];
+const Params = actionMap['params'];
+const STT = actionMap['stt'];
 
 const EMPTY_LEFT_ACTIONS: [] = [];
 
@@ -29,12 +32,36 @@ const COMPACT_CONTEXT_VALUE = { actionSize: COMPACT_ACTION_SIZE };
 const COMPACT_ACTION_BAR_STYLE = { paddingLeft: 4, paddingRight: 4 };
 const COMPACT_SEND_BUTTON_PROPS = { size: 28 };
 
+const styles = createStaticStyles(({ css }) => ({
+  contextChip: css`
+    display: inline-flex;
+    gap: 5px;
+    align-items: center;
+
+    width: fit-content;
+    max-width: 220px;
+    height: 22px;
+    padding-inline: 8px;
+    border-radius: 6px;
+
+    font-size: 12px;
+    line-height: 1;
+    color: ${cssVar.colorTextSecondary};
+
+    background: color-mix(in srgb, ${cssVar.colorText} 6%, transparent);
+  `,
+  contextChipLabel: css`
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  `,
+}));
+
 const Conversation = memo(() => {
-  const [setActiveAgentId, useFetchAgentConfig] = useAgentStore((s) => [
-    s.setActiveAgentId,
-    s.useFetchAgentConfig,
-  ]);
+  const setActiveAgentId = useAgentStore((s) => s.setActiveAgentId);
+  const useFetchAgentConfig = useAgentStore((s) => s.useFetchAgentConfig);
   const currentAgentId = useConversationStore(conversationSelectors.agentId);
+  const pageTitle = usePageEditorStore((s) => s.title);
 
   useEffect(() => {
     if (!currentAgentId) return;
@@ -63,27 +90,29 @@ const Conversation = memo(() => {
   );
   const { handleUploadFiles } = useUploadFiles({ model, provider });
 
-  const handleAgentChange = useCallback(
-    (id: string) => {
-      if (!id || id === currentAgentId || isChatGroupSessionId(id)) return;
-      setActiveAgentId(id);
-    },
-    [currentAgentId, setActiveAgentId],
-  );
-
   const leftContent = useMemo(
     () => (
       <ActionBarContext value={COMPACT_CONTEXT_VALUE}>
         <Flexbox horizontal align={'center'} gap={2}>
-          <AgentSelectorAction onAgentChange={handleAgentChange} />
-          <Search />
+          <Upload />
+          <Params />
         </Flexbox>
       </ActionBarContext>
     ),
-    [handleAgentChange],
+    [],
   );
 
-  const modelSelector = useMemo(() => <CopilotModelSelector />, []);
+  const sendAreaPrefix = useMemo(
+    () => (
+      <ActionBarContext value={COMPACT_CONTEXT_VALUE}>
+        <Flexbox horizontal align={'center'} gap={2}>
+          <CopilotModelSelector />
+          <STT />
+        </Flexbox>
+      </ActionBarContext>
+    ),
+    [],
+  );
 
   return (
     <DragUploadZone
@@ -91,16 +120,24 @@ const Conversation = memo(() => {
       onUploadFiles={handleUploadFiles}
     >
       <Flexbox flex={1} height={'100%'}>
-        <CopilotToolbar />
+        <CopilotHeader />
         <Flexbox flex={1} style={{ overflow: 'hidden' }}>
           <ChatList welcome={<Welcome />} />
         </Flexbox>
+        {pageTitle && (
+          <Flexbox paddingInline={12} style={{ paddingBottom: 4 }}>
+            <span className={styles.contextChip}>
+              <FileTextIcon size={12} />
+              <span className={styles.contextChipLabel}>{pageTitle}</span>
+            </span>
+          </Flexbox>
+        )}
         <ChatInput
           actionBarStyle={COMPACT_ACTION_BAR_STYLE}
           allowExpand={false}
           leftActions={EMPTY_LEFT_ACTIONS}
           leftContent={leftContent}
-          sendAreaPrefix={modelSelector}
+          sendAreaPrefix={sendAreaPrefix}
           sendButtonProps={COMPACT_SEND_BUTTON_PROPS}
           showRuntimeConfig={false}
         />

@@ -9,7 +9,6 @@ import { memo, useEffect } from 'react';
 import DiffAllToolbar from '@/features/EditorCanvas/DiffAllToolbar';
 import { useRegisterFilesHotkeys } from '@/hooks/useHotkeys';
 import { useGlobalStore } from '@/store/global';
-import { systemStatusSelectors } from '@/store/global/selectors';
 import { usePageStore } from '@/store/page';
 import { StyleSheet } from '@/utils/styles';
 
@@ -59,7 +58,6 @@ interface PageEditorProps {
 const PageEditorCanvas = memo(() => {
   const editor = usePageEditorStore((s) => s.editor);
   const documentId = usePageEditorStore((s) => s.documentId);
-  const showRightPanel = useGlobalStore(systemStatusSelectors.showRightPanel);
   const updateSystemStatus = useGlobalStore((s) => s.updateSystemStatus);
 
   // Register Files scope and save document hotkey
@@ -94,7 +92,7 @@ const PageEditorCanvas = memo(() => {
           </Flexbox>
           {documentId && <DiffAllToolbar documentId={documentId} editor={editor!} />}
         </Flexbox>
-        {showRightPanel && <Copilot />}
+        <Copilot />
       </Flexbox>
     </>
   );

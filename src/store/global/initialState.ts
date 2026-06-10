@@ -163,6 +163,10 @@ export interface SystemStatus {
   noWideScreen?: boolean;
   pageAgentPanelWidth?: number;
   /**
+   * Presentation mode for the page AI assistant: a floating island or a docked side panel.
+   */
+  pageAiPanelMode?: 'floating' | 'docked';
+  /**
    * number of pages (documents) to display per page
    */
   pagePageSize?: number;
@@ -285,6 +289,7 @@ export const INITIAL_STATUS = {
   modelSwitchPanelWidth: 460,
   noWideScreen: true,
   pageAgentPanelWidth: 360,
+  pageAiPanelMode: 'floating',
   pagePageSize: 20,
   portalWidth: 400,
   readNotificationSlugs: [],

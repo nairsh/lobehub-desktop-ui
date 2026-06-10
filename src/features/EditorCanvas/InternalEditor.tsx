@@ -13,7 +13,6 @@ import { Editor, useEditorState } from '@lobehub/editor/react';
 import { createStaticStyles, cssVar, cx } from 'antd-style';
 import isEqual from 'fast-deep-equal';
 import { $createParagraphNode, $createTextNode, $getNodeByKey, $getRoot } from 'lexical';
-import { ChevronRightIcon } from 'lucide-react';
 import {
   type ComponentType,
   type FormEvent,
@@ -38,14 +37,14 @@ import { useImageUpload } from './useImageUpload';
 const IMAGE_FILTERS = [
   { extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'avif'], name: 'Images' },
 ];
-const SELECTION_MENU_ESTIMATED_HEIGHT = 510;
-const SELECTION_MENU_WIDTH = 320;
-const SLASH_MENU_MAX_HEIGHT = 500;
-const SLASH_MENU_WIDTH = 430;
+const SELECTION_MENU_ESTIMATED_HEIGHT = 350;
+const SELECTION_MENU_WIDTH = 230;
+const SLASH_MENU_MAX_HEIGHT = 400;
+const SLASH_MENU_WIDTH = 320;
 
 const escapeCssContent = (value: string) => value.replaceAll('\\', '\\\\').replaceAll("'", "\\'");
 
-const getBlockOperationPortalStyles = (searchPlaceholder: string) => `
+const getBlockOperationPortalStyles = () => `
   body:has(.lobe-block-operation-dropdown)
     [data-lobe-editor-hovered-block='true'],
   html[data-page-editor-dragging-block='true']
@@ -102,38 +101,77 @@ const getBlockOperationPortalStyles = (searchPlaceholder: string) => `
   }
 
   .lobe-block-operation-dropdown .ant-dropdown-menu {
-    min-width: 360px;
+    min-width: 300px;
     margin-top: 8px;
-    padding: 10px;
+    padding: 8px;
     border: 1px solid color-mix(in srgb, var(--lobe-color-border, rgba(0, 0, 0, 0.12)) 70%, transparent);
-    border-radius: 14px;
+    border-radius: 12px;
     background: var(--lobe-color-bg-elevated, #fff);
     box-shadow: 0 18px 48px rgba(15, 23, 42, 0.14), 0 3px 10px rgba(15, 23, 42, 0.08);
   }
 
-  .lobe-block-operation-dropdown .ant-dropdown-menu::before {
-    content: '${escapeCssContent(searchPlaceholder)}';
+  /* Real search input injected via MutationObserver */
+  .block-menu-search-item {
+    padding: 0 0 6px !important;
+    min-height: unset !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    cursor: default !important;
+    list-style: none;
+  }
+
+  .block-menu-search-item:hover {
+    background: transparent !important;
+  }
+
+  .block-menu-search-input {
     display: flex;
     align-items: center;
-    height: 38px;
-    margin-bottom: 8px;
-    padding-inline: 12px;
+    width: 100%;
+    height: 34px;
+    padding-inline: 10px;
     border: 1px solid color-mix(in srgb, var(--lobe-color-border, rgba(0, 0, 0, 0.12)) 82%, transparent);
-    border-radius: 9px;
-    background: color-mix(in srgb, var(--lobe-color-bg-container, #fff) 96%, var(--lobe-color-text, #1f1f1f) 4%);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--lobe-color-bg-container, #fff) 50%, transparent);
+    color: var(--lobe-color-text, #1f1f1f);
+    font-size: 13px;
+    line-height: 1;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 100ms ease;
+  }
+
+  .block-menu-search-input::placeholder {
+    color: var(--lobe-color-text-quaternary, rgba(0, 0, 0, 0.25));
+  }
+
+  .block-menu-search-input:focus {
+    border-color: var(--lobe-color-primary, #2383e2);
+    background: var(--lobe-color-bg-container, #fff);
+  }
+
+  /* Block type label shown above menu items */
+  .block-menu-type-label {
+    display: block;
+    padding: 2px 8px 4px;
     color: var(--lobe-color-text-tertiary, rgba(0, 0, 0, 0.45));
-    font-size: 17px;
-    line-height: 18px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    list-style: none;
     pointer-events: none;
+    user-select: none;
   }
 
   .lobe-block-operation-dropdown .ant-dropdown-menu-item {
-    min-height: 42px;
-    padding: 8px 10px !important;
-    border-radius: 7px !important;
+    min-height: 34px;
+    padding: 5px 8px !important;
+    border-radius: 6px !important;
     color: var(--lobe-color-text, #1f1f1f) !important;
-    font-size: 18px;
-    line-height: 24px;
+    font-size: 14px;
+    line-height: 22px;
+    transition: background 80ms ease !important;
   }
 
   .lobe-block-operation-dropdown .ant-dropdown-menu-item:hover {
@@ -147,68 +185,46 @@ const getBlockOperationPortalStyles = (searchPlaceholder: string) => `
   .lobe-block-operation-dropdown .ant-dropdown-menu-title-content {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 10px;
   }
 
-  .lobe-block-operation-dropdown .ant-dropdown-menu-title-content::before {
-    content: '';
-    flex: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    border-radius: 4px;
-    background: transparent;
-    color: var(--lobe-color-text-quaternary, rgba(0, 0, 0, 0.34));
-    font-size: 17px;
-    font-weight: 600;
-    line-height: 1;
+  /* Item shortcut hint injected by JS */
+  .block-menu-item-shortcut {
+    margin-left: auto;
+    color: var(--lobe-color-text-quaternary, rgba(0, 0, 0, 0.25));
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
   }
 
-  .lobe-block-operation-dropdown .ant-dropdown-menu-item:nth-child(1) .ant-dropdown-menu-title-content::before {
-    content: 'C';
+  /* Group dividers injected by JS */
+  .block-menu-group-divider {
+    height: 1px;
+    margin: 4px 0;
+    background: color-mix(in srgb, var(--lobe-color-border, rgba(0, 0, 0, 0.12)) 65%, transparent);
+    list-style: none;
+    pointer-events: none;
   }
 
-  .lobe-block-operation-dropdown .ant-dropdown-menu-item:nth-child(2) .ant-dropdown-menu-title-content::before {
-    content: '↗';
+  /* Last edited metadata */
+  .block-menu-meta-item {
+    padding: 4px 8px 2px !important;
+    min-height: unset !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    cursor: default !important;
+    pointer-events: none !important;
+    list-style: none;
   }
 
-  .lobe-block-operation-dropdown .ant-dropdown-menu-item:nth-child(3) .ant-dropdown-menu-title-content::before {
-    content: '⧉';
+  .block-menu-meta-item:hover {
+    background: transparent !important;
   }
 
-  .lobe-block-operation-dropdown .ant-dropdown-menu-item:nth-child(4) .ant-dropdown-menu-title-content::before {
-    content: '↪';
-  }
-
-  .lobe-block-operation-dropdown .ant-dropdown-menu-item:nth-child(5) .ant-dropdown-menu-title-content::before {
-    content: '⌫';
-    color: var(--lobe-color-error, #d93025);
-  }
-
-  .lobe-block-operation-dropdown .ant-dropdown-menu-item:nth-child(6),
-  .lobe-block-operation-dropdown .ant-dropdown-menu-item:nth-child(8),
-  .lobe-block-operation-dropdown .ant-dropdown-menu-item:nth-child(9) {
-    border-top: 1px solid color-mix(in srgb, var(--lobe-color-border, rgba(0, 0, 0, 0.12)) 65%, transparent);
-    margin-top: 6px !important;
-    padding-top: 12px !important;
-  }
-
-  .lobe-block-operation-dropdown .ant-dropdown-menu-item:nth-child(6) .ant-dropdown-menu-title-content::before {
-    content: '☰';
-  }
-
-  .lobe-block-operation-dropdown .ant-dropdown-menu-item:nth-child(7) .ant-dropdown-menu-title-content::before {
-    content: '✎';
-  }
-
-  .lobe-block-operation-dropdown .ant-dropdown-menu-item:nth-child(8) .ant-dropdown-menu-title-content::before {
-    content: '▶';
-  }
-
-  .lobe-block-operation-dropdown .ant-dropdown-menu-item:nth-child(9) .ant-dropdown-menu-title-content::before {
-    content: '✧';
+  .block-menu-meta-text {
+    color: var(--lobe-color-text-quaternary, rgba(0, 0, 0, 0.25));
+    font-size: 11px;
+    line-height: 1.5;
   }
 
   html[data-page-editor-dragging-block='true'] .lobe-block-operation-dropdown {
@@ -225,6 +241,26 @@ const getBlockOperationPortalStyles = (searchPlaceholder: string) => `
   html[data-page-editor-text-selection='true'] .ant-btn[aria-label='Block actions and drag'] {
     opacity: 0;
     pointer-events: none;
+  }
+
+  /* Font variants */
+  html[data-page-editor-font='serif'] [data-lexical-editor='true'] {
+    font-family: Georgia, "Times New Roman", "Palatino Linotype", serif;
+  }
+
+  html[data-page-editor-font='mono'] [data-lexical-editor='true'] {
+    font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", "Cascadia Code", monospace;
+    font-size: 13.5px;
+  }
+
+  /* Small text mode */
+  html[data-page-editor-small-text='true'] [data-lexical-editor='true'] {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  html[data-page-editor-small-text='true'][data-page-editor-font='mono'] [data-lexical-editor='true'] {
+    font-size: 12px;
   }
 `;
 
@@ -319,13 +355,13 @@ const styles = createStaticStyles(({ css }) => ({
     height: 24px;
     padding-inline: 8px;
 
-    font-size: 15px;
-    font-weight: 600;
+    font-size: 12px;
+    font-weight: 500;
     color: ${cssVar.colorTextTertiary};
   `,
   slashMenuDivider: css`
     height: 1px;
-    margin-block: 8px 6px;
+    margin-block: 4px 3px;
     background: color-mix(in srgb, ${cssVar.colorBorder} 58%, transparent);
   `,
   slashMenuFooter: css`
@@ -333,37 +369,37 @@ const styles = createStaticStyles(({ css }) => ({
     align-items: center;
     justify-content: space-between;
 
-    height: 42px;
-    margin-block: 8px -8px;
+    height: 36px;
+    margin-block: 6px -8px;
     margin-inline: -8px;
-    padding-inline: 14px;
+    padding-inline: 10px;
     border-block-start: 1px solid color-mix(in srgb, ${cssVar.colorBorder} 58%, transparent);
 
-    font-size: 17px;
+    font-size: 13px;
     color: ${cssVar.colorTextSecondary};
   `,
   slashMenuFooterShortcut: css`
-    font-size: 16px;
+    font-size: 13px;
     color: ${cssVar.colorTextQuaternary};
   `,
   slashMenuList: css`
     overflow: hidden auto;
-    max-height: min(438px, calc(100vh - 84px));
+    max-height: min(336px, calc(100vh - 84px));
   `,
   slashMenuItem: css`
     cursor: pointer;
 
     display: grid;
-    grid-template-columns: 30px minmax(0, 1fr) auto 16px;
+    grid-template-columns: 24px minmax(0, 1fr) auto;
     gap: 10px;
     align-items: center;
 
     width: 100%;
-    min-height: 40px;
-    padding-block: 5px;
-    padding-inline: 9px;
+    min-height: 34px;
+    padding-block: 4px;
+    padding-inline: 8px;
     border: 0;
-    border-radius: 12px;
+    border-radius: 8px;
 
     color: ${cssVar.colorText};
     text-align: start;
@@ -392,26 +428,23 @@ const styles = createStaticStyles(({ css }) => ({
     align-items: center;
     justify-content: center;
 
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
+    width: 24px;
+    height: 24px;
 
-    color: ${cssVar.colorTextTertiary};
-
-    background: color-mix(in srgb, ${cssVar.colorText} 5%, transparent);
+    color: ${cssVar.colorTextSecondary};
   `,
   slashMenuItemTitle: css`
     overflow: hidden;
     display: block;
 
-    font-size: 17px;
+    font-size: 14px;
     font-weight: 400;
-    line-height: 1.25;
+    line-height: 1.2;
     text-overflow: ellipsis;
     white-space: nowrap;
   `,
   slashMenuShortcut: css`
-    font-size: 16px;
+    font-size: 13px;
     color: ${cssVar.colorTextQuaternary};
     white-space: nowrap;
   `,
@@ -548,6 +581,7 @@ const InternalEditor = memo<InternalEditorProps>(
       { left: number; top: number } | undefined
     >();
     const [slashFallback, setSlashFallback] = useState<SlashFallbackState>();
+    const slashMenuListRef = useRef<HTMLDivElement>(null);
     const hoveredBlockElementRef = useRef<HTMLElement | null>(null);
     const slashOpenRequestedRef = useRef(false);
     const slashOpenTimerRef = useRef<number | undefined>(undefined);
@@ -879,6 +913,204 @@ const InternalEditor = memo<InternalEditorProps>(
       };
     }, [editor, tEditor]);
 
+    // Inject real search input + structural chrome into block operation dropdown
+    useEffect(() => {
+      const DROPDOWN_SELECTOR = '.lobe-block-operation-dropdown .ant-dropdown-menu';
+      const ITEM_SELECTOR =
+        '.ant-dropdown-menu-item:not(.block-menu-search-item):not(.block-menu-meta-item)';
+      const SEARCH_CLASS = 'block-menu-search-item';
+      const META_CLASS = 'block-menu-meta-item';
+      const DIVIDER_CLASS = 'block-menu-group-divider';
+
+      let activeInput: HTMLInputElement | null = null;
+      let activeHighlight = 0;
+
+      const getVisibleItems = (menu: Element): HTMLElement[] =>
+        Array.from(menu.querySelectorAll<HTMLElement>(ITEM_SELECTOR)).filter(
+          (el) => el.style.display !== 'none',
+        );
+
+      const highlightItem = (menu: Element, index: number) => {
+        const items = getVisibleItems(menu);
+        for (const [i, item] of items.entries()) {
+          item.classList.toggle('ant-dropdown-menu-item-active', i === index);
+        }
+      };
+
+      // Detect block type label for the hovered block
+      const getBlockTypeLabel = (): string => {
+        const blockEl = hoveredBlockElementRef.current;
+        if (!blockEl) return '';
+        const tag = blockEl.tagName.toLowerCase();
+        if (tag === 'h1') return tEditor('slash.h1', { defaultValue: 'Heading 1' });
+        if (tag === 'h2') return tEditor('slash.h2', { defaultValue: 'Heading 2' });
+        if (tag === 'h3') return tEditor('slash.h3', { defaultValue: 'Heading 3' });
+        if (tag === 'h4') return tEditor('slash.h4', { defaultValue: 'Heading 4' });
+        const closestList = blockEl.closest('ul, ol');
+        if (closestList?.tagName.toLowerCase() === 'ul')
+          return tEditor('typobar.bulletList', { defaultValue: 'Bulleted list' });
+        if (closestList?.tagName.toLowerCase() === 'ol')
+          return tEditor('typobar.numberList', { defaultValue: 'Numbered list' });
+        return tEditor('selectionToolbar.text', { defaultValue: 'Text' });
+      };
+
+      // Map known item labels to keyboard shortcut display strings
+      const getItemShortcut = (text: string): string => {
+        const lower = text.toLowerCase().trim();
+        if (lower.includes('copy link') || lower.includes('copy block link')) return '⌘^L';
+        if (lower.includes('duplicate')) return '⌘D';
+        if (lower.includes('move to')) return '⌘⇧P';
+        if (lower.includes('delete')) return 'Del';
+        if (lower.includes('suggest edits')) return '⌘⇧^X';
+        if (lower.includes('ask ai')) return '⌘J';
+        return '';
+      };
+
+      const injectIntoMenu = (menu: Element) => {
+        if (menu.querySelector(`.${SEARCH_CLASS}`)) return;
+
+        // ── Search input ──
+        const searchLi = document.createElement('li');
+        searchLi.className = `${SEARCH_CLASS} ant-dropdown-menu-item`;
+        searchLi.setAttribute('role', 'none');
+
+        const input = document.createElement('input');
+        input.className = 'block-menu-search-input';
+        input.placeholder = tEditor('blockMenu.searchActions', {
+          defaultValue: 'Search actions...',
+        });
+        input.type = 'text';
+        input.setAttribute('aria-label', 'Search actions');
+        input.setAttribute('spellcheck', 'false');
+        searchLi.append(input);
+        menu.prepend(searchLi);
+        activeInput = input;
+        activeHighlight = 0;
+
+        // ── Block type label ──
+        const blockTypeLabel = getBlockTypeLabel();
+        if (blockTypeLabel) {
+          const typeLi = document.createElement('li');
+          typeLi.className = 'block-menu-type-label';
+          typeLi.setAttribute('role', 'none');
+          typeLi.textContent = blockTypeLabel;
+          searchLi.after(typeLi);
+        }
+
+        // ── Keyboard shortcuts on each item ──
+        const allItems = Array.from(menu.querySelectorAll<HTMLElement>(ITEM_SELECTOR));
+        for (const item of allItems) {
+          const titleContent = item.querySelector('.ant-dropdown-menu-title-content');
+          if (!titleContent) continue;
+          const text = titleContent.textContent || '';
+          const shortcut = getItemShortcut(text);
+          if (shortcut && !item.querySelector('.block-menu-item-shortcut')) {
+            const shortcutSpan = document.createElement('span');
+            shortcutSpan.className = 'block-menu-item-shortcut';
+            shortcutSpan.textContent = shortcut;
+            titleContent.append(shortcutSpan);
+          }
+        }
+
+        // ── Dividers between action groups (after Delete / after Comment) ──
+        // Items: copy-block, copy-link, duplicate, move-to, delete | comment, suggest-edits | present, ask-ai
+        const insertDividerBefore = (itemIndex: number) => {
+          const items = Array.from(menu.querySelectorAll<HTMLElement>(ITEM_SELECTOR));
+          const target = items[itemIndex];
+          if (!target) return;
+          const existing = target.previousElementSibling;
+          if (existing?.classList.contains(DIVIDER_CLASS)) return;
+          const divider = document.createElement('li');
+          divider.className = DIVIDER_CLASS;
+          divider.setAttribute('role', 'separator');
+          menu.insertBefore(divider, target);
+        };
+        // Groups: [0-4] core | [5-6] ai-tools | [7-8] present/ai
+        insertDividerBefore(5); // before Comment
+        insertDividerBefore(7); // before Present
+
+        // ── Last edited metadata ──
+        const metaLi = document.createElement('li');
+        metaLi.className = `${META_CLASS} ant-dropdown-menu-item`;
+        metaLi.setAttribute('role', 'none');
+        const metaText = document.createElement('div');
+        metaText.className = 'block-menu-meta-text';
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        metaText.textContent = `${tEditor('blockMenu.lastEditedAt', { defaultValue: 'Just now at' })} ${timeStr}`;
+        metaLi.append(metaText);
+        menu.append(metaLi);
+
+        // Focus after brief delay so the menu renders first
+        setTimeout(() => {
+          input.focus({ preventScroll: true });
+          activeHighlight = 0;
+          highlightItem(menu, 0);
+        }, 40);
+
+        // Filter items
+        input.addEventListener('input', () => {
+          const query = input.value.toLowerCase().trim();
+          const items = Array.from(menu.querySelectorAll<HTMLElement>(ITEM_SELECTOR));
+          for (const item of items) {
+            const text = item.textContent?.toLowerCase() || '';
+            item.style.display = !query || text.includes(query) ? '' : 'none';
+          }
+          // Hide dividers if the surrounding groups are empty
+          for (const div of menu.querySelectorAll<HTMLElement>(`.${DIVIDER_CLASS}`)) {
+            const next = div.nextElementSibling as HTMLElement | null;
+            div.style.display = next?.style.display === 'none' || !next ? 'none' : '';
+          }
+          activeHighlight = 0;
+          highlightItem(menu, 0);
+        });
+
+        // Keyboard navigation
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            document.documentElement.dataset.pageEditorBlockMenuDismissed = 'true';
+            return;
+          }
+          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            const items = getVisibleItems(menu);
+            if (items.length === 0) return;
+            activeHighlight =
+              e.key === 'ArrowDown'
+                ? (activeHighlight + 1) % items.length
+                : (activeHighlight - 1 + items.length) % items.length;
+            highlightItem(menu, activeHighlight);
+            items[activeHighlight]?.scrollIntoView({ block: 'nearest' });
+            return;
+          }
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const items = getVisibleItems(menu);
+            const target = items[activeHighlight] ?? items[0];
+            target?.click();
+          }
+        });
+      };
+
+      const observer = new MutationObserver(() => {
+        const menu = document.querySelector(DROPDOWN_SELECTOR);
+        if (menu) {
+          injectIntoMenu(menu);
+        } else {
+          activeInput = null;
+          activeHighlight = 0;
+        }
+      });
+
+      observer.observe(document.body, { childList: true, subtree: true });
+
+      return () => {
+        observer.disconnect();
+        activeInput = null;
+      };
+    }, [tEditor]);
+
     // Use refs for stable references across re-renders
     const previousDocumentSnapshotRef = useRef<unknown>(undefined);
     const currentLinePlaceholderRef = useRef<HTMLElement | null>(null);
@@ -1117,7 +1349,10 @@ const InternalEditor = memo<InternalEditorProps>(
             return;
           }
 
-          if (event.key === 'Enter' && filteredSelectableSlashItems.length > 0) {
+          if (
+            (event.key === 'Enter' || event.key === 'Tab') &&
+            filteredSelectableSlashItems.length > 0
+          ) {
             event.preventDefault();
             selectSlashFallbackItem(slashFallback.activeIndex);
             return;
@@ -1223,16 +1458,32 @@ const InternalEditor = memo<InternalEditorProps>(
         }
 
         const prefixText = getSelectionPrefixText(selection, block);
-        const trimmedPrefixText = prefixText.trim();
-        const normalizedQuery = trimmedPrefixText.startsWith('/')
-          ? trimmedPrefixText.slice(1)
-          : trimmedPrefixText;
-        const hasMovedPastCommand =
-          prefixText !== trimmedPrefixText ||
-          /\s/.test(normalizedQuery) ||
-          (trimmedPrefixText === '' && slashFallback.triggerText !== undefined);
+        const hasTrigger = slashFallback.triggerText !== undefined;
 
-        if (hasMovedPastCommand) {
+        // When opened via "/", the command marker must still precede the query.
+        if (hasTrigger && !prefixText.startsWith('/')) {
+          closeSlashFallback();
+          return;
+        }
+
+        const rawQuery = hasTrigger ? prefixText.slice(1) : prefixText;
+        const normalizedQuery = rawQuery.trim();
+
+        // "/" followed only by whitespace means the command was abandoned.
+        if (rawQuery.length > 0 && normalizedQuery.length === 0) {
+          closeSlashFallback();
+          return;
+        }
+
+        // Allow interior spaces (e.g. "/heading 1") so multi-word queries keep
+        // filtering — as long as the query still matches at least one block.
+        // A query that matches nothing dismisses the menu so typing prose after
+        // a finished word isn't hijacked.
+        const stillMatchesQuery =
+          normalizedQuery.length === 0 ||
+          selectableSlashItems.some((item) => matchesSlashQuery(item, normalizedQuery));
+
+        if (!stillMatchesQuery) {
           closeSlashFallback();
           return;
         }
@@ -1265,7 +1516,7 @@ const InternalEditor = memo<InternalEditorProps>(
         document.removeEventListener('selectionchange', syncSlashState);
         document.removeEventListener('pointerdown', handlePointerDown, true);
       };
-    }, [closeSlashFallback, editor, slashFallback]);
+    }, [closeSlashFallback, editor, slashFallback, selectableSlashItems]);
 
     useEffect(() => {
       if (!slashFallback) return;
@@ -1280,6 +1531,16 @@ const InternalEditor = memo<InternalEditorProps>(
         );
       }
     }, [filteredSelectableSlashItems.length, slashFallback]);
+
+    // Keep the highlighted item visible while navigating with the arrow keys.
+    useEffect(() => {
+      const activeIndex = slashFallback?.activeIndex;
+      if (activeIndex === undefined) return;
+
+      slashMenuListRef.current
+        ?.querySelector(`[data-slash-index="${activeIndex}"]`)
+        ?.scrollIntoView({ block: 'nearest' });
+    }, [slashFallback?.activeIndex]);
 
     useEffect(() => {
       const lexicalEditor = editor.getLexicalEditor?.();
@@ -1382,6 +1643,10 @@ const InternalEditor = memo<InternalEditorProps>(
       const updateToolbarPosition = () => {
         window.cancelAnimationFrame(frame);
         frame = window.requestAnimationFrame(() => {
+          // Keep the toolbar in place while interacting with its own controls
+          // (e.g. the inline AI input), which would otherwise collapse the selection.
+          if (document.activeElement?.closest('.page-editor-selection-toolbar')) return;
+
           const selection = root.ownerDocument.getSelection();
           if (
             !selection ||
@@ -1473,11 +1738,7 @@ const InternalEditor = memo<InternalEditorProps>(
         onKeyDownCapture={handleEditorKeyDown}
         onPointerUp={syncContentSnapshot}
       >
-        <style>
-          {getBlockOperationPortalStyles(
-            tEditor('blockMenu.searchActions', { defaultValue: 'Search actions...' }),
-          )}
-        </style>
+        <style>{getBlockOperationPortalStyles()}</style>
         <Editor
           content={''}
           editor={editor}
@@ -1500,9 +1761,9 @@ const InternalEditor = memo<InternalEditorProps>(
             role="menu"
             style={{ left: slashFallback.left, top: slashFallback.top }}
           >
-            <div className={styles.slashMenuList}>
+            <div className={styles.slashMenuList} ref={slashMenuListRef}>
               <div className={styles.slashMenuSectionLabel}>
-                {tEditor('slash.category.suggested', { defaultValue: 'Suggested' })}
+                {tEditor('slash.category.basic', { defaultValue: 'Basic blocks' })}
               </div>
               {(() => {
                 let dividerIndex = 0;
@@ -1510,7 +1771,6 @@ const InternalEditor = memo<InternalEditorProps>(
                 return slashItemList.map((item, index) => {
                   if (!isSlashMenuOption(item)) {
                     const labels = [
-                      tEditor('slash.category.basic', { defaultValue: 'Basic blocks' }),
                       tEditor('slash.category.media', { defaultValue: 'Media' }),
                       tEditor('slash.category.advanced', { defaultValue: 'Advanced blocks' }),
                     ];
@@ -1542,6 +1802,7 @@ const InternalEditor = memo<InternalEditorProps>(
                     <button
                       aria-label={String(item.label)}
                       className={cx(styles.slashMenuItem, isActive && styles.slashMenuItemActive)}
+                      data-slash-index={optionIndex}
                       key={item.key}
                       role="menuitem"
                       type="button"
@@ -1554,7 +1815,7 @@ const InternalEditor = memo<InternalEditorProps>(
                       }}
                     >
                       <span className={styles.slashMenuItemIcon}>
-                        {Icon ? <Icon size={15} /> : null}
+                        {Icon ? <Icon size={17} /> : null}
                       </span>
                       <span>
                         <span className={styles.slashMenuItemTitle}>{item.label}</span>
@@ -1567,7 +1828,6 @@ const InternalEditor = memo<InternalEditorProps>(
                       ) : (
                         <span />
                       )}
-                      {isActive ? <ChevronRightIcon size={14} /> : <span />}
                     </button>
                   );
                 });

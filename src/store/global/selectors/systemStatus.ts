@@ -155,6 +155,7 @@ const modelSwitchPanelGroupMode = (s: GlobalState) =>
   s.status.modelSwitchPanelGroupMode || 'byProvider';
 const modelSwitchPanelWidth = (s: GlobalState) => s.status.modelSwitchPanelWidth || 460;
 const pageAgentPanelWidth = (s: GlobalState) => s.status.pageAgentPanelWidth || 360;
+const pageAiPanelMode = (s: GlobalState) => s.status.pageAiPanelMode || 'floating';
 
 const showChatHeader = (s: GlobalState) => !s.status.zenMode;
 const inZenMode = (s: GlobalState) => s.status.zenMode;
@@ -232,6 +233,7 @@ export const systemStatusSelectors = {
   modelSwitchPanelGroupMode,
   modelSwitchPanelWidth,
   pageAgentPanelWidth,
+  pageAiPanelMode,
   pagePageSize,
   portalWidth,
   recentPageSize,
