@@ -1,5 +1,6 @@
 export default {
   'navigation.chat': 'Chat',
+  'navigation.back': 'Back',
   'navigation.discover': 'Discover',
   'navigation.discoverAssistants': 'Discover Assistants',
   'navigation.discoverMcp': 'Discover MCP',
@@ -7,6 +8,7 @@ export default {
   'navigation.discoverProviders': 'Discover Providers',
   'navigation.group': 'Group',
   'navigation.groupChat': 'Group Chat',
+  'navigation.forward': 'Forward',
   'navigation.home': 'Home',
   'navigation.image': 'Image',
   'navigation.knowledgeBase': 'Knowledge Base',

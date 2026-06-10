@@ -542,6 +542,10 @@ export const desktopRoutes: RouteObject[] = [
 
       // Pages routes
       {
+        element: redirectElement('/page'),
+        path: 'pages',
+      },
+      {
         children: [
           {
             element: dynamicElement(() => import('@/routes/(main)/page'), 'Desktop > Page'),

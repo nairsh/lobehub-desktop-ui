@@ -46,6 +46,38 @@ interface LocalGenerationTopicResult {
   updatedAt: Date;
 }
 
+const getPageRouteId = (id: string) => id.replace(/^docs_/, '');
+
+const getMemoryRoute = (result: Extract<SearchResult, { type: 'memory' }>) => {
+  const layer = result.memoryLayer?.toLowerCase();
+
+  switch (layer) {
+    case 'activity':
+    case 'activities': {
+      return `/memory/activities?memoryId=${result.id}`;
+    }
+    case 'context':
+    case 'contexts': {
+      return `/memory/contexts?memoryId=${result.id}`;
+    }
+    case 'experience':
+    case 'experiences': {
+      return `/memory/experiences?memoryId=${result.id}`;
+    }
+    case 'identity':
+    case 'identities': {
+      return `/memory/identities?memoryId=${result.id}`;
+    }
+    case 'preference':
+    case 'preferences': {
+      return `/memory/preferences?preferenceId=${result.id}`;
+    }
+    default: {
+      return `/memory?memoryId=${result.id}`;
+    }
+  }
+};
+
 /**
  * Search results from unified search index.
  */
@@ -117,7 +149,7 @@ const SearchResults = memo<SearchResultsProps>(
           break;
         }
         case 'page': {
-          navigate(`/page/${result.id.split('_')[1]}`);
+          navigate(`/page/${getPageRouteId(result.id)}`);
           break;
         }
         case 'mcp': {
@@ -133,7 +165,7 @@ const SearchResults = memo<SearchResultsProps>(
           break;
         }
         case 'memory': {
-          navigate(`/memory/preferences?preferenceId=${result.id}`);
+          navigate(getMemoryRoute(result));
           break;
         }
         case 'knowledgeBase': {
