@@ -74,6 +74,13 @@ InstructionsModalContent.displayName = 'InstructionsModalContent';
 
 // ── Files modal ────────────────────────────────────────────────────────────
 
+const getNativeUploadFile = (file: UploadFile): File | undefined => {
+  const originFile = file.originFileObj as File | undefined;
+
+  if (originFile) return originFile;
+  if (file instanceof File) return file;
+};
+
 const FilesModalContent = memo<{ knowledgeBaseId: string }>(({ knowledgeBaseId }) => {
   const { t } = useTranslation('project');
   const { close } = useModalContext();
@@ -84,7 +91,7 @@ const FilesModalContent = memo<{ knowledgeBaseId: string }>(({ knowledgeBaseId }
   const handleUpload = async () => {
     setLoading(true);
     try {
-      const files = fileList.map((f) => f.originFileObj as File).filter(Boolean);
+      const files = fileList.map(getNativeUploadFile).filter((file): file is File => Boolean(file));
       await pushDockFileList(files, knowledgeBaseId);
       close();
     } catch (e: any) {
