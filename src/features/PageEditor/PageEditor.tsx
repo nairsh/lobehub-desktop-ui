@@ -24,8 +24,19 @@ import TitleSection from './TitleSection';
 const styles = StyleSheet.create({
   contentWrapper: {
     display: 'flex',
+    flexDirection: 'column',
     overflowY: 'auto',
     position: 'relative',
+  },
+  coverShell: {
+    backgroundColor: 'color-mix(in srgb, var(--ant-color-fill-tertiary) 72%, transparent)',
+    backgroundImage: 'url("/images/screenshot_background.webp")',
+    backgroundPosition: 'center 42%',
+    backgroundSize: 'cover',
+    flex: '0 0 auto',
+    height: 'clamp(150px, 24vh, 230px)',
+    opacity: 0.72,
+    width: '100%',
   },
   editorContainer: {
     minWidth: 0,
@@ -34,8 +45,8 @@ const styles = StyleSheet.create({
   editorContent: {
     marginInline: 'auto',
     maxWidth: 900,
-    paddingInline: 'clamp(56px, 8vw, 96px)',
-    paddingTop: 52,
+    paddingInline: 'clamp(68px, 8vw, 96px)',
+    paddingTop: 32,
     overflowY: 'auto',
     position: 'relative',
     width: 'min(100%, 900px)',
@@ -85,6 +96,7 @@ const PageEditorCanvas = memo(() => {
             width={'100%'}
             onClick={() => editor?.focus()}
           >
+            <div aria-hidden style={styles.coverShell} />
             <Flexbox flex={1} style={styles.editorContent}>
               <TitleSection />
               <EditorCanvas />

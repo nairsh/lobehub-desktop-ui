@@ -29,9 +29,10 @@ const TitleSection = memo(() => {
   return (
     <Flexbox
       gap={8}
-      paddingBlock={'0 10px'}
+      paddingBlock={'0 12px'}
       style={{
         cursor: 'default',
+        marginTop: -10,
         position: 'relative',
       }}
       onMouseEnter={() => setIsHoveringTitle(true)}
@@ -48,7 +49,7 @@ const TitleSection = memo(() => {
           locale={locale}
           open={showEmojiPicker}
           shape={'square'}
-          size={72}
+          size={78}
           title={t('pageEditor.chooseIcon')}
           value={emoji}
           onChange={(e) => {
@@ -75,8 +76,8 @@ const TitleSection = memo(() => {
             opacity: isHoveringTitle ? 1 : 0,
             pointerEvents: isHoveringTitle ? 'auto' : 'none',
             position: 'absolute',
-            top: -34,
-            transition: `opacity ${cssVar.motionDurationMid} ${cssVar.motionEaseInOut}`,
+            top: -36,
+            transition: 'opacity 120ms ease',
             width: 'fit-content',
           }}
           onClick={() => {
@@ -102,6 +103,7 @@ const TitleSection = memo(() => {
           fontWeight: 700,
           letterSpacing: 0,
           lineHeight: 1.18,
+          minHeight: 48,
           padding: 0,
           resize: 'none',
           width: '100%',

@@ -14,6 +14,22 @@ import { usePageEditorStore } from '../store';
 import Breadcrumb from './Breadcrumb';
 import { useMenu } from './useMenu';
 
+const headerStyle = {
+  background: 'color-mix(in srgb, var(--ant-color-bg-container) 82%, transparent)',
+  borderBlockEnd:
+    '1px solid color-mix(in srgb, var(--ant-color-border-secondary) 60%, transparent)',
+  height: 45,
+  paddingBlock: 6,
+  paddingInline: 12,
+};
+
+const titleStyle = {
+  fontSize: 14,
+  lineHeight: '20px',
+  marginLeft: 4,
+  maxWidth: 260,
+};
+
 const Header = memo(() => {
   const { t } = useTranslation('file');
   const [documentId, emoji, title, parentId, onBack] = usePageEditorStore((s) => [
@@ -27,6 +43,7 @@ const Header = memo(() => {
 
   return (
     <NavHeader
+      style={headerStyle}
       left={
         <>
           {onBack && <ActionIcon icon={ArrowLeftIcon} onClick={onBack} />}
@@ -38,7 +55,7 @@ const Header = memo(() => {
               {/* Icon */}
               {emoji && <Avatar avatar={emoji} shape={'square'} size={28} />}
               {/* Title */}
-              <Text ellipsis style={{ marginLeft: 4 }} weight={500}>
+              <Text ellipsis style={titleStyle} weight={500}>
                 {title || t('pageEditor.titlePlaceholder')}
               </Text>
             </>
@@ -56,7 +73,7 @@ const Header = memo(() => {
             placement="bottomRight"
             popupProps={{
               style: {
-                minWidth: 200,
+                minWidth: 220,
               },
             }}
           >
