@@ -62,6 +62,12 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId, project
   const clearChatUploadFileList = useFileStore((s) => s.clearChatUploadFileList);
   const clearChatContextSelections = useFileStore((s) => s.clearChatContextSelections);
   const currentInstructions = project?.settings?.defaultSystemPrompt ?? '';
+  const projectContext = [
+    project?.description?.trim() ? `Project description:\n${project.description.trim()}` : '',
+    currentInstructions.trim() ? `Project instructions:\n${currentInstructions.trim()}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n\n');
 
   const [topics, setTopics] = useState<ChatTopic[]>([]);
 
@@ -104,12 +110,12 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId, project
 
   useLayoutEffect(() => {
     setActiveProjectKnowledgeBaseId(knowledgeBaseId);
-    setActiveProjectSystemPrompt(currentInstructions || undefined);
+    setActiveProjectSystemPrompt(projectContext || undefined);
     return () => {
       setActiveProjectKnowledgeBaseId(undefined);
       setActiveProjectSystemPrompt(undefined);
     };
-  }, [knowledgeBaseId, currentInstructions]);
+  }, [knowledgeBaseId, projectContext]);
 
   const handleSend = useCallback(
     async ({ getEditorData }: { getEditorData?: () => unknown }) => {
@@ -132,7 +138,7 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId, project
           files: fileList,
           message: inputMessage,
           projectKnowledgeBaseId: knowledgeBaseId,
-          projectSystemPrompt: currentInstructions || undefined,
+          projectSystemPrompt: projectContext || undefined,
         });
         navigate(SESSION_CHAT_URL(inboxAgentId, false));
       } finally {
@@ -159,8 +165,9 @@ const ProjectWorkspace = memo<ProjectWorkspaceProps>(({ knowledgeBaseId, project
       );
     },
     [
-      currentInstructions,
+      projectContext,
       inboxAgentId,
+      knowledgeBaseId,
       projectId,
       sendMessage,
       navigate,

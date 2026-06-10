@@ -8,7 +8,7 @@ export const KnowledgeBaseManifest: BuiltinToolManifest = {
     // ---- Resource Library Files (highest priority — most user files live here) ----
     {
       description:
-        "List files from the user's resource library. This is where most user-uploaded files live (images, PDFs, documents, etc.). Files here are NOT in any knowledge base yet. Supports filtering by category and search query. **Use this first when the user asks about their files.**",
+        "List files and documents the assistant can access. In a project chat, pass the project knowledgeBaseId to page through project files before searching or reading them. Without knowledgeBaseId, this lists the user's resource library. Supports filtering by category, search query, and pagination.",
       name: KnowledgeBaseApiName.listFiles,
       parameters: {
         properties: {
@@ -16,6 +16,11 @@ export const KnowledgeBaseManifest: BuiltinToolManifest = {
             description:
               'Filter by file category. Options: "images", "documents", "audios", "videos", "websites". Omit to list all categories.',
             enum: ['images', 'documents', 'audios', 'videos', 'websites'],
+            type: 'string',
+          },
+          knowledgeBaseId: {
+            description:
+              'Optional knowledge base ID to list files/documents inside that knowledge base. Use the project knowledge base ID for project files.',
             type: 'string',
           },
           limit: {

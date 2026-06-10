@@ -136,6 +136,7 @@ export interface RemoveFilesArgs {
 
 export interface ListFilesArgs {
   category?: string;
+  knowledgeBaseId?: string;
   limit?: number;
   offset?: number;
   q?: string;

@@ -93,6 +93,7 @@ interface FileService {
   getFileItemById: (id: string) => Promise<FileListItemResult | undefined>;
   getKnowledgeItems: (params: {
     category?: string;
+    knowledgeBaseId?: string;
     limit: number;
     offset: number;
     q?: string | null;
@@ -168,7 +169,7 @@ export class KnowledgeBaseExecutionRuntime {
 
   async viewKnowledgeBase(
     args: ViewKnowledgeBaseArgs,
-    options?: { signal?: AbortSignal },
+    _options?: { signal?: AbortSignal },
   ): Promise<BuiltinServerRuntimeOutput> {
     try {
       if (!this.knowledgeBaseService) {
@@ -480,14 +481,16 @@ export class KnowledgeBaseExecutionRuntime {
         return { content: 'File service is not available.', success: false };
       }
 
-      const { category, q, limit = 50, offset = 0 } = args;
+      const { category, knowledgeBaseId, q, limit = 50, offset = 0 } = args;
+      const cappedLimit = Math.min(limit, 100);
 
       const result = await this.fileService.getKnowledgeItems({
         category,
-        limit,
+        knowledgeBaseId,
+        limit: cappedLimit,
         offset,
         q,
-        showFilesInKnowledgeBase: false,
+        showFilesInKnowledgeBase: !!knowledgeBaseId,
       });
 
       const files: FileInfo[] = result.items.map((item) => ({
@@ -514,8 +517,10 @@ export class KnowledgeBaseExecutionRuntime {
       const lines = files.map((f) => `- \`${f.id}\` | ${f.name} | ${f.fileType} | ${f.size} bytes`);
 
       let content = `Found ${files.length} file(s)`;
+      if (knowledgeBaseId) content += ` in knowledge base "${knowledgeBaseId}"`;
       if (category) content += ` in category "${category}"`;
-      if (result.hasMore) content += ` (more available, use offset=${offset + limit} to paginate)`;
+      if (result.hasMore)
+        content += ` (more available, use offset=${offset + cappedLimit} to paginate)`;
       content += `:\n\n${lines.join('\n')}`;
 
       const state: ListFilesState = { files, hasMore: result.hasMore, total: files.length };
