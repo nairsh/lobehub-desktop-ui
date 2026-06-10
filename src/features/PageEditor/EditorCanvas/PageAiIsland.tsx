@@ -317,6 +317,7 @@ const PageAiIsland = memo(() => {
   const [submittedPrompt, setSubmittedPrompt] = useState('');
   const [hasAsked, setHasAsked] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const autoSubmittedRef = useRef<string | undefined>(undefined);
   const aiIslandId = aiIsland?.id;
 
   useEffect(() => {
@@ -394,6 +395,7 @@ const PageAiIsland = memo(() => {
     document.dispatchEvent(new Event('selectionchange'));
     document.dispatchEvent(new Event('page-editor-hide-selection-toolbar'));
 
+    // TODO: wire to AI backend.
     await sendMessage({
       message: trimmed,
       pageSelections: [
@@ -407,12 +409,19 @@ const PageAiIsland = memo(() => {
     });
   };
 
+  // TODO: wire to AI backend when the shell is promoted from UI preview.
+  // Prefill the prompt typed in the selection toolbar's inline input.
+  useEffect(() => {
+    if (!aiIsland?.initialPrompt) return;
+    if (autoSubmittedRef.current === aiIsland.id) return;
+    autoSubmittedRef.current = aiIsland.id;
+    setPrompt(aiIsland.initialPrompt);
+  }, [aiIsland?.id, aiIsland?.initialPrompt]);
+
   if (!aiIsland || !position) return null;
 
   const contextLabel =
-    aiIsland.preview || aiIsland.pageId
-      ? t('pageAiIsland.contextPage', { defaultValue: 'Current page' })
-      : undefined;
+    aiIsland.preview || aiIsland.pageId ? t('pageAiIsland.contextPage') : undefined;
   const suggestions = [
     {
       label: t('pageAiIsland.improve'),
@@ -521,17 +530,17 @@ const PageAiIsland = memo(() => {
           <div className={styles.inputTools}>
             <button className={styles.modelButton} type="button">
               <SparklesIcon size={12} />
-              <span>{t('pageAiIsland.model', { defaultValue: 'Page AI' })}</span>
+              <span>{t('pageAiIsland.model')}</span>
             </button>
             <button
-              aria-label={t('pageAiIsland.voice', { defaultValue: 'Voice input' })}
+              aria-label={t('pageAiIsland.voice')}
               className={styles.settingsButton}
               type="button"
             >
               <MicIcon size={14} />
             </button>
             <button
-              aria-label={t('pageAiIsland.more', { defaultValue: 'More' })}
+              aria-label={t('pageAiIsland.more')}
               className={styles.settingsButton}
               type="button"
             >

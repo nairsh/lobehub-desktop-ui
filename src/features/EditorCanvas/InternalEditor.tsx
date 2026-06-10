@@ -1246,11 +1246,12 @@ const InternalEditor = memo<InternalEditorProps>(
 
       const unregisterAskAi = blockMenuService.registerMenu({
         key: 'page-editor-ask-ai',
-        label: () => tEditor('pageAiIsland.askAi', { defaultValue: 'Ask AI' }),
+        label: () => tEditor('pageAiIsland.askAi'),
         onClick: ({ blockElement }) => {
           const text = blockElement.textContent?.replaceAll(/\s+/g, ' ').trim() || '';
           const rect = blockElement.getBoundingClientRect();
 
+          // TODO: wire to AI backend.
           window.dispatchEvent(
             new CustomEvent('page-editor-open-ai-island', {
               detail: {

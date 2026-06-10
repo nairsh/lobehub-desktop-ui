@@ -30,6 +30,10 @@ export interface PageAiIslandState {
   content: string;
   format: 'text' | 'xml';
   id: string;
+  /**
+   * When set, the AI island opens with this prompt prefilled.
+   */
+  initialPrompt?: string;
   pageId?: string;
   preview?: string;
   rect: {

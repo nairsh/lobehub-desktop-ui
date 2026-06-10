@@ -46,7 +46,7 @@ export const useSlashItems = (): SlashOptions['items'] => {
       {
         icon: SparklesIcon,
         key: 'ask-ai',
-        label: t('pageAiIsland.askAi', 'Ask AI'),
+        label: t('pageAiIsland.askAi'),
         onSelect: () => {
           const selection = window.getSelection();
           const rangeRect =
@@ -61,6 +61,7 @@ export const useSlashItems = (): SlashOptions['items'] => {
           const blockText = blockElement?.textContent?.replaceAll(/\s+/g, ' ').trim() || '';
           const blockRect = blockElement?.getBoundingClientRect();
 
+          // TODO: wire to AI backend.
           setAiIsland({
             content: blockText,
             format: 'text',
@@ -210,9 +211,7 @@ export const useSlashItems = (): SlashOptions['items'] => {
       if (item.type === 'divider') return item;
       const itemKey = String(item.key);
       const descriptions: Record<string, string> = {
-        'ask-ai': t('slash.description.askAi', {
-          defaultValue: 'Draft, rewrite, or answer with page context.',
-        }),
+        'ask-ai': t('slash.description.askAi'),
         'codeblock': t('slash.description.codeblock', {
           defaultValue: 'Capture code with syntax highlighting.',
         }),
