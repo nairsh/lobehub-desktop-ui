@@ -13,14 +13,189 @@ description: >
 
 Two approaches for local testing on macOS:
 
-| Approach                    | Tool                | Best For                                             |
-| --------------------------- | ------------------- | ---------------------------------------------------- |
-| **agent-browser + CDP**     | `agent-browser` CLI | Electron apps, web apps (DOM access, JS eval)        |
-| **osascript (AppleScript)** | `osascript -e`      | Native macOS apps (WeChat, Discord, Telegram, Slack) |
+| Approach                    | Tool                     | Best For                                                            |
+| --------------------------- | ------------------------ | ------------------------------------------------------------------- |
+| **Playwright harness**      | `playwright-electron.sh` | **Electron desktop** — preferred; owns the process, no attach races |
+| **agent-browser + CDP**     | `agent-browser` CLI      | Web apps (`dev:spa`), fallback for Electron if harness unavailable  |
+| **osascript (AppleScript)** | `osascript -e`           | Native macOS apps (WeChat, Discord, Telegram, Slack)                |
 
 ---
 
-# Part 1: agent-browser (Electron / Web Apps)
+# Part 1: Playwright Harness (Electron Desktop — Preferred)
+
+Use the Playwright harness for **all LobeHub desktop testing**. It owns the Electron process from launch, eliminating attach races, target ambiguity, and session drops on HMR reload that plague the CDP-attach model.
+
+By default the harness now starts the **desktop renderer Vite dev server** and points Electron at it, so UI edits in `src/` show up live while Playwright keeps control of the same Electron window.
+
+## Quick Start
+
+```bash
+SCRIPT=".agents/skills/local-testing/scripts/playwright-electron.sh"
+
+# Start daemon (idempotent; auto-rebuilds main/preload if source changed)
+$SCRIPT start
+
+# Check status and current URL
+$SCRIPT status
+
+# Stop
+$SCRIPT stop
+
+# Force fresh restart
+$SCRIPT restart
+```
+
+After `start` succeeds, the app is accessible via the HTTP API on `localhost:7323`. The daemon reuses the existing logged-in dev profile at `~/Library/Application Support/lobehub-desktop-dev` — no re-login needed.
+
+The launcher now keeps two managed background processes alive:
+
+- the Playwright daemon on `localhost:7323`
+- the desktop renderer Vite dev server on `localhost:9876`
+
+That means normal React/Vite HMR works while Playwright remains attached to Electron.
+
+## HTTP API
+
+All endpoints are `curl`-callable. Interact via shell one-liners or inline scripts:
+
+```bash
+BASE="http://127.0.0.1:7323"
+
+# Status
+curl -s $BASE/status | python3 -m json.tool
+
+# Screenshot → path of saved PNG
+curl -s -X POST $BASE/screenshot | python3 -m json.tool
+# Then read it: Read tool on the path field
+
+# Accessibility snapshot (Playwright ARIA tree)
+curl -s -X POST $BASE/snapshot | python3 -m json.tool
+
+# Eval JS in renderer
+curl -s -X POST $BASE/eval \
+  -H 'Content-Type: application/json' \
+  -d '{"code": "document.title"}'
+
+# Eval in main process (e.g. read electron-store)
+curl -s -X POST $BASE/eval-main \
+  -H 'Content-Type: application/json' \
+  -d '{"code": "() => app.getVersion()"}'
+
+# Click by visible text
+curl -s -X POST $BASE/click \
+  -H 'Content-Type: application/json' \
+  -d '{"text": "New Chat"}'
+
+# Click by CSS selector
+curl -s -X POST $BASE/click \
+  -H 'Content-Type: application/json' \
+  -d '{"selector": "[data-testid=\"send-button\"]"}'
+
+# Type into chat input (contenteditable)
+curl -s -X POST $BASE/type \
+  -H 'Content-Type: application/json' \
+  -d '{"selector": "[contenteditable]", "text": "Hello"}'
+
+# Press a key
+curl -s -X POST $BASE/press \
+  -H 'Content-Type: application/json' \
+  -d '{"key": "Enter"}'
+
+# Navigate to a route
+curl -s -X POST $BASE/navigate \
+  -H 'Content-Type: application/json' \
+  -d '{"url": "lobechat://main/chat"}'
+
+# Reload
+curl -s -X POST $BASE/reload
+
+# Stop daemon
+curl -s -X POST $BASE/stop
+```
+
+## LobeHub-Specific Patterns
+
+### Inspect Zustand Store
+
+```bash
+curl -s -X POST http://127.0.0.1:7323/eval \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "code": "(function() { var s = window.__LOBE_STORES.chat(); return JSON.stringify({ activeAgent: s.activeAgentId, ops: Object.values(s.operations).map(function(o){return{type:o.type,status:o.status}}) }); })()"
+  }'
+```
+
+### Send a Chat Message and Wait for Response
+
+```bash
+BASE="http://127.0.0.1:7323"
+# Type message
+curl -s -X POST $BASE/type -H 'Content-Type: application/json' \
+  -d '{"selector": "[contenteditable]", "text": "Hello world"}'
+# Send
+curl -s -X POST $BASE/press -H 'Content-Type: application/json' \
+  -d '{"key": "Enter"}'
+# Poll until no running ops
+for i in $(seq 1 30); do
+  result=$(curl -s -X POST $BASE/eval -H 'Content-Type: application/json' \
+    -d '{"code": "(function(){ var ops=Object.values(window.__LOBE_STORES.chat().operations); return ops.filter(function(o){return o.status===\"running\"}).length===0?\"done\":\"running\"; })()"}')
+  echo "$result" | grep -q '"done"' && break
+  sleep 2
+done
+# Screenshot result
+curl -s -X POST $BASE/screenshot | python3 -m json.tool
+```
+
+### Install Error Interceptor
+
+```bash
+curl -s -X POST http://127.0.0.1:7323/eval \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "code": "(function(){ window.__CAPTURED_ERRORS=[]; var orig=console.error; console.error=function(){ var m=Array.from(arguments).map(function(a){return a instanceof Error?a.message:typeof a===\"object\"?JSON.stringify(a):String(a);}).join(\" \"); window.__CAPTURED_ERRORS.push(m); orig.apply(console,arguments); }; return \"installed\"; })()"
+  }'
+
+# Later:
+curl -s -X POST http://127.0.0.1:7323/eval \
+  -H 'Content-Type: application/json' \
+  -d '{"code": "JSON.stringify(window.__CAPTURED_ERRORS)"}'
+```
+
+## Environment Variables
+
+| Variable                   | Default                               | Description                                     |
+| -------------------------- | ------------------------------------- | ----------------------------------------------- |
+| `DAEMON_PORT`              | `7323`                                | HTTP control port                               |
+| `DAEMON_LOG`               | `/tmp/playwright-electron-daemon.log` | Daemon log file                                 |
+| `WAIT_TIMEOUT_S`           | `90`                                  | Max seconds to wait for ready signal            |
+| `SKIP_BUILD`               | `0`                                   | Set to `1` to skip stale-build check            |
+| `PLAYWRIGHT_SPA_PORT`      | `9876`                                | Renderer dev server port                        |
+| `PLAYWRIGHT_RENDERER_MODE` | `dev`                                 | `dev` for live HMR, `static` for built renderer |
+
+## Why Playwright > CDP Attach
+
+| Issue with CDP attach                | Playwright approach                                       |
+| ------------------------------------ | --------------------------------------------------------- |
+| Attach races (port not ready)        | Playwright spawns the process — no polling needed         |
+| Target ambiguity (splash vs. window) | `app.firstWindow()` / typed `Page` handles per window     |
+| Sessions die on HMR reload           | Playwright `Page` object survives navigations             |
+| Stale element refs after re-render   | Auto-waits before click/fill — no manual waits needed     |
+| pgrep-pattern cleanup leaves orphans | `app.close()` / SIGTERM tears down the whole process tree |
+
+## Gotchas
+
+- **Single-instance lock**: The daemon uses the `LobeHub` production profile. The start script quits the production app automatically. If you have the LobeHub app open, `start` will close it first.
+- **SPA is anonymous until logged in**: The first time the harness runs with a fresh `localhost:9876` origin, the SPA shows "anonymous" — the main-process electron-store config loads correctly (server URL, active:true) but the SPA-side auth cookies/tokens are tied to the browser session. Click "Connect to your own LobeHub server instance" once; after OAuth completes the session persists in `~/Library/Application Support/LobeHub` and is reused on every subsequent `start`.
+- **AI messages require the local server**: For actual AI message testing, `bun run dev:next` (or `bun run dev`) must be running on `localhost:3010`. The harness verifies UI and interaction; server responses depend on the backend being up.
+- **Renderer UI changes are live by default**: The harness starts a dedicated desktop renderer Vite server from `apps/desktop/renderer.dev.vite.config.ts`, so edits in `src/`, `src/features/`, `src/components/`, `src/routes/`, and related desktop SPA files should hot-reload in the open Electron window with no restart.
+- **Main/preload changes still need an app restart**: The live Vite server only covers the renderer. If you change `apps/desktop/src/main/**` or `apps/desktop/src/preload/**`, run `$SCRIPT restart` so Electron relaunches against the rebuilt main bundle.
+- **Static fallback still exists**: If the Vite dev server is the problem and you want the old built-renderer behavior, run `PLAYWRIGHT_RENDERER_MODE=static $SCRIPT start`.
+- **Screenshot path**: PNGs go to `/tmp/playwright-electron-screenshots/`. Use the `Read` tool on the returned `path` to view them.
+- **Renderer dev server uses port 9876**: Don't run another desktop/web Vite server on the same port in parallel. Change with `PLAYWRIGHT_SPA_PORT` if needed.
+
+---
+
+# Part 2: agent-browser (Web Apps / Fallback)
 
 Use `agent-browser` to automate Chromium-based apps via Chrome DevTools Protocol.
 
@@ -410,18 +585,20 @@ For **shared osascript patterns** (activate, type, paste, screenshot, read acces
 
 Ready-to-use scripts in `.agents/skills/local-testing/scripts/`:
 
-| Script                    | Usage                                               |
-| ------------------------- | --------------------------------------------------- |
-| `electron-dev.sh`         | Manage Electron dev env (start/stop/status/restart) |
-| `capture-app-window.sh`   | Capture screenshot of a specific app window         |
-| `record-electron-demo.sh` | Record Electron app demo with ffmpeg                |
-| `record-app-screen.sh`    | Record app screen (video + screenshots, start/stop) |
-| `test-discord-bot.sh`     | Send message to Discord bot via osascript           |
-| `test-slack-bot.sh`       | Send message to Slack bot via osascript             |
-| `test-telegram-bot.sh`    | Send message to Telegram bot via osascript          |
-| `test-wechat-bot.sh`      | Send message to WeChat bot via osascript            |
-| `test-lark-bot.sh`        | Send message to Lark / 飞书 bot via osascript       |
-| `test-qq-bot.sh`          | Send message to QQ bot via osascript                |
+| Script                           | Usage                                                                                 |
+| -------------------------------- | ------------------------------------------------------------------------------------- |
+| `playwright-electron.sh`         | **Playwright harness** — preferred Electron testing (start/stop/status/restart/build) |
+| `playwright-electron-daemon.mjs` | Long-running daemon launched by `playwright-electron.sh`                              |
+| `electron-dev.sh`                | Legacy CDP attach — use only as fallback                                              |
+| `capture-app-window.sh`          | Capture screenshot of a specific app window                                           |
+| `record-electron-demo.sh`        | Record Electron app demo with ffmpeg                                                  |
+| `record-app-screen.sh`           | Record app screen (video + screenshots, start/stop)                                   |
+| `test-discord-bot.sh`            | Send message to Discord bot via osascript                                             |
+| `test-slack-bot.sh`              | Send message to Slack bot via osascript                                               |
+| `test-telegram-bot.sh`           | Send message to Telegram bot via osascript                                            |
+| `test-wechat-bot.sh`             | Send message to WeChat bot via osascript                                              |
+| `test-lark-bot.sh`               | Send message to Lark / 飞书 bot via osascript                                         |
+| `test-qq-bot.sh`                 | Send message to QQ bot via osascript                                                  |
 
 ### Window Screenshot Utility
 
