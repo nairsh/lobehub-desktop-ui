@@ -29,13 +29,9 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   coverShell: {
-    backgroundColor: 'color-mix(in srgb, var(--ant-color-fill-tertiary) 72%, transparent)',
-    backgroundImage: 'url("/images/screenshot_background.webp")',
-    backgroundPosition: 'center 42%',
-    backgroundSize: 'cover',
+    backgroundColor: cssVar.colorBgContainer,
     flex: '0 0 auto',
     height: 'clamp(150px, 24vh, 230px)',
-    opacity: 0.72,
     width: '100%',
   },
   editorContainer: {
