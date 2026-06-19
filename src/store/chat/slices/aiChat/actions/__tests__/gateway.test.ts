@@ -2,6 +2,7 @@ import type { AgentStreamEvent } from '@lobechat/agent-gateway-client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { aiAgentService } from '@/services/aiAgent';
+import { messageService } from '@/services/message';
 
 import type { GatewayConnection } from '../gateway';
 import { GatewayActionImpl } from '../gateway';
@@ -484,6 +485,64 @@ describe('GatewayActionImpl', () => {
           prompt: 'Hello',
         }),
       );
+    });
+
+    it('hydrates server-created messages for existing topics before connecting', async () => {
+      const replaceMessages = vi.fn();
+      const connectToGateway = vi.fn();
+      const startOperation = vi.fn(() => ({ operationId: 'gw-op-local' }));
+      const serverMessages = [
+        { id: 'usr-1', role: 'user', content: 'Hello' },
+        { id: 'ast-1', role: 'assistant', content: 'Loading...' },
+      ];
+
+      vi.mocked(messageService.getMessages).mockResolvedValue(serverMessages as any);
+      vi.mocked(aiAgentService.execAgentTask).mockResolvedValue({
+        agentId: 'agent-1',
+        assistantMessageId: 'ast-1',
+        autoStarted: true,
+        createdAt: new Date().toISOString(),
+        message: 'ok',
+        operationId: 'server-op-1',
+        status: 'created',
+        success: true,
+        timestamp: new Date().toISOString(),
+        token: 'test-token',
+        topicId: 'topic-1',
+        userMessageId: 'usr-1',
+      });
+
+      const get = vi.fn(() => ({
+        associateMessageWithOperation: vi.fn(),
+        connectToGateway,
+        internal_updateTopicLoading: vi.fn(),
+        onOperationCancel: vi.fn(),
+        replaceMessages,
+        startOperation,
+      })) as any;
+
+      (globalThis as any).window = {
+        global_serverConfigStore: {
+          getState: () => ({ serverConfig: { agentGatewayUrl: 'https://gateway.test.com' } }),
+        },
+      };
+
+      const action = new GatewayActionImpl(vi.fn() as any, get, undefined);
+
+      await action.executeGatewayAgent({
+        context: { agentId: 'agent-1', topicId: 'topic-1', threadId: null, scope: 'main' },
+        message: 'Hello',
+      });
+
+      const expectedContext = {
+        agentId: 'agent-1',
+        scope: 'main',
+        threadId: null,
+        topicId: 'topic-1',
+      };
+      expect(messageService.getMessages).toHaveBeenCalledWith(expectedContext);
+      expect(replaceMessages).toHaveBeenCalledWith(serverMessages, { context: expectedContext });
+      expect(connectToGateway).toHaveBeenCalled();
     });
 
     it('should forward empty prompt for continue generation', async () => {

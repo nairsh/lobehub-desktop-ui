@@ -292,25 +292,32 @@ export class GatewayActionImpl {
       resumeApproval,
     });
 
-    // If server created a new topic, fetch messages first then switch topic
-    // (same pattern as client mode: replaceMessages before switchTopic to avoid skeleton flash)
-    if (isCreateNewTopic && result.topicId) {
+    // Use the server-created topicId for the execution context. Hydrate the
+    // authoritative messages before connecting the Gateway stream: execAgent
+    // creates the real rows, and stream events target those message IDs.
+    const execContext = { ...context, topicId: result.topicId };
+
+    if (result.topicId) {
       try {
-        const newContext = { ...context, topicId: result.topicId };
-        const messages = await messageService.getMessages(newContext);
-        this.#get().replaceMessages(messages, { context: newContext });
+        const messages = await messageService.getMessages(execContext);
+        this.#get().replaceMessages(messages, { context: execContext });
       } catch {
         /* non-critical */
       }
+    }
 
+    if (!result.success) {
+      throw new Error(result.error || result.message || 'Agent operation failed to start');
+    }
+
+    // If server created a new topic, switch topic after messages are hydrated
+    // (same pattern as client mode: replaceMessages before switchTopic to avoid skeleton flash)
+    if (isCreateNewTopic && result.topicId) {
       await this.#get().switchTopic(result.topicId, {
         clearNewKey: true,
         skipRefreshMessage: true,
       });
     }
-
-    // Use the server-created topicId for the execution context
-    const execContext = { ...context, topicId: result.topicId };
 
     if (result.topicId) {
       this.#get().internal_updateTopicLoading(result.topicId, true);
