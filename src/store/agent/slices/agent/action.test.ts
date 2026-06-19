@@ -75,6 +75,7 @@ beforeEach(() => {
     agentMap: {},
     builtinAgentIdMap: {},
     updateAgentConfigSignal: undefined,
+    updateAgentModelConfigSignal: undefined,
     agentDocumentsMap: {},
     updateAgentMetaSignal: undefined,
   });
@@ -316,6 +317,33 @@ describe('AgentSlice Actions', () => {
         { avatar: null },
         expect.any(AbortSignal),
       );
+    });
+
+    it('should isolate model/provider saves from other config saves', async () => {
+      const { result } = renderHook(() => useAgentStore());
+
+      vi.mocked(agentService.updateAgentConfig).mockResolvedValue({
+        agent: {} as any,
+        success: true,
+      });
+
+      act(() => {
+        useAgentStore.setState({ activeAgentId: 'agent-1' });
+      });
+
+      await act(async () => {
+        await result.current.updateAgentConfig({ model: 'gpt-4', provider: 'openai' });
+      });
+
+      const modelController = result.current.updateAgentModelConfigSignal;
+
+      await act(async () => {
+        await result.current.updateAgentChatConfig({ historyCount: 10 });
+      });
+
+      expect(modelController).toBeInstanceOf(AbortController);
+      expect(result.current.updateAgentModelConfigSignal).toBe(modelController);
+      expect(result.current.updateAgentConfigSignal).toBeInstanceOf(AbortController);
     });
   });
 

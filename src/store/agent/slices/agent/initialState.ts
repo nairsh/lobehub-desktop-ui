@@ -40,6 +40,7 @@ export interface AgentSliceState {
   streamingSystemRoleInProgress?: boolean;
   updateAgentChatConfigSignal?: AbortController;
   updateAgentConfigSignal?: AbortController;
+  updateAgentModelConfigSignal?: AbortController;
   updateAgentMetaSignal?: AbortController;
 }
 

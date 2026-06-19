@@ -47,6 +47,13 @@ type AgentMetaUpdate = Partial<
  */
 
 type Setter = StoreSetter<AgentStore>;
+const getConfigUpdateSignalKey = (
+  data: PartialDeep<LobeAgentConfig>,
+): 'updateAgentConfigSignal' | 'updateAgentModelConfigSignal' =>
+  'model' in data || 'provider' in data
+    ? 'updateAgentModelConfigSignal'
+    : 'updateAgentConfigSignal';
+
 const isNormalChatSessionId = (id: string) => id.startsWith('ssn_');
 const toChatConfigUpdate = (data: PartialDeep<LobeAgentConfig>): ChatConfigUpdate => {
   const update: ChatConfigUpdate = {};
@@ -218,7 +225,7 @@ export class AgentSliceActionImpl {
 
     if (!activeAgentId) return;
 
-    const controller = this.#get().internal_createAbortController('updateAgentConfigSignal');
+    const controller = this.#get().internal_createAbortController(getConfigUpdateSignalKey(config));
 
     await this.#get().optimisticUpdateAgentConfig(activeAgentId, config, controller.signal);
   };
@@ -229,7 +236,7 @@ export class AgentSliceActionImpl {
   ): Promise<void> => {
     if (!agentId) return;
 
-    const controller = this.#get().internal_createAbortController('updateAgentConfigSignal');
+    const controller = this.#get().internal_createAbortController(getConfigUpdateSignalKey(config));
 
     await this.#get().optimisticUpdateAgentConfig(agentId, config, controller.signal);
   };
