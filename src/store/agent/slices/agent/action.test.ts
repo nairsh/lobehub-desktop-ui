@@ -345,6 +345,42 @@ describe('AgentSlice Actions', () => {
       expect(result.current.updateAgentModelConfigSignal).toBe(modelController);
       expect(result.current.updateAgentConfigSignal).toBeInstanceOf(AbortController);
     });
+
+    it('should not roll back model/provider from a stale non-model save response', async () => {
+      const { result } = renderHook(() => useAgentStore());
+
+      vi.mocked(agentService.updateAgentConfig).mockResolvedValue({
+        agent: {
+          model: 'gpt-4',
+          provider: 'openai',
+          systemRole: 'updated role',
+        } as any,
+        success: true,
+      });
+
+      act(() => {
+        useAgentStore.setState({
+          activeAgentId: 'agent-1',
+          agentMap: {
+            'agent-1': {
+              model: 'claude-3-5-sonnet',
+              provider: 'anthropic',
+              systemRole: 'draft role',
+            },
+          },
+        });
+      });
+
+      await act(async () => {
+        await result.current.updateAgentConfig({ systemRole: 'updated role' });
+      });
+
+      expect(result.current.agentMap['agent-1']).toMatchObject({
+        model: 'claude-3-5-sonnet',
+        provider: 'anthropic',
+        systemRole: 'updated role',
+      });
+    });
   });
 
   describe('updateAgentChatConfig', () => {

@@ -44,25 +44,31 @@ export const useSend = () => {
       // Require input content (except for default inbox which can have files/context)
       if (!inputMessage && fileList.length === 0 && contextList.length === 0) return;
 
+      let shouldClearInput = false;
+
       try {
         switch (inputActiveMode) {
           case 'agent': {
             await sendAsAgent({ editorData, message: inputMessage });
+            shouldClearInput = true;
             break;
           }
 
           case 'group': {
             await sendAsGroup({ editorData, message: inputMessage });
+            shouldClearInput = true;
             break;
           }
 
           case 'write': {
             await sendAsWrite({ editorData, message: inputMessage });
+            shouldClearInput = true;
             break;
           }
 
           case 'research': {
             await sendAsResearch(inputMessage);
+            shouldClearInput = true;
             break;
           }
 
@@ -70,7 +76,7 @@ export const useSend = () => {
             // Default inbox behavior
             if (!inboxAgentId) return;
 
-            await sendMessage({
+            const result = await sendMessage({
               context: { agentId: inboxAgentId },
               contexts: contextList,
               editorData,
@@ -86,13 +92,16 @@ export const useSend = () => {
               overrideCouncil: councilMode && councilReady ? councilSettings : undefined,
               useModelCouncil: councilMode && councilReady,
             });
+            shouldClearInput = !!result;
           }
         }
       } finally {
-        // Clear input and files after send
-        clearChatUploadFileList();
-        clearChatContextSelections();
-        mainInputEditor?.clearContent();
+        if (shouldClearInput) {
+          // Clear input and files after send
+          clearChatUploadFileList();
+          clearChatContextSelections();
+          mainInputEditor?.clearContent();
+        }
       }
     },
     [

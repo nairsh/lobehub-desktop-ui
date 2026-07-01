@@ -554,6 +554,92 @@ describe('ConversationLifecycle actions', () => {
           'op-running',
         );
       });
+
+      it('should queue when a gateway agent runtime is running', async () => {
+        const { result } = renderHook(() => useChatStore());
+        const context = createTestContext();
+        const contextKey = messageMapKey(context);
+
+        act(() => {
+          useChatStore.setState({
+            operations: {
+              'op-gateway-running': {
+                childOperationIds: [],
+                context,
+                id: 'op-gateway-running',
+                metadata: {},
+                status: 'running',
+                type: 'execServerAgentRuntime',
+              },
+            } as any,
+            operationsByContext: {
+              [contextKey]: ['op-gateway-running'],
+            },
+          });
+        });
+
+        const enqueueMessageSpy = vi.spyOn(result.current, 'enqueueMessage');
+
+        await act(async () => {
+          await result.current.sendMessage({
+            context,
+            message: 'queued gateway message',
+          });
+        });
+
+        expect(enqueueMessageSpy).toHaveBeenCalledWith(
+          contextKey,
+          expect.objectContaining({ content: 'queued gateway message' }),
+          'op-gateway-running',
+        );
+      });
+
+      it('should not queue behind an aborting gateway runtime', async () => {
+        const { result } = renderHook(() => useChatStore());
+        const context = createTestContext();
+        const contextKey = messageMapKey(context);
+        const sendMessageInServerSpy = vi
+          .spyOn(aiChatService, 'sendMessageInServer')
+          .mockResolvedValue({
+            messages: [
+              createMockMessage({ id: TEST_IDS.USER_MESSAGE_ID, role: 'user' }),
+              createMockMessage({ id: TEST_IDS.ASSISTANT_MESSAGE_ID, role: 'assistant' }),
+            ],
+            topics: [],
+            assistantMessageId: TEST_IDS.ASSISTANT_MESSAGE_ID,
+            userMessageId: TEST_IDS.USER_MESSAGE_ID,
+          } as any);
+
+        act(() => {
+          useChatStore.setState({
+            operations: {
+              'op-gateway-aborting': {
+                childOperationIds: [],
+                context,
+                id: 'op-gateway-aborting',
+                metadata: { isAborting: true },
+                status: 'running',
+                type: 'execServerAgentRuntime',
+              },
+            } as any,
+            operationsByContext: {
+              [contextKey]: ['op-gateway-aborting'],
+            },
+          });
+        });
+
+        const enqueueMessageSpy = vi.spyOn(result.current, 'enqueueMessage');
+
+        await act(async () => {
+          await result.current.sendMessage({
+            context,
+            message: TEST_CONTENT.USER_MESSAGE,
+          });
+        });
+
+        expect(enqueueMessageSpy).not.toHaveBeenCalled();
+        expect(sendMessageInServerSpy).toHaveBeenCalled();
+      });
     });
 
     describe('group chat supervisor metadata', () => {

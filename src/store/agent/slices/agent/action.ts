@@ -53,6 +53,21 @@ const getConfigUpdateSignalKey = (
   'model' in data || 'provider' in data
     ? 'updateAgentModelConfigSignal'
     : 'updateAgentConfigSignal';
+const isModelConfigUpdate = (data: PartialDeep<LobeAgentConfig>) =>
+  'model' in data || 'provider' in data;
+
+const removeModelConfigFromResponse = (
+  data: PartialDeep<LobeAgentConfig>,
+  response: PartialDeep<LobeAgentConfig>,
+): PartialDeep<LobeAgentConfig> => {
+  if (isModelConfigUpdate(data)) return response;
+
+  const rest = { ...response };
+  delete rest.model;
+  delete rest.provider;
+
+  return rest;
+};
 
 const isNormalChatSessionId = (id: string) => id.startsWith('ssn_');
 const toChatConfigUpdate = (data: PartialDeep<LobeAgentConfig>): ChatConfigUpdate => {
@@ -401,7 +416,7 @@ export class AgentSliceActionImpl {
 
       // 3. Use returned data directly (no refetch needed!)
       if (result?.success && result.agent) {
-        internal_dispatchAgentMap(id, result.agent);
+        internal_dispatchAgentMap(id, removeModelConfigFromResponse(data, result.agent));
       }
       updateSaveStatus('saved');
     } catch (error: any) {
