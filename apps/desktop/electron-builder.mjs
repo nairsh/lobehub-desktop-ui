@@ -26,7 +26,7 @@ const hasAppleCertificate = Boolean(process.env.CSC_LINK);
 // 自定义更新服务器 URL (用于 stable 频道)
 const updateServerUrl = process.env.UPDATE_SERVER_URL;
 const updateGithubOwner = process.env.UPDATE_GITHUB_OWNER || 'nairsh';
-const updateGithubRepo = process.env.UPDATE_GITHUB_REPO || 'lobehub-desktop-ui';
+const updateGithubRepo = process.env.UPDATE_GITHUB_REPO || 'lobehub-server';
 
 console.info(`🚄 Build Version ${packageJSON.version}, Channel: ${channel}`);
 console.info(`🏗️ Building for architecture: ${arch}`);

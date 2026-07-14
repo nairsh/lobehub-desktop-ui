@@ -99,7 +99,7 @@ export const getDesktopEnv = memoize(() =>
       UPDATE_GITHUB_REPO: z
         .string()
         .optional()
-        .default(process.env.UPDATE_GITHUB_REPO || 'lobehub-desktop-ui'),
+        .default(process.env.UPDATE_GITHUB_REPO || 'lobehub-server'),
 
       // Vercel JWT for bypassing deployment protection (dev only)
       VERCEL_JWT: z.string().optional(),

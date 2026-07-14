@@ -98,6 +98,9 @@ jobs:
         run: npm run desktop:package:app
         env:
           UPDATE_CHANNEL: beta
+          UPDATE_GITHUB_OWNER: nairsh
+          UPDATE_GITHUB_REPO: lobehub-server
+          UPDATE_SERVER_URL: ${{ secrets.UPDATE_SERVER_URL }}
           APP_URL: http://localhost:3015
           DATABASE_URL: 'postgresql://postgres@localhost:5432/postgres'
           KEY_VAULTS_SECRET: 'oLXWIiR/AKF+rWaqy9lHkrYgzpATbW3CtJp3UfkVgpE='
@@ -119,6 +122,9 @@ jobs:
         run: npm run desktop:package:app
         env:
           UPDATE_CHANNEL: beta
+          UPDATE_GITHUB_OWNER: nairsh
+          UPDATE_GITHUB_REPO: lobehub-server
+          UPDATE_SERVER_URL: ${{ secrets.UPDATE_SERVER_URL }}
           APP_URL: http://localhost:3015
           DATABASE_URL: 'postgresql://postgres@localhost:5432/postgres'
           KEY_VAULTS_SECRET: 'oLXWIiR/AKF+rWaqy9lHkrYgzpATbW3CtJp3UfkVgpE='
@@ -136,6 +142,9 @@ jobs:
         run: npm run desktop:package:app
         env:
           UPDATE_CHANNEL: beta
+          UPDATE_GITHUB_OWNER: nairsh
+          UPDATE_GITHUB_REPO: lobehub-server
+          UPDATE_SERVER_URL: ${{ secrets.UPDATE_SERVER_URL }}
           APP_URL: http://localhost:3015
           DATABASE_URL: 'postgresql://postgres@localhost:5432/postgres'
           KEY_VAULTS_SECRET: 'oLXWIiR/AKF+rWaqy9lHkrYgzpATbW3CtJp3UfkVgpE='
