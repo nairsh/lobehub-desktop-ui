@@ -27,16 +27,17 @@ const DataModeStep = memo<DataModeStepProps>(({ onBack, onNext }) => {
     telemetryEnabled ? 'share' : 'privacy',
   );
 
-  const setMode = useCallback(
-    (mode: DataMode) => {
-      setSelectedMode(mode);
-      const nextTelemetry = mode === 'share';
-      if (telemetryEnabled !== nextTelemetry) {
-        void updateGeneralConfig({ telemetry: nextTelemetry });
-      }
-    },
-    [telemetryEnabled, updateGeneralConfig],
-  );
+  const setMode = useCallback((mode: DataMode) => {
+    setSelectedMode(mode);
+  }, []);
+
+  const handleNext = useCallback(() => {
+    const nextTelemetry = selectedMode === 'share';
+    if (telemetryEnabled !== nextTelemetry) {
+      void updateGeneralConfig({ telemetry: nextTelemetry });
+    }
+    onNext();
+  }, [onNext, selectedMode, telemetryEnabled, updateGeneralConfig]);
 
   const checkIcon = (
     <Checkbox
@@ -126,7 +127,7 @@ const DataModeStep = memo<DataModeStepProps>(({ onBack, onNext }) => {
           </Button>
         }
         right={
-          <Button type={'primary'} onClick={onNext}>
+          <Button type={'primary'} onClick={handleNext}>
             {t('next')}
           </Button>
         }

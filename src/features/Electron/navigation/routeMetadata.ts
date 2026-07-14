@@ -156,7 +156,7 @@ const routePatterns: RoutePattern[] = [
   },
   {
     icon: pageIcon,
-    test: (p) => p === '/page',
+    test: (p) => p === '/page' || p === '/pages',
     titleKey: 'navigation.pages',
   },
 

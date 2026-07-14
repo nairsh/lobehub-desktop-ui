@@ -131,7 +131,13 @@ const TabItem = memo<TabItemProps>(
             )
           )}
           <span className={styles.tabTitle}>{item.title}</span>
-          <ActionIcon className={styles.closeIcon} icon={X} size="small" onClick={handleClose} />
+          <ActionIcon
+            className={styles.closeIcon}
+            icon={X}
+            size="small"
+            title={t('tab.closeCurrentTab')}
+            onClick={handleClose}
+          />
         </Flexbox>
       </ContextMenuTrigger>
     );

@@ -11,7 +11,6 @@ import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { ProductLogo } from '@/components/Branding';
-import { useUserStore } from '@/store/user';
 
 interface WelcomeStepProps {
   onNext: () => void;
@@ -20,11 +19,8 @@ interface WelcomeStepProps {
 const WelcomeStep = memo<WelcomeStepProps>(({ onNext }) => {
   const { t, i18n } = useTranslation('onboarding');
   const locale = i18n.language;
-  const updateGeneralConfig = useUserStore((s) => s.updateGeneralConfig);
 
   const handleNext = () => {
-    // Enable telemetry by default
-    updateGeneralConfig({ telemetry: true });
     onNext();
   };
 

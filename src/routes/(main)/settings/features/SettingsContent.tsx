@@ -1,7 +1,10 @@
 'use client';
 
 import { Fragment, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+
+import { Button, Empty, Flexbox } from '@lobehub/ui';
 
 import NavHeader from '@/features/NavHeader';
 import SettingContainer from '@/features/Setting/SettingContainer';
@@ -24,6 +27,7 @@ interface SettingsContentProps {
 }
 
 const SettingsContent = ({ mobile, activeTab }: SettingsContentProps) => {
+  const { t } = useTranslation('setting');
   const enableBusinessFeatures = useServerConfigStore(serverConfigSelectors.enableBusinessFeatures);
   const navigate = useNavigate();
 
@@ -34,7 +38,7 @@ const SettingsContent = ({ mobile, activeTab }: SettingsContentProps) => {
   }, [activeTab, navigate]);
 
   const renderComponent = (tab: string) => {
-    const Component = componentMap[tab as keyof typeof componentMap] || componentMap.appearance;
+    const Component = componentMap[tab as keyof typeof componentMap];
     if (!Component) return null;
 
     const componentProps: { mobile?: boolean } = {};
@@ -58,7 +62,29 @@ const SettingsContent = ({ mobile, activeTab }: SettingsContentProps) => {
     return <Component {...componentProps} />;
   };
 
+  const renderUnknownTab = () => (
+    <>
+      {!mobile && <NavHeader />}
+      <SettingContainer maxWidth={1024} paddingBlock={'24px 128px'} paddingInline={24}>
+        <Flexbox align="center" justify="center" style={{ minHeight: 360 }}>
+          <Empty
+            description={t('settingsTabNotFound.desc')}
+            title={t('settingsTabNotFound.title')}
+            type="page"
+          />
+          <Button type="primary" onClick={() => navigate('/settings/profile', { replace: true })}>
+            {t('settingsTabNotFound.action')}
+          </Button>
+        </Flexbox>
+      </SettingContainer>
+    </>
+  );
+
   if (activeTab && REDIRECT_MAP[activeTab]) return null;
+
+  if (activeTab && !componentMap[activeTab as keyof typeof componentMap]) {
+    return renderUnknownTab();
+  }
 
   if (mobile) {
     return activeTab ? renderComponent(activeTab) : renderComponent(SettingsTabs.Profile);
